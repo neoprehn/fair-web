@@ -7,5 +7,5 @@ openpyxl>=3.1
 python-pptx>=1.0
 gunicorn>=23.0
 
-# pyfair wird separat installiert (Sibling-Repo):
-#   pip install -e ../fair
+# pyfair wird separat installiert (liegt im Nachbarordner Entwicklung/fair/fair):
+#   pip install -e ../fair/fair
