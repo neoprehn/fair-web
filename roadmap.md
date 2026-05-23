@@ -1,21 +1,21 @@
 ### Phase 1 – Vorbereitung & Analyse
-- [ ] Claude Code Prompt einfügen
-- [ ] PyFair Code analysieren lassen (model.py, meta_model.py, simple_report.py)
-- [ ] Sample-Dateien analysieren lassen
-- [ ] requirements.txt prüfen lassen
-- [ ] Branch `feature-webapp` anlegen
+- [x] Claude Code Prompt einfügen
+- [x] PyFair Code analysieren lassen (model.py, meta_model.py, simple_report.py)
+- [x] Sample-Dateien analysieren lassen
+- [x] requirements.txt prüfen lassen
+- [x] Branch `feature-webapp` anlegen
 
 ---
 
 ### Phase 2 – Django Grundgerüst
-- [ ] Django installieren
-- [ ] Django Projekt aufsetzen (`config/`)
-- [ ] Apps anlegen (szenarien, berechnung, auswertung, export)
-- [ ] PostgreSQL Datenbank verbinden
-- [ ] Bootstrap 5 Grundlayout bauen (`base.html`)
-- [ ] Navigation zwischen Seiten einrichten
+- [x] Django installieren
+- [x] Django Projekt aufsetzen (`config/`)
+- [x] Apps anlegen (szenarien, berechnung, auswertung, export)
+- [x] PostgreSQL Datenbank verbinden
+- [x] Bootstrap 5 Grundlayout bauen (`base.html`)
+- [x] Navigation zwischen Seiten einrichten
 - [ ] Lokaler Test – läuft die Seite?
-- [ ] Commit & Push zu GitHub
+- [x] Commit & Push zu GitHub
 
 ---
 
@@ -116,9 +116,9 @@ VS Code → git push → GitHub → VPS: git pull → neoprehn.de
 
 | Datei | Warum wichtig |
 |---|---|
-| `fair/model/model.py` | FairModel Kernlogik |
-| `fair/model/meta_model.py` | Mehrere Szenarien kombinieren |
-| `fair/report/simple_report.py` | Bestehende Report-Logik |
-| `fair/utility/beta_pert.py` | Wahrscheinlichkeitsverteilung |
+| `pyfair/model/model.py` | FairModel Kernlogik |
+| `pyfair/model/meta_model.py` | Mehrere Szenarien kombinieren |
+| `pyfair/report/simple_report.py` | Bestehende Report-Logik |
+| `pyfair/utility/beta_pert.py` | Wahrscheinlichkeitsverteilung |
 | `requirements.txt` | Bestehende Abhängigkeiten |
 | `sample/` | Beispiele wie PyFair genutzt wird |

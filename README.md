@@ -29,7 +29,7 @@ Aktueller Stand: Django 5.2 LTS Scaffold mit Bootstrap 5, PostgreSQL und vorbere
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
    pip install -r requirements.txt
-   pip install -e ..\fair\fair    # PyFair als lokales Paket (Nachbarordner)
+   pip install -e ..\fair         # PyFair als lokales Paket (Nachbarordner, setup.py liegt im fair-Root)
    ```
 
 3. **.env anlegen**
