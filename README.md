@@ -13,15 +13,17 @@ Entwicklung/
 
 ## Phase 1 — Grundgerüst
 
-Aktueller Stand: Django 5.2 LTS Scaffold mit Bootstrap 5, PostgreSQL und vorbereiteten Apps für die nächsten Feature-Branches.
+Aktueller Stand: Django 5.2 LTS Scaffold mit Bootstrap 5, MariaDB und vorbereiteten Apps für die nächsten Feature-Branches.
 
 ## Setup (lokal, Windows / VS Code)
 
-1. **PostgreSQL einrichten**
-   ```powershell
-   # In psql (z.B. via pgAdmin oder psql):
-   CREATE USER fairweb WITH PASSWORD 'fairweb';
-   CREATE DATABASE fairweb OWNER fairweb;
+1. **MariaDB einrichten**
+   ```sql
+   -- In der MariaDB-Konsole (mariadb -u root -p):
+   CREATE DATABASE fairweb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER 'fairweb'@'localhost' IDENTIFIED BY 'fairweb';
+   GRANT ALL PRIVILEGES ON fairweb.* TO 'fairweb'@'localhost';
+   FLUSH PRIVILEGES;
    ```
 
 2. **Virtualenv + Dependencies**

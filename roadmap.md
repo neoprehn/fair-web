@@ -11,7 +11,7 @@
 - [x] Django installieren
 - [x] Django Projekt aufsetzen (`config/`)
 - [x] Apps anlegen (szenarien, berechnung, auswertung, export)
-- [x] PostgreSQL Datenbank verbinden
+- [ ] MariaDB Datenbank verbinden
 - [x] Bootstrap 5 Grundlayout bauen (`base.html`)
 - [x] Navigation zwischen Seiten einrichten
 - [ ] Lokaler Test – läuft die Seite?
@@ -23,7 +23,7 @@
 - [ ] Datenbankmodell für Szenarien erstellen
 - [ ] Formular für FAIR Parameter bauen
 - [ ] Schieber (Slider) für Unsicherheit einbauen
-- [ ] Szenario speichern in PostgreSQL
+- [ ] Szenario speichern in MariaDB
 - [ ] Szenario laden & bearbeiten
 - [ ] Szenario löschen
 - [ ] Dashboard mit Szenario-Übersicht
@@ -36,7 +36,7 @@
 - [ ] PyFair als Engine einbinden
 - [ ] Monte Carlo Simulation starten
 - [ ] Live-Fortschrittsanzeige während Simulation
-- [ ] Ergebnisse in PostgreSQL als JSON speichern
+- [ ] Ergebnisse in MariaDB als JSON speichern
 - [ ] Mehrere Szenarien gleichzeitig berechnen
 - [ ] Lokaler Test
 - [ ] Commit & Push → Branch `feature-berechnung` mergen in `main`
@@ -75,17 +75,17 @@
 ---
 
 ### Phase 8 – Deployment auf IONOS VPS
-- [ ] Per SSH auf VPS verbinden
-- [ ] Ubuntu aktualisieren
-- [ ] Python & pip installieren
-- [ ] PostgreSQL auf VPS installieren & einrichten
-- [ ] Nginx installieren & konfigurieren
-- [ ] Gunicorn installieren & konfigurieren
-- [ ] GitHub Repository auf VPS klonen
-- [ ] Umgebungsvariablen setzen
-- [ ] SSL Zertifikat (Let's Encrypt) einrichten
-- [ ] Domain `fair.neoprehn.de` verbinden
-- [ ] Finaler Test auf neoprehn.de
+- [x] Per SSH auf VPS verbinden
+- [x] Ubuntu aktualisieren
+- [x] Python & pip installieren
+- [x] MariaDB auf VPS installieren & einrichten
+- [ ] Nginx installieren & konfigurieren _(zu verifizieren)_
+- [ ] Gunicorn installieren & konfigurieren _(zu verifizieren)_
+- [x] GitHub Repository auf VPS klonen _(via CI/CD bereits eingerichtet)_
+- [ ] Umgebungsvariablen setzen _(zu verifizieren)_
+- [ ] SSL Zertifikat (Let's Encrypt) einrichten _(zu verifizieren – HTTPS auf fair.neoprehn.de aktiv?)_
+- [x] Domain `fair.neoprehn.de` verbinden
+- [ ] Finaler Test auf neoprehn.de _(Webseite zeigt aktuell noch keinen App-Inhalt)_
 
 ---
 
