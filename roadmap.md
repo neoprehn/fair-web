@@ -11,10 +11,10 @@
 - [x] Django installieren
 - [x] Django Projekt aufsetzen (`config/`)
 - [x] Apps anlegen (szenarien, berechnung, auswertung, export)
-- [ ] MariaDB Datenbank verbinden
+- [x] MariaDB Datenbank verbinden
 - [x] Bootstrap 5 Grundlayout bauen (`base.html`)
 - [x] Navigation zwischen Seiten einrichten
-- [ ] Lokaler Test – läuft die Seite?
+- [x] Lokaler Test – läuft die Seite?
 - [x] Commit & Push zu GitHub
 
 ---
