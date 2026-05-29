@@ -7,7 +7,18 @@ sich direkt ein pyfair-``FairModel`` füttern (Phase 4).
 """
 
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
+from .fair_confidence import (
+    CONFIDENCE_DEFAULTS,
+    CONFIDENCE_DISTRIBUTIONS,
+    UNSICHERHEIT_DEFAULT,
+    UNSICHERHEIT_MAX,
+    UNSICHERHEIT_MIN,
+    UNSICHERHEIT_TO_CONFIDENCE,
+    UNSICHERHEIT_LABELS,
+)
 
 
 class Szenario(models.Model):
@@ -76,6 +87,13 @@ class FaktorEingabe(models.Model):
         default=Verteilung.PERT,
     )
     params = models.JSONField("Parameter", default=dict)
+    # Unsicherheit als 5-Stufen-Slider (0 = niedrigste ... 4 = höchste).
+    # Wird invertiert auf pyfair-"confidence" abgebildet (siehe fair_confidence).
+    unsicherheit = models.PositiveSmallIntegerField(
+        "Unsicherheit",
+        default=UNSICHERHEIT_DEFAULT,
+        validators=[MinValueValidator(UNSICHERHEIT_MIN), MaxValueValidator(UNSICHERHEIT_MAX)],
+    )
 
     class Meta:
         verbose_name = "Faktor-Eingabe"
@@ -95,9 +113,34 @@ class FaktorEingabe(models.Model):
         """Der pyfair-Knotenname für diesen Faktor (z. B. 'Loss Magnitude')."""
         return self.FAIR_TARGETS[self.faktor]
 
+    @property
+    def confidence_level(self):
+        """pyfair-Konfidenzstufe (invertiert zur Unsicherheit)."""
+        return UNSICHERHEIT_TO_CONFIDENCE[self.unsicherheit]
+
+    @property
+    def unsicherheit_label(self):
+        """Lesbares Label der Unsicherheitsstufe (z. B. 'mittel')."""
+        return UNSICHERHEIT_LABELS[self.unsicherheit]
+
+    @property
+    def confidence_shape(self):
+        """Aufgelöster pyfair-Formparameter (z. B. {'gamma': 4}) oder None."""
+        if self.verteilung not in CONFIDENCE_DISTRIBUTIONS:
+            return None
+        return CONFIDENCE_DEFAULTS[self.confidence_level].get(self.verteilung)
+
     def to_fair_kwargs(self):
-        """kwargs für die strukturierte pyfair-API ``input_data``."""
-        return {"distribution": self.verteilung, "params": dict(self.params)}
+        """kwargs für die strukturierte pyfair-API ``input_data``.
+
+        Für Verteilungen mit Konfidenz-Formparameter (PERT/Lognormal/
+        Poisson/Beta) wird ``confidence`` mitgegeben – pyfair leitet daraus
+        gamma/sigma/k/range ab. Konstant/Normal kennen keine Konfidenz.
+        """
+        kwargs = {"distribution": self.verteilung, "params": dict(self.params)}
+        if self.verteilung in CONFIDENCE_DISTRIBUTIONS:
+            kwargs["confidence"] = self.confidence_level
+        return kwargs
 
     def clean(self):
         """Prüft, dass ``params`` zur gewählten Verteilung passt."""

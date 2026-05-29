@@ -9,7 +9,14 @@ zusammen und nutzt die Modell-Validierung (``FaktorEingabe.clean``).
 from django import forms
 from django.forms import inlineformset_factory
 
+from .fair_confidence import UNSICHERHEIT_MAX, UNSICHERHEIT_MIN
 from .models import FaktorEingabe, Szenario
+
+
+class RangeInput(forms.NumberInput):
+    """Bootstrap-Range-Slider (<input type="range">)."""
+
+    input_type = "range"
 
 
 class SzenarioForm(forms.ModelForm):
@@ -45,10 +52,16 @@ class FaktorEingabeForm(forms.ModelForm):
 
     class Meta:
         model = FaktorEingabe
-        fields = ("faktor", "verteilung")
+        fields = ("faktor", "verteilung", "unsicherheit")
         widgets = {
             "faktor": forms.Select(attrs={"class": "form-select"}),
             "verteilung": forms.Select(attrs={"class": "form-select verteilung-select"}),
+            "unsicherheit": RangeInput(attrs={
+                "class": "form-range unsicherheit-slider",
+                "min": UNSICHERHEIT_MIN,
+                "max": UNSICHERHEIT_MAX,
+                "step": 1,
+            }),
         }
 
     def __init__(self, *args, **kwargs):

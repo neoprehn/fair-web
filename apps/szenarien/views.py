@@ -15,8 +15,24 @@ from django.views.generic import (
     UpdateView,
 )
 
+from .fair_confidence import (
+    CONFIDENCE_DEFAULTS,
+    CONFIDENCE_DISTRIBUTIONS,
+    UNSICHERHEIT_LABELS,
+    UNSICHERHEIT_TO_CONFIDENCE,
+)
 from .forms import FaktorFormSet, SzenarioForm
 from .models import FaktorEingabe, Szenario
+
+
+# Konfiguration für das Slider-JS (Single Source: fair_confidence).
+# Wird im Template via {{ ...|json_script }} ausgegeben.
+_CONFIDENCE_CONFIG = {
+    "defaults": CONFIDENCE_DEFAULTS,
+    "distributions": list(CONFIDENCE_DISTRIBUTIONS),
+    "unsicherheitToConfidence": UNSICHERHEIT_TO_CONFIDENCE,
+    "labels": UNSICHERHEIT_LABELS,
+}
 
 
 class SzenarioListView(ListView):
@@ -40,6 +56,7 @@ class _SzenarioFormMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["confidence_config"] = _CONFIDENCE_CONFIG
         if "faktor_formset" not in context:
             if self.request.method == "POST":
                 context["faktor_formset"] = FaktorFormSet(

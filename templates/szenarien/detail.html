@@ -29,7 +29,7 @@
 <h2 class="h5 mt-4">FAIR-Faktoren</h2>
 <table class="table">
     <thead>
-        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th></tr>
+        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th><th>Unsicherheit</th></tr>
     </thead>
     <tbody>
     {% for faktor in szenario.faktoren.all %}
@@ -41,9 +41,17 @@
                     <span class="badge text-bg-light">{{ key }} = {{ value }}</span>
                 {% endfor %}
             </td>
+            <td>
+                {{ faktor.unsicherheit_label }}
+                {% if faktor.confidence_shape %}
+                    {% for key, value in faktor.confidence_shape.items %}
+                        <span class="badge text-bg-light">{{ key }} = {{ value }}</span>
+                    {% endfor %}
+                {% endif %}
+            </td>
         </tr>
     {% empty %}
-        <tr><td colspan="3" class="text-body-secondary">Noch keine Faktoren erfasst.</td></tr>
+        <tr><td colspan="4" class="text-body-secondary">Noch keine Faktoren erfasst.</td></tr>
     {% endfor %}
     </tbody>
 </table>

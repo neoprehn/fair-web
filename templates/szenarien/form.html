@@ -68,6 +68,18 @@
                     <div class="dist-params" data-dist="constant">
                         <div class="mb-2"><label class="form-label">Fester Wert (constant)</label>{{ sub.constant }}{{ sub.constant.errors }}</div>
                     </div>
+
+                    <div class="confidence-group mt-3">
+                        <label class="form-label d-flex justify-content-between mb-1">
+                            <span>Unsicherheit</span>
+                            <span class="confidence-readout small text-info"></span>
+                        </label>
+                        {{ sub.unsicherheit }}
+                        <div class="d-flex justify-content-between small text-body-secondary">
+                            <span>niedrig</span><span>hoch</span>
+                        </div>
+                        {{ sub.unsicherheit.errors }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -82,20 +94,44 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ confidence_config|json_script:"confidence-config" }}
 <script>
-// Blendet pro Faktor-Karte nur die Parameterfelder der gewählten Verteilung ein.
-function syncFaktorCard(card) {
-    var select = card.querySelector('.verteilung-select');
-    if (!select) return;
-    var aktiv = select.value;
-    card.querySelectorAll('.dist-params').forEach(function (group) {
-        group.style.display = (group.dataset.dist === aktiv) ? '' : 'none';
+(function () {
+    var CONF = JSON.parse(document.getElementById('confidence-config').textContent);
+
+    // Pro Faktor-Karte: nur die Felder der gewählten Verteilung zeigen,
+    // den Unsicherheits-Slider nur bei Verteilungen mit Konfidenz-Form,
+    // und den resultierenden pyfair-Wert live anzeigen.
+    function syncCard(card) {
+        var vertSelect = card.querySelector('.verteilung-select');
+        if (!vertSelect) return;
+        var vert = vertSelect.value;
+
+        card.querySelectorAll('.dist-params').forEach(function (group) {
+            group.style.display = (group.dataset.dist === vert) ? '' : 'none';
+        });
+
+        var confGroup = card.querySelector('.confidence-group');
+        var hatKonfidenz = CONF.distributions.indexOf(vert) !== -1;
+        confGroup.style.display = hatKonfidenz ? '' : 'none';
+        if (!hatKonfidenz) return;
+
+        var slider = card.querySelector('.unsicherheit-slider');
+        var readout = card.querySelector('.confidence-readout');
+        var stufe = parseInt(slider.value, 10);
+        var confidence = CONF.unsicherheitToConfidence[stufe];      // z. B. "moderate"
+        var shape = CONF.defaults[confidence][vert];                // z. B. {gamma: 4}
+        var key = Object.keys(shape)[0];
+        readout.textContent = CONF.labels[stufe] + ' · ' + key + ' = ' + shape[key];
+    }
+
+    document.querySelectorAll('.faktor-card').forEach(function (card) {
+        syncCard(card);
+        var vertSelect = card.querySelector('.verteilung-select');
+        var slider = card.querySelector('.unsicherheit-slider');
+        if (vertSelect) vertSelect.addEventListener('change', function () { syncCard(card); });
+        if (slider) slider.addEventListener('input', function () { syncCard(card); });
     });
-}
-document.querySelectorAll('.faktor-card').forEach(function (card) {
-    syncFaktorCard(card);
-    var select = card.querySelector('.verteilung-select');
-    if (select) select.addEventListener('change', function () { syncFaktorCard(card); });
-});
+})();
 </script>
 {% endblock %}

@@ -14,7 +14,8 @@ from apps.szenarien.models import FaktorEingabe, Szenario
 @pytest.mark.django_db
 def test_form_pert_baut_params():
     form = FaktorEingabeForm(
-        data={"faktor": "LEF", "verteilung": "pert", "low": 1, "mode": 3, "high": 6}
+        data={"faktor": "LEF", "verteilung": "pert", "unsicherheit": 2,
+              "low": 1, "mode": 3, "high": 6}
     )
     assert form.is_valid(), form.errors
     assert form.instance.params == {"low": 1, "mode": 3, "high": 6}
@@ -23,7 +24,8 @@ def test_form_pert_baut_params():
 @pytest.mark.django_db
 def test_form_constant_ignoriert_fremde_felder():
     form = FaktorEingabeForm(
-        data={"faktor": "LM", "verteilung": "constant", "constant": 4000, "low": 99}
+        data={"faktor": "LM", "verteilung": "constant", "unsicherheit": 2,
+              "constant": 4000, "low": 99}
     )
     assert form.is_valid(), form.errors
     assert form.instance.params == {"constant": 4000}
@@ -66,9 +68,11 @@ def _post_data(**szenario_felder):
         "faktoren-0-low": "1",
         "faktoren-0-mode": "3",
         "faktoren-0-high": "6",
+        "faktoren-0-unsicherheit": "2",
         "faktoren-1-faktor": "LM",
         "faktoren-1-verteilung": "constant",
         "faktoren-1-constant": "4000",
+        "faktoren-1-unsicherheit": "2",
     }
     data.update(szenario_felder)
     return data
