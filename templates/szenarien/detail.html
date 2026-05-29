@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ szenario.name }} &middot; fair-web{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'szenarien:dashboard' %}">Szenarien</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ szenario.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h1 class="h3 mb-1">{{ szenario.name }}</h1>
+        {% if szenario.beschreibung %}<p class="text-body-secondary mb-0">{{ szenario.beschreibung }}</p>{% endif %}
+    </div>
+    <div>
+        <a class="btn btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>
+        <a class="btn btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>
+    </div>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Anzahl Simulationen</dt><dd class="col-sm-9">{{ szenario.n_simulations }}</dd>
+    <dt class="col-sm-3">Zufalls-Seed</dt><dd class="col-sm-9">{{ szenario.random_seed }}</dd>
+</dl>
+
+<h2 class="h5 mt-4">FAIR-Faktoren</h2>
+<table class="table">
+    <thead>
+        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th></tr>
+    </thead>
+    <tbody>
+    {% for faktor in szenario.faktoren.all %}
+        <tr>
+            <td>{{ faktor.get_faktor_display }}</td>
+            <td>{{ faktor.get_verteilung_display }}</td>
+            <td>
+                {% for key, value in faktor.params.items %}
+                    <span class="badge text-bg-light">{{ key }} = {{ value }}</span>
+                {% endfor %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="3" class="text-body-secondary">Noch keine Faktoren erfasst.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

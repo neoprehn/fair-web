@@ -106,12 +106,12 @@ class FaktorEingabe(models.Model):
         fehlend = [key for key in required if key not in params]
         if fehlend:
             raise ValidationError(
-                {"params": f"Verteilung „{self.verteilung}“ benötigt: {', '.join(fehlend)}."}
+                f"Verteilung „{self.verteilung}“ benötigt: {', '.join(fehlend)}."
             )
 
         if self.verteilung == self.Verteilung.PERT:
             low, mode, high = params["low"], params["mode"], params["high"]
             if not (low <= mode <= high):
                 raise ValidationError(
-                    {"params": "PERT erfordert die Reihenfolge low ≤ mode ≤ high."}
+                    "PERT erfordert die Reihenfolge low ≤ mode ≤ high."
                 )
