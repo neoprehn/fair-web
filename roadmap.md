@@ -33,13 +33,13 @@
 ---
 
 ### Phase 4 – PyFair Anbindung & Berechnung
-- [ ] PyFair als Engine einbinden
-- [ ] Monte Carlo Simulation starten
-- [ ] Live-Fortschrittsanzeige während Simulation
-- [ ] Ergebnisse in MariaDB als JSON speichern
-- [ ] Mehrere Szenarien gleichzeitig berechnen
-- [ ] Lokaler Test
-- [ ] Commit & Push → Branch `feature-berechnung` mergen in `main`
+- [x] PyFair als Engine einbinden _(editable im venv installiert; `services.simuliere`)_
+- [x] Monte Carlo Simulation starten _(Button → Hintergrund-Thread, Variante A)_
+- [x] Live-Fortschrittsanzeige während Simulation _(chunked + AJAX-Polling)_
+- [x] Ergebnisse in MariaDB als JSON speichern _(`Simulationslauf.ergebnis` inkl. LEC-Daten)_
+- [x] Mehrere Szenarien gleichzeitig berechnen _(`FairMetaModel`, Summenrisiko + Beitrag je Szenario)_
+- [x] Lokaler Test _(35 Tests grün)_
+- [x] Commit & Push → Branch `feature-berechnung` mergen in `main`
 
 ---
 
