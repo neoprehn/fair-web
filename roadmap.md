@@ -22,7 +22,7 @@
 ### Phase 3 – Szenarien & FAIR Parameter
 - [x] Datenbankmodell für Szenarien erstellen _(Szenario + FaktorEingabe, Faktor LEF/LM, Verteilung PERT/Normal/Konstant)_
 - [x] Formular für FAIR Parameter bauen _(Verteilung pro Faktor wählbar, Parameterfelder per JS ein-/ausgeblendet)_
-- [ ] Schieber (Slider) für Unsicherheit einbauen _(offen – aktuell Zahlenfelder)_
+- [x] Schieber (Slider) für Unsicherheit einbauen _(5 pyfair-Konfidenzstufen, Live-Wertanzeige)_
 - [x] Szenario speichern in MariaDB
 - [x] Szenario laden & bearbeiten
 - [x] Szenario löschen
