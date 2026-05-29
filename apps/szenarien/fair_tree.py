@@ -83,6 +83,71 @@ def vorfahren(code):
     return kette
 
 
+def ist_blatt(code):
+    return code not in CHILDREN
+
+
+# Nicht-Blatt-Knoten (haben einen „direkt/aufschlüsseln"-Umschalter).
+NICHT_BLATT = [code for code in FAIR_NODES if code in CHILDREN]
+
+
+def traversal():
+    """DFS-Reihenfolge ab den Top-Ästen als Liste von (code, tiefe)."""
+    out = []
+
+    def rec(code, tiefe):
+        out.append((code, tiefe))
+        for kind in CHILDREN.get(code, []):
+            rec(kind, tiefe + 1)
+
+    for ast in ROOT_CHILDREN:
+        rec(ast, 0)
+    return out
+
+
+def frontier_aus_modus(modus):
+    """Aktiver Schnitt aus der Modus-Karte ({code: 'direkt'|'aufschluesseln'}).
+
+    Blätter und auf „direkt" gestellte Knoten sind Eingabe-Knoten; auf
+    „aufschluesseln" gestellte Knoten werden durch ihre Kinder ersetzt.
+    Fehlt ein Modus, gilt „direkt".
+    """
+    front = []
+
+    def rec(code):
+        if ist_blatt(code) or modus.get(code, "direkt") == "direkt":
+            front.append(code)
+        else:
+            for kind in CHILDREN[code]:
+                rec(kind)
+
+    for ast in ROOT_CHILDREN:
+        rec(ast)
+    return front
+
+
+def modus_aus_codes(codes):
+    """Leitet die Modus-Karte aus einem vorhandenen Schnitt ab (fürs Bearbeiten)."""
+    codes = set(codes)
+    modus = {}
+    for code in NICHT_BLATT:
+        if code in codes:
+            modus[code] = "direkt"
+        elif any(k in codes for k in _nachfahren(code)):
+            modus[code] = "aufschluesseln"
+        else:
+            modus[code] = "direkt"
+    return modus
+
+
+def _nachfahren(code):
+    out = []
+    for kind in CHILDREN.get(code, []):
+        out.append(kind)
+        out.extend(_nachfahren(kind))
+    return out
+
+
 def schnitt_ist_gueltig(codes):
     """Prüft, ob die angegebenen Knoten einen gültigen Schnitt durch den Baum bilden.
 

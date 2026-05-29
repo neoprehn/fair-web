@@ -15,13 +15,14 @@ from django.views.generic import (
     UpdateView,
 )
 
+from . import fair_tree
 from .fair_confidence import (
     CONFIDENCE_DEFAULTS,
     CONFIDENCE_DISTRIBUTIONS,
     UNSICHERHEIT_LABELS,
     UNSICHERHEIT_TO_CONFIDENCE,
 )
-from .forms import FaktorFormSet, SzenarioForm
+from .forms import FaktorEingabeForm, SzenarioForm
 from .models import FaktorEingabe, Szenario
 
 
@@ -48,45 +49,88 @@ class SzenarioDetailView(DetailView):
 
 
 class _SzenarioFormMixin:
-    """Gemeinsame Formset-Logik für Anlegen und Bearbeiten."""
+    """Anlegen/Bearbeiten mit freiem FAIR-Baum-Schnitt.
+
+    Pro Knoten ein FaktorEingabeForm (Prefix = Code). Welche Knoten
+    gespeichert werden, bestimmt der „Schnitt" aus den Modus-Umschaltern.
+    """
 
     model = Szenario
     form_class = SzenarioForm
     template_name = "szenarien/form.html"
 
+    def _bestehende(self):
+        if self.object:
+            return {f.faktor: f for f in self.object.faktoren.all()}
+        return {}
+
+    def _node_forms(self, data=None):
+        bestehend = self._bestehende()
+        forms = {}
+        for code, _tiefe in fair_tree.traversal():
+            inst = bestehend.get(code) or FaktorEingabe(faktor=code)
+            forms[code] = FaktorEingabeForm(data, instance=inst, prefix=code, faktor_code=code)
+        return forms
+
+    def _modus_aus_post(self):
+        return {c: self.request.POST.get(f"modus-{c}", "direkt") for c in fair_tree.NICHT_BLATT}
+
+    def _baum_rows(self, node_forms, modus):
+        return [
+            {
+                "code": code, "tiefe": tiefe,
+                "abbr": fair_tree.abbr(code), "name": fair_tree.target(code),
+                "ist_blatt": fair_tree.ist_blatt(code),
+                "modus": modus.get(code, "direkt"),
+                "form": node_forms[code],
+            }
+            for code, tiefe in fair_tree.traversal()
+        ]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["confidence_config"] = _CONFIDENCE_CONFIG
-        if "faktor_formset" not in context:
+        if "baum_rows" not in context:
             if self.request.method == "POST":
-                context["faktor_formset"] = FaktorFormSet(
-                    self.request.POST, instance=self.object
-                )
+                node_forms = self._node_forms(self.request.POST)
+                modus = self._modus_aus_post()
             else:
-                context["faktor_formset"] = FaktorFormSet(
-                    instance=self.object, initial=self._faktor_initial()
+                node_forms = self._node_forms()
+                modus = (
+                    fair_tree.modus_aus_codes(self.object.schnitt_codes())
+                    if self.object
+                    else {c: "direkt" for c in fair_tree.NICHT_BLATT}
                 )
+            context["baum_rows"] = self._baum_rows(node_forms, modus)
         return context
 
-    def _faktor_initial(self):
-        """Beim Anlegen die zwei Karten fest auf LEF und LM vorbelegen."""
-        if self.object is None:
-            return [
-                {"faktor": FaktorEingabe.Faktor.LEF},
-                {"faktor": FaktorEingabe.Faktor.LM},
-            ]
-        return None
-
     def form_valid(self, form):
-        formset = FaktorFormSet(self.request.POST, instance=self.object)
-        if not formset.is_valid():
-            return self.render_to_response(
-                self.get_context_data(form=form, faktor_formset=formset)
+        modus = self._modus_aus_post()
+        frontier = fair_tree.frontier_aus_modus(modus)
+        node_forms = self._node_forms(self.request.POST)
+        frontier_forms = {code: node_forms[code] for code in frontier}
+
+        alle_ok = all(f.is_valid() for f in frontier_forms.values())
+        schnitt_ok = fair_tree.schnitt_ist_gueltig(frontier)
+        if not (alle_ok and schnitt_ok):
+            context = self.get_context_data(
+                form=form, baum_rows=self._baum_rows(node_forms, modus)
             )
+            if not schnitt_ok:
+                context["schnitt_fehler"] = (
+                    "Bitte einen vollständigen, rechenbaren Schnitt angeben "
+                    "(jeder Ast bis zu einer Eingabe heruntergebrochen)."
+                )
+            return self.render_to_response(context)
+
         with transaction.atomic():
             self.object = form.save()
-            formset.instance = self.object
-            formset.save()
+            self.object.faktoren.all().delete()
+            for code, f in frontier_forms.items():
+                eingabe = f.save(commit=False)
+                eingabe.szenario = self.object
+                eingabe.faktor = code
+                eingabe.save()
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
