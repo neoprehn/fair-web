@@ -9,37 +9,70 @@
 </div>
 
 {% if szenarien %}
-<div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th class="text-end">Simulationen</th>
-                <th>Faktoren</th>
-                <th>Geändert</th>
-                <th class="text-end">Aktionen</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for szenario in szenarien %}
-            <tr>
-                <td><a href="{% url 'szenarien:detail' szenario.pk %}">{{ szenario.name }}</a></td>
-                <td class="text-end">{{ szenario.n_simulations }}</td>
-                <td>{{ szenario.faktoren.count }} / 2</td>
-                <td class="text-body-secondary small">{{ szenario.geaendert_am|date:"d.m.Y H:i" }}</td>
-                <td class="text-end">
-                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>
-                    <a class="btn btn-sm btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
+<form method="post" action="{% url 'berechnung:meta_starten' %}">
+    {% csrf_token %}
+    <div class="d-flex justify-content-end mb-2">
+        <button type="submit" id="meta-btn" class="btn btn-primary btn-sm" disabled>
+            ▶ Ausgewählte gemeinsam berechnen (<span id="meta-count">0</span>)
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width:2.5rem;"></th>
+                    <th>Name</th>
+                    <th class="text-end">Simulationen</th>
+                    <th>Faktoren</th>
+                    <th>Geändert</th>
+                    <th class="text-end">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for szenario in szenarien %}
+                <tr>
+                    <td>
+                        <input class="form-check-input meta-check" type="checkbox"
+                               name="szenarien" value="{{ szenario.pk }}"
+                               {% if not szenario.faktoren.count %}disabled title="Keine Faktoren"{% endif %}>
+                    </td>
+                    <td><a href="{% url 'szenarien:detail' szenario.pk %}">{{ szenario.name }}</a></td>
+                    <td class="text-end">{{ szenario.n_simulations }}</td>
+                    <td>{{ szenario.faktoren.count }} / 2</td>
+                    <td class="text-body-secondary small">{{ szenario.geaendert_am|date:"d.m.Y H:i" }}</td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>
+                        <a class="btn btn-sm btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
 {% else %}
 <div class="text-center text-body-secondary py-5">
     <p class="lead">Noch keine Szenarien angelegt.</p>
     <a class="btn btn-primary" href="{% url 'szenarien:create' %}">Erstes Szenario anlegen</a>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// "Gemeinsam berechnen" erst ab 2 ausgewählten Szenarien aktivieren.
+(function () {
+    var checks = document.querySelectorAll('.meta-check');
+    var btn = document.getElementById('meta-btn');
+    var zaehler = document.getElementById('meta-count');
+    if (!btn) return;
+    function update() {
+        var n = document.querySelectorAll('.meta-check:checked').length;
+        zaehler.textContent = n;
+        btn.disabled = n < 2;
+    }
+    checks.forEach(function (c) { c.addEventListener('change', update); });
+    update();
+})();
+</script>
 {% endblock %}

@@ -91,6 +91,54 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
     return _ergebnis_aus_sample(sample)
 
 
+def simuliere_meta(szenarien, n_simulations, random_seed, fortschritt=None):
+    """Gemeinsamer Lauf über mehrere Szenarien (Gesamtrisiko = Summe).
+
+    Baut je Szenario ein FairModel (eigener Seed → unabhängige Ziehungen,
+    gleiche ``n_simulations``) und summiert via ``FairMetaModel``. Liefert
+    ``{"gesamt": <kennzahlen>, "szenarien": [{pk, name, stats}, ...]}``.
+    """
+    import pyfair
+
+    szenarien = list(szenarien)
+    if not szenarien:
+        raise ValueError("Keine Szenarien ausgewählt.")
+
+    models = []
+    keys = []
+    n = len(szenarien)
+    for i, sz in enumerate(szenarien):
+        inputs = sz.fair_inputs()
+        if not inputs:
+            raise ValueError(f"Szenario „{sz.name}“ hat keine FAIR-Faktoren.")
+        key = f"{sz.name}__{sz.pk}"  # eindeutiger Spaltenname im MetaModel
+        model = pyfair.FairModel(
+            name=key, n_simulations=n_simulations, random_seed=random_seed + i
+        )
+        for target, kwargs in inputs.items():
+            model.input_data(target, **kwargs)
+        models.append(model)
+        keys.append((sz, key))
+        if fortschritt:
+            # +1, damit die abschließende Meta-Rechnung noch Platz hat.
+            fortschritt(round((i + 1) / (n + 1) * 100))
+
+    meta = pyfair.FairMetaModel(name="Gesamt", models=models, mode="sum")
+    meta.calculate_all()
+    df = meta.export_results()
+
+    ergebnis = {
+        "gesamt": _ergebnis_aus_sample(df["Risk"].to_numpy()),
+        "szenarien": [
+            {"pk": sz.pk, "name": sz.name, "stats": _ergebnis_aus_sample(df[key].to_numpy())}
+            for sz, key in keys
+        ],
+    }
+    if fortschritt:
+        fortschritt(100)
+    return ergebnis
+
+
 def starte_simulation_async(lauf_id):
     """Startet die Berechnung in einem Hintergrund-Thread (nicht blockierend)."""
     thread = threading.Thread(target=_thread_target, args=(lauf_id,), daemon=True)
@@ -129,5 +177,46 @@ def _run_simulation(lauf_id):
         lauf.save(update_fields=["status", "fortschritt", "ergebnis", "aktualisiert_am"])
     except Exception as exc:  # noqa: BLE001 – Fehler im Lauf festhalten, nicht crashen
         Simulationslauf.objects.filter(pk=lauf_id).update(
+            status=Simulationslauf.Status.FEHLER, fehler_text=str(exc)
+        )
+
+
+def starte_meta_async(meta_id):
+    """Startet einen Meta-Lauf im Hintergrund-Thread."""
+    thread = threading.Thread(target=_thread_target_meta, args=(meta_id,), daemon=True)
+    thread.start()
+    return thread
+
+
+def _thread_target_meta(meta_id):
+    try:
+        _run_meta(meta_id)
+    finally:
+        connection.close()
+
+
+def _run_meta(meta_id):
+    """Führt einen Meta-Lauf aus und pflegt Status/Fortschritt (synchron, testbar)."""
+    from .models import MetaLauf, Simulationslauf
+
+    try:
+        lauf = MetaLauf.objects.get(pk=meta_id)
+        lauf.status = Simulationslauf.Status.LAEUFT
+        lauf.fortschritt = 0
+        lauf.save(update_fields=["status", "fortschritt", "aktualisiert_am"])
+
+        def melde(prozent):
+            MetaLauf.objects.filter(pk=meta_id).update(fortschritt=prozent)
+
+        ergebnis = simuliere_meta(
+            lauf.szenarien.all(), lauf.n_simulations, lauf.random_seed, fortschritt=melde
+        )
+
+        lauf.status = Simulationslauf.Status.FERTIG
+        lauf.fortschritt = 100
+        lauf.ergebnis = ergebnis
+        lauf.save(update_fields=["status", "fortschritt", "ergebnis", "aktualisiert_am"])
+    except Exception as exc:  # noqa: BLE001
+        MetaLauf.objects.filter(pk=meta_id).update(
             status=Simulationslauf.Status.FEHLER, fehler_text=str(exc)
         )
