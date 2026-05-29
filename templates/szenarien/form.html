@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %} &middot; fair-web{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %}</h1>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-8">
+            <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+            {{ form.name }}
+            {{ form.name.errors }}
+        </div>
+        <div class="col-md-12">
+            <label class="form-label" for="{{ form.beschreibung.id_for_label }}">Beschreibung</label>
+            {{ form.beschreibung }}
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="{{ form.n_simulations.id_for_label }}">Anzahl Simulationen</label>
+            {{ form.n_simulations }}
+            {{ form.n_simulations.errors }}
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="{{ form.random_seed.id_for_label }}">Zufalls-Seed</label>
+            {{ form.random_seed }}
+            {{ form.random_seed.errors }}
+        </div>
+    </div>
+
+    <h2 class="h5">FAIR-Faktoren</h2>
+    <p class="text-body-secondary small">Lege je einen Faktor für Schadenshäufigkeit (LEF) und Schadenshöhe (LM) an.</p>
+
+    {{ faktor_formset.management_form }}
+    {% if faktor_formset.non_form_errors %}<div class="alert alert-danger">{{ faktor_formset.non_form_errors }}</div>{% endif %}
+
+    <div class="row g-3">
+    {% for sub in faktor_formset %}
+        <div class="col-md-6">
+            <div class="card faktor-card h-100">
+                <div class="card-body">
+                    {% for hidden in sub.hidden_fields %}{{ hidden }}{% endfor %}
+                    {% if sub.non_field_errors %}<div class="alert alert-danger py-2">{{ sub.non_field_errors }}</div>{% endif %}
+
+                    <div class="mb-2">
+                        <label class="form-label">Faktor</label>
+                        {{ sub.faktor }}
+                        {{ sub.faktor.errors }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Verteilung</label>
+                        {{ sub.verteilung }}
+                    </div>
+
+                    <div class="dist-params" data-dist="pert">
+                        <div class="mb-2"><label class="form-label">Minimum (low)</label>{{ sub.low }}{{ sub.low.errors }}</div>
+                        <div class="mb-2"><label class="form-label">Wahrscheinlichster Wert (mode)</label>{{ sub.mode }}{{ sub.mode.errors }}</div>
+                        <div class="mb-2"><label class="form-label">Maximum (high)</label>{{ sub.high }}{{ sub.high.errors }}</div>
+                    </div>
+                    <div class="dist-params" data-dist="normal">
+                        <div class="mb-2"><label class="form-label">Mittelwert (mean)</label>{{ sub.mean }}{{ sub.mean.errors }}</div>
+                        <div class="mb-2"><label class="form-label">Streuung (stdev)</label>{{ sub.stdev }}{{ sub.stdev.errors }}</div>
+                    </div>
+                    <div class="dist-params" data-dist="constant">
+                        <div class="mb-2"><label class="form-label">Fester Wert (constant)</label>{{ sub.constant }}{{ sub.constant.errors }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Speichern</button>
+        <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Abbrechen</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Blendet pro Faktor-Karte nur die Parameterfelder der gewählten Verteilung ein.
+function syncFaktorCard(card) {
+    var select = card.querySelector('.verteilung-select');
+    if (!select) return;
+    var aktiv = select.value;
+    card.querySelectorAll('.dist-params').forEach(function (group) {
+        group.style.display = (group.dataset.dist === aktiv) ? '' : 'none';
+    });
+}
+document.querySelectorAll('.faktor-card').forEach(function (card) {
+    syncFaktorCard(card);
+    var select = card.querySelector('.verteilung-select');
+    if (select) select.addEventListener('change', function () { syncFaktorCard(card); });
+});
+</script>
+{% endblock %}

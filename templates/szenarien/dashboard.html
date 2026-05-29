@@ -1,14 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard &middot; fair-web{% endblock %}
+{% block title %}Szenarien &middot; fair-web{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-lg-8">
-        <h1 class="h3 mb-3">Willkommen bei fair-web</h1>
-        <p class="lead">FAIR Monte Carlo Simulationen als Webseite, basierend auf PyFair.</p>
-        <p>Phase 1 Grundgerüst läuft. Szenarien, Berechnung, Auswertung und Export folgen in den nächsten Feature-Branches.</p>
-        <a class="btn btn-primary disabled" aria-disabled="true">Neues Szenario (folgt in Phase 2)</a>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Szenarien</h1>
+    <a class="btn btn-primary" href="{% url 'szenarien:create' %}">+ Neues Szenario</a>
 </div>
+
+{% if szenarien %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th class="text-end">Simulationen</th>
+                <th>Faktoren</th>
+                <th>Geändert</th>
+                <th class="text-end">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for szenario in szenarien %}
+            <tr>
+                <td><a href="{% url 'szenarien:detail' szenario.pk %}">{{ szenario.name }}</a></td>
+                <td class="text-end">{{ szenario.n_simulations }}</td>
+                <td>{{ szenario.faktoren.count }} / 2</td>
+                <td class="text-body-secondary small">{{ szenario.geaendert_am|date:"d.m.Y H:i" }}</td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>
+                    <a class="btn btn-sm btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center text-body-secondary py-5">
+    <p class="lead">Noch keine Szenarien angelegt.</p>
+    <a class="btn btn-primary" href="{% url 'szenarien:create' %}">Erstes Szenario anlegen</a>
+</div>
+{% endif %}
 {% endblock %}
