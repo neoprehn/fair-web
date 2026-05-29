@@ -103,8 +103,24 @@
 
 ---
 ### ab hier alles von neoprehn
-### Phase 9 - Sicherheit
+### Phase 9 - Sicherheit + Ideen
 - [ ] Prüfen des Deploys hinsichtlich Sicherheits-Design Fehler
+- [ ] Home Bildschirm verbessern (Modellerklärung. interaktives User-Durchklicken ohne Simulation)
+- [ ] Dokumentation zur Webseite (Bedienhilfe etc. aufbauen)
+- [ ] Szenariocluster mit Szenarien 
+- [ ] Bei Auswahl der gemeinsamen Berechnung von Szenarien die Möglichkeit schaffen, compare oder add als Ergebnis zu haben, diese sollte dann auch als Ergebnis abgespeichert werden (unter eigenem Reiter "Gemeinsame Szenarien" oder "Szenariovergleiche")
+- [ ] Eingabe von Annahmen je eigegebener Faktor (ist dann auch im Szenarioergebnis abzuspeichern)
+- [ ] Ausbaustufe: KI-Agent, der bei der Formulierung der Szenarien hilft, um eine hohe Qualität sicherzustellen
+- [ ] Lokaler Test
+- [ ] Commit & Push → Branch `feature-export` mergen in `main`
+
+---
+### ab hier alles von neoprehn
+### Phase 10 - FAOR + FAIR CAM
+- [ ] Einbindung in die Webseite der FAOR - Logik
+- [ ] Einbindung von FAIR CAM (hierzu muss wahrscheinlich noch alles als pyfaircam entwickelt werden)
+- [ ] 
+- [ ] 
 - [ ] 
 - [ ] 
 - [ ] 

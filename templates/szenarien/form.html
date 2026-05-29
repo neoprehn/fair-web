@@ -31,62 +31,19 @@
 
     <h2 class="h5">FAIR-Faktoren</h2>
     <p class="text-body-secondary small">
-        Lege fest, wie du das Risiko aufschlüsselst. Ein Faktor kann <em>direkt</em> angegeben
-        oder in seine Teilfaktoren <em>aufgeschlüsselt</em> werden – beliebig tief.
+        Risk = <strong>Häufigkeit</strong> × <strong>Schaden</strong>. Jeder Faktor kann
+        <em>direkt</em> angegeben oder in seine Teilfaktoren <em>aufgeschlüsselt</em> werden – beliebig tief.
     </p>
 
-    <div class="fair-baum" style="max-width: 760px;">
-    {% for row in baum_rows %}
-        <div class="baum-row mb-2" data-code="{{ row.code }}" data-leaf="{{ row.ist_blatt|yesno:'true,false' }}"
-             style="margin-left: {{ row.tiefe }}rem;">
-            <div class="d-flex align-items-center gap-2 baum-knoten">
-                <span class="badge text-bg-light">{{ row.abbr }}</span>
-                <span class="small">{{ row.name }}</span>
-                {% if not row.ist_blatt %}
-                    <select class="form-select form-select-sm modus-select w-auto ms-2" name="modus-{{ row.code }}">
-                        <option value="direkt" {% if row.modus == "direkt" %}selected{% endif %}>direkt angeben</option>
-                        <option value="aufschluesseln" {% if row.modus == "aufschluesseln" %}selected{% endif %}>aufschlüsseln</option>
-                    </select>
-                {% endif %}
-            </div>
-
-            <div class="card baum-eingabe mt-2">
-                <div class="card-body py-2">
-                    {% if row.form.non_field_errors %}<div class="alert alert-danger py-1 small">{{ row.form.non_field_errors }}</div>{% endif %}
-                    <div class="row g-2 align-items-end">
-                        <div class="col-auto">
-                            <label class="form-label mb-1">Verteilung</label>
-                            {{ row.form.verteilung }}
-                        </div>
-                        <div class="col dist-params" data-dist="pert">
-                            <div class="row g-2">
-                                <div class="col"><label class="form-label mb-1">{{ row.form.low.label }}</label>{{ row.form.low }}</div>
-                                <div class="col"><label class="form-label mb-1">{{ row.form.mode.label }}</label>{{ row.form.mode }}</div>
-                                <div class="col"><label class="form-label mb-1">{{ row.form.high.label }}</label>{{ row.form.high }}</div>
-                            </div>
-                        </div>
-                        <div class="col dist-params" data-dist="normal">
-                            <div class="row g-2">
-                                <div class="col"><label class="form-label mb-1">{{ row.form.mean.label }}</label>{{ row.form.mean }}</div>
-                                <div class="col"><label class="form-label mb-1">{{ row.form.stdev.label }}</label>{{ row.form.stdev }}</div>
-                            </div>
-                        </div>
-                        <div class="col dist-params" data-dist="constant">
-                            <label class="form-label mb-1">{{ row.form.constant.label }}</label>{{ row.form.constant }}
-                        </div>
-                    </div>
-                    <div class="confidence-group mt-2" style="max-width: 320px;">
-                        <label class="form-label d-flex justify-content-between mb-1">
-                            <span class="small">Unsicherheit</span>
-                            <span class="confidence-readout small text-info"></span>
-                        </label>
-                        {{ row.form.unsicherheit }}
-                        <div class="d-flex justify-content-between small text-body-secondary"><span>niedrig</span><span>hoch</span></div>
-                    </div>
-                </div>
-            </div>
+    <div class="row g-4 fair-baum">
+        <div class="col-lg-6">
+            <h3 class="h6 text-info">Schadenshäufigkeit (LEF)</h3>
+            {% for row in baum_lef %}{% include "szenarien/_baum_row.html" %}{% endfor %}
         </div>
-    {% endfor %}
+        <div class="col-lg-6">
+            <h3 class="h6 text-info">Schadenshöhe (LM)</h3>
+            {% for row in baum_lm %}{% include "szenarien/_baum_row.html" %}{% endfor %}
+        </div>
     </div>
 
     <div class="mt-4">

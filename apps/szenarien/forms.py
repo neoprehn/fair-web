@@ -36,13 +36,27 @@ class SzenarioForm(forms.ModelForm):
 _PARAM_LABELS = {
     "frequency": {"low": "Minimum (pro Jahr)", "mode": "Wahrscheinlich (pro Jahr)",
                   "high": "Maximum (pro Jahr)", "mean": "Mittelwert (pro Jahr)",
-                  "stdev": "Streuung", "constant": "Fester Wert (pro Jahr)"},
+                  "stdev": "Streuung", "constant": "Fester Wert (pro Jahr)",
+                  "rate": "λ (Ereignisse pro Jahr)"},
     "probability": {"low": "Minimum (0–1)", "mode": "Wahrscheinlich (0–1)",
                     "high": "Maximum (0–1)", "mean": "Mittelwert (0–1)",
-                    "stdev": "Streuung", "constant": "Fester Wert (0–1)"},
+                    "stdev": "Streuung", "constant": "Fester Wert (0–1)",
+                    "beta_mean": "Mittelwert (0–1)"},
     "magnitude": {"low": "Minimum (€)", "mode": "Wahrscheinlich (€)",
                   "high": "Maximum (€)", "mean": "Mittelwert (€)",
-                  "stdev": "Streuung (€)", "constant": "Fester Wert (€)"},
+                  "stdev": "Streuung (€)", "constant": "Fester Wert (€)",
+                  "ln_mean": "Mittelwert (€)"},
+}
+
+# Verteilung -> [(Formularfeld, pyfair-Param-Key)]. Formparameter (gamma/sigma/
+# k/range) kommen nicht von hier, sondern aus der Konfidenz (Unsicherheits-Slider).
+FELD_MAP = {
+    "pert": [("low", "low"), ("mode", "mode"), ("high", "high")],
+    "normal": [("mean", "mean"), ("stdev", "stdev")],
+    "constant": [("constant", "constant")],
+    "poisson": [("rate", "lambda")],
+    "beta": [("beta_mean", "mean")],
+    "lognormal": [("ln_mean", "mean")],
 }
 
 
@@ -55,6 +69,9 @@ class FaktorEingabeForm(forms.ModelForm):
     mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
     stdev = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
     constant = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
+    rate = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
+    beta_mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
+    ln_mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
 
     class Meta:
         model = FaktorEingabe
@@ -82,19 +99,23 @@ class FaktorEingabeForm(forms.ModelForm):
             # Param-Labels typgerecht setzen.
             for key, label in _PARAM_LABELS[typ].items():
                 self.fields[key].label = label
-        # Bestehende params auf die Einzelfelder legen (Bearbeiten).
+        # Bestehende params auf die passenden Einzelfelder legen (Bearbeiten).
         if self.instance and self.instance.pk:
-            for key, value in (self.instance.params or {}).items():
-                if key in self.fields:
-                    self.fields[key].initial = value
+            vorhandene = self.instance.params or {}
+            for feld, key in FELD_MAP.get(self.instance.verteilung, []):
+                if key in vorhandene:
+                    self.fields[feld].initial = vorhandene[key]
 
     def clean(self):
         cleaned = super().clean()
         verteilung = cleaned.get("verteilung")
         if not verteilung:
             return cleaned
-        required = FaktorEingabe.REQUIRED_PARAMS.get(verteilung, ())
-        params = {key: cleaned[key] for key in required if cleaned.get(key) is not None}
+        # Felder der gewählten Verteilung in pyfair-Param-Keys übersetzen.
+        params = {}
+        for feld, key in FELD_MAP.get(verteilung, []):
+            if cleaned.get(feld) is not None:
+                params[key] = cleaned[feld]
         # params VOR der Modell-Validierung setzen (clean prüft Pflichtfelder/PERT/[0,1]).
         self.instance.params = params
         return cleaned

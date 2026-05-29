@@ -75,7 +75,7 @@ class _SzenarioFormMixin:
     def _modus_aus_post(self):
         return {c: self.request.POST.get(f"modus-{c}", "direkt") for c in fair_tree.NICHT_BLATT}
 
-    def _baum_rows(self, node_forms, modus):
+    def _baum_rows(self, node_forms, modus, eintraege):
         return [
             {
                 "code": code, "tiefe": tiefe,
@@ -84,13 +84,13 @@ class _SzenarioFormMixin:
                 "modus": modus.get(code, "direkt"),
                 "form": node_forms[code],
             }
-            for code, tiefe in fair_tree.traversal()
+            for code, tiefe in eintraege
         ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["confidence_config"] = _CONFIDENCE_CONFIG
-        if "baum_rows" not in context:
+        if "baum_lef" not in context:
             if self.request.method == "POST":
                 node_forms = self._node_forms(self.request.POST)
                 modus = self._modus_aus_post()
@@ -101,7 +101,8 @@ class _SzenarioFormMixin:
                     if self.object
                     else {c: "direkt" for c in fair_tree.NICHT_BLATT}
                 )
-            context["baum_rows"] = self._baum_rows(node_forms, modus)
+            context["baum_lef"] = self._baum_rows(node_forms, modus, fair_tree.traversal_ast("LEF"))
+            context["baum_lm"] = self._baum_rows(node_forms, modus, fair_tree.traversal_ast("LM"))
         return context
 
     def form_valid(self, form):
@@ -114,7 +115,9 @@ class _SzenarioFormMixin:
         schnitt_ok = fair_tree.schnitt_ist_gueltig(frontier)
         if not (alle_ok and schnitt_ok):
             context = self.get_context_data(
-                form=form, baum_rows=self._baum_rows(node_forms, modus)
+                form=form,
+                baum_lef=self._baum_rows(node_forms, modus, fair_tree.traversal_ast("LEF")),
+                baum_lm=self._baum_rows(node_forms, modus, fair_tree.traversal_ast("LM")),
             )
             if not schnitt_ok:
                 context["schnitt_fehler"] = (

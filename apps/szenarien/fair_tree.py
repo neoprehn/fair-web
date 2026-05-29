@@ -41,9 +41,9 @@ LEAVES = [code for code in FAIR_NODES if code not in CHILDREN]
 # Erlaubte Verteilungen je Faktortyp (Wahrscheinlichkeiten ohne unbeschränkte
 # Normalverteilung; gebunden auf [0,1] wird zusätzlich validiert).
 DISTS_BY_TYP = {
-    "frequency":   ["pert", "normal", "constant"],
-    "probability": ["pert", "constant"],
-    "magnitude":   ["pert", "normal", "constant"],
+    "frequency":   ["pert", "poisson", "normal", "constant"],
+    "probability": ["pert", "beta", "constant"],
+    "magnitude":   ["pert", "lognormal", "normal", "constant"],
 }
 
 
@@ -102,6 +102,19 @@ def traversal():
 
     for ast in ROOT_CHILDREN:
         rec(ast, 0)
+    return out
+
+
+def traversal_ast(ast):
+    """DFS-Reihenfolge eines einzelnen Astes (Tiefe relativ zum Ast-Wurzelknoten)."""
+    out = []
+
+    def rec(code, tiefe):
+        out.append((code, tiefe))
+        for kind in CHILDREN.get(code, []):
+            rec(kind, tiefe + 1)
+
+    rec(ast, 0)
     return out
 
 
