@@ -90,6 +90,7 @@ class _SzenarioFormMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["confidence_config"] = _CONFIDENCE_CONFIG
+        context["svg_nodes"], context["svg_edges"] = fair_tree.svg_layout()
         if "baum_lef" not in context:
             if self.request.method == "POST":
                 node_forms = self._node_forms(self.request.POST)

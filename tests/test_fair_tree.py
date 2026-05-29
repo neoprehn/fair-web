@@ -34,6 +34,15 @@ def test_vorfahren():
     assert fair_tree.vorfahren("LEF") == []
 
 
+def test_svg_layout():
+    nodes, edges = fair_tree.svg_layout()
+    codes = {n["code"] for n in nodes}
+    assert codes == set(fair_tree.FAIR_NODES) | {"Risk"}  # 12 Knoten + Risk
+    assert len(edges) == 12  # 2 (Risk) + 10 Eltern-Kind-Kanten
+    risk = next(n for n in nodes if n["code"] == "Risk")
+    assert risk["label"] == "R"
+
+
 # ---------------------------------------------------------------------------
 # Schnitt-Gültigkeit
 # ---------------------------------------------------------------------------

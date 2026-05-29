@@ -33,7 +33,22 @@
     <p class="text-body-secondary small">
         Risk = <strong>Häufigkeit</strong> × <strong>Schaden</strong>. Jeder Faktor kann
         <em>direkt</em> angegeben oder in seine Teilfaktoren <em>aufgeschlüsselt</em> werden – beliebig tief.
+        Klicke in ein Eingabefeld – der Baum zeigt, wo du gerade bist.
     </p>
+
+    <div class="card mb-3"><div class="card-body py-2" style="overflow-x:auto;">
+        <svg id="fair-svg" viewBox="0 0 900 250" style="width:100%; max-width:900px; height:auto;">
+            {% for e in svg_edges %}
+            <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
+            {% endfor %}
+            {% for n in svg_nodes %}
+            <g class="svg-node" data-code="{{ n.code }}">
+                <rect x="{{ n.x|add:'-30' }}" y="{{ n.y|add:'-13' }}" width="60" height="26" rx="6"/>
+                <text x="{{ n.x }}" y="{{ n.y|add:'4' }}" text-anchor="middle">{{ n.label }}</text>
+            </g>
+            {% endfor %}
+        </svg>
+    </div></div>
 
     <div class="row g-4 fair-baum">
         <div class="col-lg-6">
@@ -110,6 +125,15 @@
         });
     }
 
+    // Aktiven Knoten im SVG hervorheben, sobald man in eine Zeile klickt/fokussiert.
+    var svg = document.getElementById('fair-svg');
+    function highlight(code) {
+        if (!svg) return;
+        svg.querySelectorAll('.svg-node').forEach(function (g) {
+            g.classList.toggle('aktiv', g.dataset.code === code);
+        });
+    }
+
     rows.forEach(function (row) {
         var ms = row.querySelector('.modus-select');
         if (ms) ms.addEventListener('change', syncBaum);
@@ -117,6 +141,7 @@
         if (vs) vs.addEventListener('change', function () { syncDist(row); });
         var sl = row.querySelector('.unsicherheit-slider');
         if (sl) sl.addEventListener('input', function () { syncDist(row); });
+        row.addEventListener('focusin', function () { highlight(row.dataset.code); });
     });
     syncBaum();
 })();

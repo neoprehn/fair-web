@@ -87,6 +87,41 @@ def ist_blatt(code):
     return code not in CHILDREN
 
 
+# Feste Positionen (x, y) für die SVG-Darstellung des Baums (inkl. Risk-Wurzel).
+SVG_POS = {
+    "Risk": (461, 26),
+    "LEF": (240, 92), "LM": (682, 92),
+    "TEF": (125, 158), "VULN": (355, 158), "PL": (590, 158), "SL": (775, 158),
+    "CF": (70, 224), "POA": (185, 224), "TC": (300, 224), "CS": (415, 224),
+    "SLEF": (720, 224), "SLEM": (830, 224),
+}
+
+
+def svg_layout():
+    """Knoten + Kanten für das FAIR-Baum-SVG.
+
+    Returns (nodes, edges):
+      nodes: [{code, label, x, y}]  (label = Kürzel, Risk als 'R')
+      edges: [{x1, y1, x2, y2}]
+    """
+    nodes = []
+    for code, (x, y) in SVG_POS.items():
+        label = "R" if code == "Risk" else abbr(code)
+        nodes.append({"code": code, "label": label, "x": x, "y": y})
+
+    paare = [("Risk", "LEF"), ("Risk", "LM")]
+    for code, (_n, _a, parent_code, _t) in FAIR_NODES.items():
+        if parent_code:
+            paare.append((parent_code, code))
+
+    edges = []
+    for a, b in paare:
+        x1, y1 = SVG_POS[a]
+        x2, y2 = SVG_POS[b]
+        edges.append({"x1": x1, "y1": y1, "x2": x2, "y2": y2})
+    return nodes, edges
+
+
 # Nicht-Blatt-Knoten (haben einen „direkt/aufschlüsseln"-Umschalter).
 NICHT_BLATT = [code for code in FAIR_NODES if code in CHILDREN]
 
