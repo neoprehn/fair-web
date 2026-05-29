@@ -1,80 +1,68 @@
-"""Tests für Formulare und CRUD-Views der Szenarien (Phase 3)."""
+"""Tests für Formulare und CRUD-Views der Szenarien (FAIR-Baum)."""
 
 import pytest
 from django.urls import reverse
 
 from apps.szenarien.forms import FaktorEingabeForm
-from apps.szenarien.models import FaktorEingabe, Szenario
+from apps.szenarien.models import Szenario
 
 
 # ---------------------------------------------------------------------------
-# FaktorEingabeForm (Verteilungs-Parameter -> params)
+# FaktorEingabeForm (fester Faktor je Knoten, eingeschränkte Verteilungen)
 # ---------------------------------------------------------------------------
 
 @pytest.mark.django_db
 def test_form_pert_baut_params():
     form = FaktorEingabeForm(
-        data={"faktor": "LEF", "verteilung": "pert", "unsicherheit": 2,
-              "low": 1, "mode": 3, "high": 6}
+        data={"verteilung": "pert", "unsicherheit": 2, "low": 1, "mode": 3, "high": 6},
+        faktor_code="LEF",
     )
     assert form.is_valid(), form.errors
     assert form.instance.params == {"low": 1, "mode": 3, "high": 6}
+    assert form.instance.faktor == "LEF"
 
 
 @pytest.mark.django_db
 def test_form_constant_ignoriert_fremde_felder():
     form = FaktorEingabeForm(
-        data={"faktor": "LM", "verteilung": "constant", "unsicherheit": 2,
-              "constant": 4000, "low": 99}
+        data={"verteilung": "constant", "unsicherheit": 2, "constant": 4000, "low": 99},
+        faktor_code="LM",
     )
     assert form.is_valid(), form.errors
     assert form.instance.params == {"constant": 4000}
 
 
 @pytest.mark.django_db
-def test_form_meldet_fehlenden_pflichtparameter():
-    form = FaktorEingabeForm(
-        data={"faktor": "LEF", "verteilung": "normal", "mean": 5}  # stdev fehlt
-    )
-    assert not form.is_valid()
-    assert "stdev" in str(form.errors)
-
-
-@pytest.mark.django_db
 def test_form_meldet_falsche_pert_reihenfolge():
     form = FaktorEingabeForm(
-        data={"faktor": "LEF", "verteilung": "pert", "low": 10, "mode": 2, "high": 5}
+        data={"verteilung": "pert", "unsicherheit": 2, "low": 10, "mode": 2, "high": 5},
+        faktor_code="LEF",
     )
     assert not form.is_valid()
 
 
+def test_form_verteilungen_je_typ_eingeschraenkt():
+    # Wahrscheinlichkeit (VULN): keine Normalverteilung anbieten.
+    vuln = FaktorEingabeForm(faktor_code="VULN")
+    werte = [w for w, _ in vuln.fields["verteilung"].choices]
+    assert "normal" not in werte and "pert" in werte
+    # Häufigkeit (LEF): Normalverteilung erlaubt.
+    lef = FaktorEingabeForm(faktor_code="LEF")
+    assert "normal" in [w for w, _ in lef.fields["verteilung"].choices]
+
+
 # ---------------------------------------------------------------------------
-# CRUD-Views
+# CRUD-Views (Baum-Schnitt)
 # ---------------------------------------------------------------------------
 
-def _post_data(**szenario_felder):
-    """Baut POST-Daten für Szenario-Formular inkl. Faktor-Formset (Prefix 'faktoren')."""
+def _post_lef_lm(**override):
+    """POST-Daten: Standard-Schnitt LEF + LM (Default-Modus 'direkt')."""
     data = {
-        "name": "Phishing",
-        "beschreibung": "",
-        "n_simulations": 1000,
-        "random_seed": 42,
-        "faktoren-TOTAL_FORMS": "2",
-        "faktoren-INITIAL_FORMS": "0",
-        "faktoren-MIN_NUM_FORMS": "0",
-        "faktoren-MAX_NUM_FORMS": "2",
-        "faktoren-0-faktor": "LEF",
-        "faktoren-0-verteilung": "pert",
-        "faktoren-0-low": "1",
-        "faktoren-0-mode": "3",
-        "faktoren-0-high": "6",
-        "faktoren-0-unsicherheit": "2",
-        "faktoren-1-faktor": "LM",
-        "faktoren-1-verteilung": "constant",
-        "faktoren-1-constant": "4000",
-        "faktoren-1-unsicherheit": "2",
+        "name": "Phishing", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,
+        "LEF-verteilung": "pert", "LEF-low": "1", "LEF-mode": "3", "LEF-high": "6", "LEF-unsicherheit": "2",
+        "LM-verteilung": "constant", "LM-constant": "4000", "LM-unsicherheit": "2",
     }
-    data.update(szenario_felder)
+    data.update(override)
     return data
 
 
@@ -87,24 +75,45 @@ def test_dashboard_zeigt_szenarien(client):
 
 
 @pytest.mark.django_db
-def test_create_legt_szenario_mit_faktoren_an(client):
-    resp = client.post(reverse("szenarien:create"), data=_post_data())
+def test_create_standard_schnitt_lef_lm(client):
+    resp = client.post(reverse("szenarien:create"), data=_post_lef_lm())
     assert resp.status_code == 302
-    szenario = Szenario.objects.get(name="Phishing")
-    assert szenario.faktoren.count() == 2
-    assert szenario.fair_inputs()["Loss Magnitude"] == {
-        "distribution": "constant",
-        "params": {"constant": 4000.0},
+    s = Szenario.objects.get(name="Phishing")
+    assert set(s.schnitt_codes()) == {"LEF", "LM"}
+    assert s.fair_inputs()["Loss Magnitude"] == {
+        "distribution": "constant", "params": {"constant": 4000.0},
     }
 
 
 @pytest.mark.django_db
-def test_create_mit_fehler_speichert_nichts(client):
-    daten = _post_data()
-    daten["faktoren-0-high"] = "0"  # high < mode -> ungültige PERT
-    resp = client.post(reverse("szenarien:create"), data=daten)
-    assert resp.status_code == 200  # Formular neu gerendert
-    assert not Szenario.objects.filter(name="Phishing").exists()
+def test_create_aufgeschluesselter_schnitt(client):
+    # LEF aufschlüsseln -> TEF + Vulnerability angeben; LM direkt.
+    data = {
+        "name": "Tief", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,
+        "modus-LEF": "aufschluesseln", "modus-TEF": "direkt", "modus-VULN": "direkt",
+        "TEF-verteilung": "pert", "TEF-low": "1", "TEF-mode": "4", "TEF-high": "10", "TEF-unsicherheit": "2",
+        "VULN-verteilung": "constant", "VULN-constant": "0.3", "VULN-unsicherheit": "2",
+        "LM-verteilung": "constant", "LM-constant": "5000", "LM-unsicherheit": "2",
+    }
+    resp = client.post(reverse("szenarien:create"), data=data)
+    assert resp.status_code == 302
+    s = Szenario.objects.get(name="Tief")
+    assert set(s.schnitt_codes()) == {"TEF", "VULN", "LM"}
+    assert s.schnitt_ist_gueltig()
+
+
+@pytest.mark.django_db
+def test_create_wahrscheinlichkeit_ueber_eins_fehler(client):
+    data = {
+        "name": "Ungueltig", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,
+        "modus-LEF": "aufschluesseln", "modus-TEF": "direkt", "modus-VULN": "direkt",
+        "TEF-verteilung": "constant", "TEF-constant": "5", "TEF-unsicherheit": "2",
+        "VULN-verteilung": "constant", "VULN-constant": "1.5", "VULN-unsicherheit": "2",  # > 1
+        "LM-verteilung": "constant", "LM-constant": "5000", "LM-unsicherheit": "2",
+    }
+    resp = client.post(reverse("szenarien:create"), data=data)
+    assert resp.status_code == 200  # neu gerendert
+    assert not Szenario.objects.filter(name="Ungueltig").exists()
 
 
 @pytest.mark.django_db
@@ -116,15 +125,13 @@ def test_detail_view(client):
 
 
 @pytest.mark.django_db
-def test_update_aendert_szenario(client):
+def test_update_wechselt_schnitt(client):
     s = Szenario.objects.create(name="Alt")
-    daten = _post_data(name="Neu")
-    daten["faktoren-INITIAL_FORMS"] = "0"
-    resp = client.post(reverse("szenarien:update", kwargs={"pk": s.pk}), data=daten)
+    resp = client.post(reverse("szenarien:update", kwargs={"pk": s.pk}), data=_post_lef_lm(name="Neu"))
     assert resp.status_code == 302
     s.refresh_from_db()
     assert s.name == "Neu"
-    assert s.faktoren.count() == 2
+    assert set(s.schnitt_codes()) == {"LEF", "LM"}
 
 
 @pytest.mark.django_db

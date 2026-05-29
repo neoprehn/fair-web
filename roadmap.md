@@ -43,6 +43,16 @@
 
 ---
 
+### Phase 4b – FAIR-Baum-Eingabe & Ergebnis-Baum (UI-Ausbau) — Branch `feature-fairbaum`
+- [x] **Slice 1:** Baumstruktur + Datenmodell (`fair_tree.py`, alle 12 Knoten, Typen, Schnitt-Validierung)
+- [ ] **Slice 2:** Dynamisches Baum-Formular (frei aufklappbar: „direkt angeben / aufschlüsseln"), Verteilungs-Auswahl je Faktor eingeschränkt, korrekte Beschriftungen, schmalere Eingabeboxen, Schnitt-Gültigkeit serverseitig
+- [ ] **Slice 3:** Interaktives SVG des FAIR-Baums (FAIR-Kürzel, Dark-Theme); aktiver Knoten leuchtet beim Reinklicken in ein Eingabefeld auf
+- [ ] **Slice 4:** Ergebnis-Baum nach der Simulation — je Knoten Wert anzeigen, farblich getrennt: **Eingabe = Sky-Blau**, **Simuliert/Berechnet = Grün** (Vorbild: pyfair-Bericht); zunächst für eine Einzel-Simulation
+- [ ] Lokaler Test je Slice; Vorschau vor jedem Live-Deploy
+- [ ] Commit & Push → `feature-fairbaum` mergen in `main`
+
+---
+
 ### Phase 5 – Grafiken & Auswertung
 - [ ] Plotly einbinden
 - [ ] LEC-Kurve animiert aufbauen
@@ -69,6 +79,8 @@
 - [ ] Standard-Seed konfigurierbar machen
 - [ ] Standard-Simulationsanzahl konfigurierbar machen
 - [ ] Benutzer & Zugriffsrechte einrichten
+- [ ] Vorschlagswerte für Konfidenzen editierbar machen (wahrscheinlich mit Eingriff in pyfair)
+- [ ] Hell/Dunkel-Design Schalter
 - [ ] Lokaler Test
 - [ ] Commit & Push → Branch `feature-admin` mergen in `main`
 
@@ -90,6 +102,14 @@
 > **CI/CD-Hinweis (29.05.2026):** Der Auto-Deploy griff lange Zeit NICHT – das Zielverzeichnis war kein Git-Checkout, und `deploy.yml` verbarg den Fehler hinter grünen Häkchen (kein `set -e`). Beides ist gefixt: Server-Ordner ist jetzt ein `main`-Checkout, `deploy.yml` nutzt `set -euo pipefail` + `git fetch`/`reset --hard`. Push/Merge nach `main` deployt jetzt zuverlässig.
 
 ---
+### ab hier alles von neoprehn
+### Phase 9 - Sicherheit
+- [ ] Prüfen des Deploys hinsichtlich Sicherheits-Design Fehler
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] Lokaler Test
+- [ ] Commit & Push → Branch `feature-export` mergen in `main`
 
 ## Branch-Übersicht
 

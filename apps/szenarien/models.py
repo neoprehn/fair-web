@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+from . import fair_tree
 from .fair_confidence import (
     CONFIDENCE_DEFAULTS,
     CONFIDENCE_DISTRIBUTIONS,
@@ -47,24 +48,36 @@ class Szenario(models.Model):
             for faktor in self.faktoren.all()
         }
 
+    def schnitt_codes(self):
+        """Die angegebenen Faktor-Codes (der Schnitt durch den FAIR-Baum)."""
+        return list(self.faktoren.values_list("faktor", flat=True))
+
+    def schnitt_ist_gueltig(self):
+        """True, wenn die Faktoren einen rechenbaren Schnitt bilden (Risk abgedeckt)."""
+        return fair_tree.schnitt_ist_gueltig(self.schnitt_codes())
+
 
 class FaktorEingabe(models.Model):
     """Eine Verteilungs-Eingabe für genau einen FAIR-Faktor eines Szenarios."""
 
     class Faktor(models.TextChoices):
-        LEF = "LEF", "Schadenshäufigkeit (Loss Event Frequency)"
-        LM = "LM", "Schadenshöhe (Loss Magnitude)"
+        LEF = "LEF", "Loss Event Frequency (LEF)"
+        TEF = "TEF", "Threat Event Frequency (TEF)"
+        CF = "CF", "Contact Frequency (CF)"
+        POA = "POA", "Probability of Action (PoA)"
+        VULN = "VULN", "Vulnerability (Vuln)"
+        TC = "TC", "Threat Capability (TC)"
+        CS = "CS", "Control Strength (CS)"
+        LM = "LM", "Loss Magnitude (LM)"
+        PL = "PL", "Primary Loss (PL)"
+        SL = "SL", "Secondary Loss (SL)"
+        SLEF = "SLEF", "Secondary Loss Event Frequency (SLEF)"
+        SLEM = "SLEM", "Secondary Loss Event Magnitude (SLEM)"
 
     class Verteilung(models.TextChoices):
         PERT = "pert", "PERT (min / wahrscheinlich / max)"
         NORMAL = "normal", "Normalverteilung (Mittelwert / Streuung)"
         CONSTANT = "constant", "Konstant (fester Wert)"
-
-    # Mapping unserer Kurzfaktoren auf die pyfair-Knotennamen.
-    FAIR_TARGETS = {
-        Faktor.LEF: "Loss Event Frequency",
-        Faktor.LM: "Loss Magnitude",
-    }
 
     # Pflicht-Parameter je Verteilung (entspricht den pyfair-Generatoren).
     REQUIRED_PARAMS = {
@@ -111,7 +124,11 @@ class FaktorEingabe(models.Model):
     @property
     def fair_target(self):
         """Der pyfair-Knotenname für diesen Faktor (z. B. 'Loss Magnitude')."""
-        return self.FAIR_TARGETS[self.faktor]
+        return fair_tree.target(self.faktor)
+
+    @property
+    def faktor_abbr(self):
+        return fair_tree.abbr(self.faktor)
 
     @property
     def confidence_level(self):
@@ -158,3 +175,12 @@ class FaktorEingabe(models.Model):
                 raise ValidationError(
                     "PERT erfordert die Reihenfolge low ≤ mode ≤ high."
                 )
+
+        # Wahrscheinlichkeits-Faktoren müssen in [0, 1] liegen.
+        if self.faktor and fair_tree.ist_gebunden(self.faktor):
+            for key, value in params.items():
+                if isinstance(value, (int, float)) and not (0.0 <= value <= 1.0):
+                    raise ValidationError(
+                        f"„{fair_tree.abbr(self.faktor)}“ ist eine Wahrscheinlichkeit – "
+                        f"Werte müssen zwischen 0 und 1 liegen (war {key}={value})."
+                    )

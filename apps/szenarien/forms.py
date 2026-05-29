@@ -1,14 +1,15 @@
 """Formulare für Szenarien und ihre FAIR-Faktor-Eingaben.
 
-Die Verteilungs-Parameter werden dem Nutzer als einzelne Zahlenfelder
-(Slider/Number) angeboten statt als rohes JSON. Beim Speichern setzt das
-Formular daraus das ``params``-Dict passend zur gewählten Verteilung
-zusammen und nutzt die Modell-Validierung (``FaktorEingabe.clean``).
+Pro FAIR-Knoten gibt es ein ``FaktorEingabeForm`` (Prefix = Knoten-Code).
+Der Faktor steht fest (durch den Knoten), die Verteilungs-Auswahl ist je
+Faktortyp eingeschränkt, und die Zahlenfelder werden zum ``params``-Dict
+zusammengesetzt. Welche Knoten tatsächlich gespeichert werden, entscheidet
+der „Schnitt" durch den Baum (siehe View + ``fair_tree``).
 """
 
 from django import forms
-from django.forms import inlineformset_factory
 
+from . import fair_tree
 from .fair_confidence import UNSICHERHEIT_MAX, UNSICHERHEIT_MIN
 from .models import FaktorEingabe, Szenario
 
@@ -31,45 +32,57 @@ class SzenarioForm(forms.ModelForm):
         }
 
 
+# Sprechende Labels je Verteilungs-Parameter, abhängig vom Faktortyp.
+_PARAM_LABELS = {
+    "frequency": {"low": "Minimum (pro Jahr)", "mode": "Wahrscheinlich (pro Jahr)",
+                  "high": "Maximum (pro Jahr)", "mean": "Mittelwert (pro Jahr)",
+                  "stdev": "Streuung", "constant": "Fester Wert (pro Jahr)"},
+    "probability": {"low": "Minimum (0–1)", "mode": "Wahrscheinlich (0–1)",
+                    "high": "Maximum (0–1)", "mean": "Mittelwert (0–1)",
+                    "stdev": "Streuung", "constant": "Fester Wert (0–1)"},
+    "magnitude": {"low": "Minimum (€)", "mode": "Wahrscheinlich (€)",
+                  "high": "Maximum (€)", "mean": "Mittelwert (€)",
+                  "stdev": "Streuung (€)", "constant": "Fester Wert (€)"},
+}
+
+
 class FaktorEingabeForm(forms.ModelForm):
-    """ModelForm mit Einzelfeldern für die Verteilungs-Parameter."""
+    """ModelForm für genau einen FAIR-Knoten (Faktor steht fest)."""
 
-    low = forms.FloatField(required=False, label="Minimum",
-                           widget=forms.NumberInput(attrs={"class": "form-control"}))
-    mode = forms.FloatField(required=False, label="Wahrscheinlichster Wert",
-                            widget=forms.NumberInput(attrs={"class": "form-control"}))
-    high = forms.FloatField(required=False, label="Maximum",
-                            widget=forms.NumberInput(attrs={"class": "form-control"}))
-    mean = forms.FloatField(required=False, label="Mittelwert",
-                            widget=forms.NumberInput(attrs={"class": "form-control"}))
-    stdev = forms.FloatField(required=False, label="Streuung (Std.-Abw.)",
-                             widget=forms.NumberInput(attrs={"class": "form-control"}))
-    constant = forms.FloatField(required=False, label="Fester Wert",
-                                widget=forms.NumberInput(attrs={"class": "form-control"}))
-
-    # Alle Felder, die in params landen können.
-    PARAM_FIELDS = ("low", "mode", "high", "mean", "stdev", "constant")
+    low = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
+    mode = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
+    high = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
+    mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
+    stdev = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
+    constant = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
 
     class Meta:
         model = FaktorEingabe
-        fields = ("faktor", "verteilung", "unsicherheit")
+        fields = ("verteilung", "unsicherheit")
         widgets = {
-            "faktor": forms.Select(attrs={"class": "form-select"}),
-            "verteilung": forms.Select(attrs={"class": "form-select verteilung-select"}),
+            "verteilung": forms.Select(attrs={"class": "form-select form-select-sm verteilung-select"}),
             "unsicherheit": RangeInput(attrs={
                 "class": "form-range unsicherheit-slider",
-                "min": UNSICHERHEIT_MIN,
-                "max": UNSICHERHEIT_MAX,
-                "step": 1,
+                "min": UNSICHERHEIT_MIN, "max": UNSICHERHEIT_MAX, "step": 1,
             }),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, faktor_code=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Leere Auswahl ("---------") entfernen – die Karten sind fest auf
-        # LEF bzw. LM vorbelegt (Initial kommt aus der View).
-        self.fields["faktor"].choices = FaktorEingabe.Faktor.choices
-        # Beim Bearbeiten die gespeicherten params auf die Einzelfelder legen.
+        # Faktor steht durch den Knoten fest.
+        self.faktor_code = faktor_code or (self.instance.faktor if self.instance else None)
+        if self.faktor_code:
+            self.instance.faktor = self.faktor_code
+            typ = fair_tree.typ(self.faktor_code)
+            # Verteilungen je Faktortyp einschränken.
+            erlaubt = set(fair_tree.erlaubte_verteilungen(self.faktor_code))
+            self.fields["verteilung"].choices = [
+                (w, label) for w, label in FaktorEingabe.Verteilung.choices if w in erlaubt
+            ]
+            # Param-Labels typgerecht setzen.
+            for key, label in _PARAM_LABELS[typ].items():
+                self.fields[key].label = label
+        # Bestehende params auf die Einzelfelder legen (Bearbeiten).
         if self.instance and self.instance.pk:
             for key, value in (self.instance.params or {}).items():
                 if key in self.fields:
@@ -80,24 +93,8 @@ class FaktorEingabeForm(forms.ModelForm):
         verteilung = cleaned.get("verteilung")
         if not verteilung:
             return cleaned
-
-        # Nur die für diese Verteilung relevanten Felder in params übernehmen.
         required = FaktorEingabe.REQUIRED_PARAMS.get(verteilung, ())
         params = {key: cleaned[key] for key in required if cleaned.get(key) is not None}
-
-        # params am Instance setzen, BEVOR die Modell-Validierung (clean) im
-        # ModelForm-_post_clean läuft – sie prüft Pflichtfelder + PERT-Reihenfolge.
+        # params VOR der Modell-Validierung setzen (clean prüft Pflichtfelder/PERT/[0,1]).
         self.instance.params = params
         return cleaned
-
-
-# Genau zwei Faktoren pro Szenario (LEF + LM).
-FaktorFormSet = inlineformset_factory(
-    Szenario,
-    FaktorEingabe,
-    form=FaktorEingabeForm,
-    extra=2,
-    max_num=2,
-    validate_max=True,
-    can_delete=False,
-)
