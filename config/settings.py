@@ -17,6 +17,15 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
+# Hinter dem Plesk/nginx-Reverse-Proxy terminiert TLS, und gunicorn wird per
+# HTTP-Socket angesprochen. Ohne diese Einstellungen hält Django die Anfrage
+# für http:// und lehnt HTTPS-POSTs als CSRF-Fehler ab ("CSRF verification failed").
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=[f"https://{h}" for h in ALLOWED_HOSTS if h not in ("localhost", "127.0.0.1", "*")],
+)
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
