@@ -16,10 +16,19 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -euo pipefail
             cd /var/www/vhosts/neoprehn.de/httpdocs/fair-web
-            git pull origin main
+            echo "== Stand VOR dem Update =="
+            git log -1 --oneline
+            # Server-Working-Tree exakt auf origin/main zwingen (robuster als git pull,
+            # scheitert nicht an lokalen Aenderungen auf dem Server).
+            git fetch origin main
+            git reset --hard origin/main
+            echo "== Stand NACH dem Update =="
+            git log -1 --oneline
             source venv/bin/activate
             pip install -r requirements.txt
-            python manage.py migrate
+            python manage.py migrate --noinput
             python manage.py collectstatic --noinput
             systemctl restart pyfair
+            echo "== Deploy abgeschlossen =="
