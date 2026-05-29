@@ -78,12 +78,19 @@ class FaktorEingabe(models.Model):
         PERT = "pert", "PERT (min / wahrscheinlich / max)"
         NORMAL = "normal", "Normalverteilung (Mittelwert / Streuung)"
         CONSTANT = "constant", "Konstant (fester Wert)"
+        POISSON = "poisson", "Poisson (λ Ereignisse pro Jahr)"
+        BETA = "beta", "Beta (Mittelwert 0–1)"
+        LOGNORMAL = "lognormal", "Lognormal (Mittelwert)"
 
-    # Pflicht-Parameter je Verteilung (entspricht den pyfair-Generatoren).
+    # Pflicht-Parameter je Verteilung (pyfair-Keys; Formparameter wie gamma/
+    # sigma/k/range liefert der Unsicherheits-Slider via confidence).
     REQUIRED_PARAMS = {
         Verteilung.PERT: ("low", "mode", "high"),
         Verteilung.NORMAL: ("mean", "stdev"),
         Verteilung.CONSTANT: ("constant",),
+        Verteilung.POISSON: ("lambda",),
+        Verteilung.BETA: ("mean",),
+        Verteilung.LOGNORMAL: ("mean",),
     }
 
     szenario = models.ForeignKey(
