@@ -63,14 +63,16 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 
 DATABASES = {
-    "default": {
-        **env.db("DATABASE_URL"),
-        "OPTIONS": {
-            "charset": "utf8mb4",
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
-    },
+    "default": env.db("DATABASE_URL"),
 }
+
+# MySQL/MariaDB-spezifische Optionen nur setzen, wenn auch wirklich MySQL
+# genutzt wird. So funktionieren Tests gegen SQLite (siehe conftest.py).
+if "mysql" in DATABASES["default"]["ENGINE"]:
+    DATABASES["default"]["OPTIONS"] = {
+        "charset": "utf8mb4",
+        "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+    }
 
 
 AUTH_PASSWORD_VALIDATORS = [

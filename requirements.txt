@@ -9,3 +9,7 @@ gunicorn>=23.0
 
 # pyfair wird separat installiert (liegt im Nachbarordner Entwicklung/fair, Package-Name: pyfair):
 #   pip install -e ../fair
+
+# --- Entwicklung / Tests ---
+pytest>=8.0
+pytest-django>=4.8
