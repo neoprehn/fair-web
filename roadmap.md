@@ -79,6 +79,8 @@
 - [ ] Standard-Seed konfigurierbar machen
 - [ ] Standard-Simulationsanzahl konfigurierbar machen
 - [ ] Benutzer & Zugriffsrechte einrichten
+- [ ] Vorschlagswerte für Konfidenzen editierbar machen (wahrscheinlich mit Eingriff in pyfair)
+- [ ] Hell/Dunkel-Design Schalter
 - [ ] Lokaler Test
 - [ ] Commit & Push → Branch `feature-admin` mergen in `main`
 
@@ -100,6 +102,14 @@
 > **CI/CD-Hinweis (29.05.2026):** Der Auto-Deploy griff lange Zeit NICHT – das Zielverzeichnis war kein Git-Checkout, und `deploy.yml` verbarg den Fehler hinter grünen Häkchen (kein `set -e`). Beides ist gefixt: Server-Ordner ist jetzt ein `main`-Checkout, `deploy.yml` nutzt `set -euo pipefail` + `git fetch`/`reset --hard`. Push/Merge nach `main` deployt jetzt zuverlässig.
 
 ---
+### ab hier alles von neoprehn
+### Phase 9 - Sicherheit
+- [ ] Prüfen des Deploys hinsichtlich Sicherheits-Design Fehler
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] Lokaler Test
+- [ ] Commit & Push → Branch `feature-export` mergen in `main`
 
 ## Branch-Übersicht
 
