@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Simulation &middot; {{ lauf.szenario.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'szenarien:dashboard' %}">Szenarien</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'szenarien:detail' lauf.szenario.pk %}">{{ lauf.szenario.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Simulation #{{ lauf.pk }}</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-3">Monte-Carlo-Simulation</h1>
+
+{% if lauf.status == "fehler" %}
+    <div class="alert alert-danger">
+        <strong>Fehler bei der Berechnung:</strong> {{ lauf.fehler_text }}
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'szenarien:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
+
+{% elif lauf.status == "fertig" %}
+    <p class="text-body-secondary">
+        {{ lauf.ergebnis.n|intcomma }} Iterationen &middot; Seed {{ lauf.random_seed }}
+    </p>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Erwarteter Jahresschaden (Mittelwert)</div>
+                <div class="h4 mb-0 text-info">{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} €</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Median</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.median|floatformat:0|intcomma }} €</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Maximum (Worst Case)</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.max|floatformat:0|intcomma }} €</div>
+            </div></div>
+        </div>
+    </div>
+
+    <h2 class="h5">Risiko-Perzentile</h2>
+    <table class="table w-auto">
+        <tbody>
+            <tr><th class="pe-4">P90</th><td>{{ lauf.ergebnis.p90|floatformat:0|intcomma }} €</td></tr>
+            <tr><th class="pe-4">P95</th><td>{{ lauf.ergebnis.p95|floatformat:0|intcomma }} €</td></tr>
+            <tr><th class="pe-4">P99</th><td>{{ lauf.ergebnis.p99|floatformat:0|intcomma }} €</td></tr>
+            <tr><th class="pe-4">Minimum</th><td>{{ lauf.ergebnis.min|floatformat:0|intcomma }} €</td></tr>
+        </tbody>
+    </table>
+
+    <p class="text-body-secondary small mt-3">Die animierte LEC-Kurve folgt in Phase 5 (Daten sind bereits berechnet).</p>
+    <form method="post" action="{% url 'berechnung:starten' lauf.szenario.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Neu berechnen</button>
+    </form>
+    <a class="btn btn-link" href="{% url 'szenarien:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
+
+{% else %}
+    {# angelegt / laeuft -> Fortschritt #}
+    <p class="text-body-secondary">Die Simulation läuft – {{ lauf.n_simulations|intcomma }} Iterationen.</p>
+    <div class="progress" style="height:1.5rem;">
+        <div id="fortschritt-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+             role="progressbar" style="width: {{ lauf.fortschritt }}%;">{{ lauf.fortschritt }}%</div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if lauf.status == "angelegt" or lauf.status == "laeuft" %}
+<script>
+(function () {
+    var url = "{% url 'berechnung:status' lauf.pk %}";
+    var bar = document.getElementById('fortschritt-bar');
+    function poll() {
+        fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+            bar.style.width = d.fortschritt + '%';
+            bar.textContent = d.fortschritt + '%';
+            if (d.status === 'fertig' || d.status === 'fehler') {
+                window.location.reload();
+            } else {
+                setTimeout(poll, 600);
+            }
+        }).catch(function () { setTimeout(poll, 1500); });
+    }
+    poll();
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Gesamt-Simulation &middot; fair-web{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'szenarien:dashboard' %}">Szenarien</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Gesamt-Simulation #{{ lauf.pk }}</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-3">Gesamtrisiko mehrerer Szenarien</h1>
+
+{% if lauf.status == "fehler" %}
+    <div class="alert alert-danger"><strong>Fehler:</strong> {{ lauf.fehler_text }}</div>
+    <a class="btn btn-outline-secondary" href="{% url 'szenarien:dashboard' %}">Zurück</a>
+
+{% elif lauf.status == "fertig" %}
+    <p class="text-body-secondary">
+        {{ lauf.szenarien.count }} Szenarien &middot; {{ lauf.ergebnis.gesamt.n|intcomma }} Iterationen &middot; Summenrisiko
+    </p>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Erwartetes Gesamtrisiko (Mittelwert)</div>
+                <div class="h4 mb-0 text-info">{{ lauf.ergebnis.gesamt.mittelwert|floatformat:0|intcomma }} €</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Median</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.gesamt.median|floatformat:0|intcomma }} €</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">P95 (Gesamt)</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.gesamt.p95|floatformat:0|intcomma }} €</div>
+            </div></div>
+        </div>
+    </div>
+
+    <h2 class="h5">Beitrag je Szenario</h2>
+    <table class="table">
+        <thead>
+            <tr><th>Szenario</th><th class="text-end">Mittelwert</th><th class="text-end">P95</th><th class="text-end">Maximum</th></tr>
+        </thead>
+        <tbody>
+        {% for s in lauf.ergebnis.szenarien %}
+            <tr>
+                <td><a href="{% url 'szenarien:detail' s.pk %}">{{ s.name }}</a></td>
+                <td class="text-end">{{ s.stats.mittelwert|floatformat:0|intcomma }} €</td>
+                <td class="text-end">{{ s.stats.p95|floatformat:0|intcomma }} €</td>
+                <td class="text-end">{{ s.stats.max|floatformat:0|intcomma }} €</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Zurück zur Übersicht</a>
+
+{% else %}
+    <p class="text-body-secondary">Berechne {{ lauf.szenarien.count }} Szenarien …</p>
+    <div class="progress" style="height:1.5rem;">
+        <div id="fortschritt-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+             role="progressbar" style="width: {{ lauf.fortschritt }}%;">{{ lauf.fortschritt }}%</div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if lauf.status == "angelegt" or lauf.status == "laeuft" %}
+<script>
+(function () {
+    var url = "{% url 'berechnung:meta_status' lauf.pk %}";
+    var bar = document.getElementById('fortschritt-bar');
+    function poll() {
+        fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+            bar.style.width = d.fortschritt + '%';
+            bar.textContent = d.fortschritt + '%';
+            if (d.status === 'fertig' || d.status === 'fehler') { window.location.reload(); }
+            else { setTimeout(poll, 600); }
+        }).catch(function () { setTimeout(poll, 1500); });
+    }
+    poll();
+})();
+</script>
+{% endif %}
+{% endblock %}
