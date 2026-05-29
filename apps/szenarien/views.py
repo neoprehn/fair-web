@@ -16,7 +16,7 @@ from django.views.generic import (
 )
 
 from .forms import FaktorFormSet, SzenarioForm
-from .models import Szenario
+from .models import FaktorEingabe, Szenario
 
 
 class SzenarioListView(ListView):
@@ -46,8 +46,19 @@ class _SzenarioFormMixin:
                     self.request.POST, instance=self.object
                 )
             else:
-                context["faktor_formset"] = FaktorFormSet(instance=self.object)
+                context["faktor_formset"] = FaktorFormSet(
+                    instance=self.object, initial=self._faktor_initial()
+                )
         return context
+
+    def _faktor_initial(self):
+        """Beim Anlegen die zwei Karten fest auf LEF und LM vorbelegen."""
+        if self.object is None:
+            return [
+                {"faktor": FaktorEingabe.Faktor.LEF},
+                {"faktor": FaktorEingabe.Faktor.LM},
+            ]
+        return None
 
     def form_valid(self, form):
         formset = FaktorFormSet(self.request.POST, instance=self.object)

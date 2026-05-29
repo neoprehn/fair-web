@@ -53,6 +53,9 @@ class FaktorEingabeForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Leere Auswahl ("---------") entfernen – die Karten sind fest auf
+        # LEF bzw. LM vorbelegt (Initial kommt aus der View).
+        self.fields["faktor"].choices = FaktorEingabe.Faktor.choices
         # Beim Bearbeiten die gespeicherten params auf die Einzelfelder legen.
         if self.instance and self.instance.pk:
             for key, value in (self.instance.params or {}).items():
