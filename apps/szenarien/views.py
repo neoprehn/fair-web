@@ -23,7 +23,7 @@ from .fair_confidence import (
     UNSICHERHEIT_TO_CONFIDENCE,
 )
 from .forms import FaktorEingabeForm, SzenarioForm
-from .models import FaktorEingabe, Szenario
+from .models import Angreifertyp, FaktorEingabe, Szenario
 
 
 # Konfiguration für das Slider-JS (Single Source: fair_confidence).
@@ -99,6 +99,7 @@ class _SzenarioFormMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["confidence_config"] = _CONFIDENCE_CONFIG
+        context["angreifertypen"] = Angreifertyp.objects.all()
         context["svg_nodes"], context["svg_edges"] = fair_tree.svg_layout()
         if "baum_lef" not in context:
             if self.request.method == "POST":

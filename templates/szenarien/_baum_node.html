@@ -10,7 +10,7 @@
     </div>
 
     <div class="node-input card"{% if not node.ist_blatt and node.modus == 'aufschluesseln' %} style="display:none"{% endif %}>
-        <div class="card-body py-2">{% include "szenarien/_node_fields.html" with form=node.form %}</div>
+        <div class="card-body py-2">{% include "szenarien/_node_fields.html" with form=node.form code=node.code %}</div>
     </div>
 
     {% if node.children %}

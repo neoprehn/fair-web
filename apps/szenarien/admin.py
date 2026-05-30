@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import FaktorEingabe, Szenario
+from .models import Angreifertyp, FaktorEingabe, Szenario
+
+
+@admin.register(Angreifertyp)
+class AngreifertypAdmin(admin.ModelAdmin):
+    list_display = ("name", "low", "mode", "high", "reihenfolge")
+    list_editable = ("low", "mode", "high", "reihenfolge")
+    ordering = ("reihenfolge", "name")
 
 
 class FaktorEingabeInline(admin.TabularInline):
