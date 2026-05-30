@@ -117,7 +117,20 @@
             <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link" href="{% url 'szenarien:dashboard' %}">Szenarien</a></li>
             </ul>
-            <a class="btn btn-primary btn-sm" href="{% url 'szenarien:create' %}">+ Neues Szenario</a>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2"
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                        <rect x="2" y="2" width="2.4" height="12" rx="1"/>
+                        <rect x="6.8" y="2" width="2.4" height="12" rx="1"/>
+                        <rect x="11.6" y="2" width="2.4" height="12" rx="1"/>
+                    </svg>
+                    Menü
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><span class="dropdown-item-text text-body-secondary small">Verwaltung &amp; Einstellungen folgen (ab Phase 7)</span></li>
+                </ul>
+            </div>
         </div>
     </div>
 </nav>
