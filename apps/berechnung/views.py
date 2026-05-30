@@ -32,6 +32,39 @@ def _formatiere_wert(code, wert):
     return f"{wert:,.0f}".replace(",", ".")
 
 
+def toleranz_overlay(rt):
+    """Risikotoleranz in eine Overlay-Form fürs LEC-Chart bringen.
+
+    Returns dict je Typ:
+      constant      -> {"kind": "vline", "value": ...}
+      curve         -> {"kind": "curve", "x": [...], "y": [...]}
+      distribution  -> {"kind": "curve", ...}  (Exceedance der gesampleten Verteilung)
+    """
+    if not rt:
+        return None
+    typ = rt.get("type")
+    if typ == "constant":
+        return {"kind": "vline", "value": rt.get("value")}
+    if typ == "curve":
+        pts = rt.get("points", [])
+        return {"kind": "curve", "x": [p["loss"] for p in pts], "y": [p["level"] for p in pts]}
+    if typ == "distribution":
+        try:
+            import numpy as np
+            from pyfair.model.model_input import FairDataInput
+            n = int(rt.get("samples") or 20000)
+            sample = np.sort(FairDataInput().generate(
+                "Toleranz", n, distribution=rt["distribution"], params=rt["params"]))
+            m = len(sample)
+            idx = np.linspace(0, m - 1, min(120, m)).astype(int)
+            return {"kind": "curve",
+                    "x": [float(sample[i]) for i in idx],
+                    "y": [float(1.0 - i / m) for i in idx]}
+        except Exception:  # noqa: BLE001 – Overlay ist optional, nie die Seite kippen
+            return None
+    return None
+
+
 class LaufDetailView(DetailView):
     model = Simulationslauf
     template_name = "berechnung/lauf.html"
@@ -49,6 +82,7 @@ class LaufDetailView(DetailView):
             n["wert"] = _formatiere_wert(n["code"], info["mittelwert"]) if info else None
         context["svg_nodes"] = nodes
         context["svg_edges"] = edges
+        context["toleranz_overlay"] = toleranz_overlay(self.object.szenario.risikotoleranz)
         return context
 
 
