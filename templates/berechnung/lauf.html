@@ -2,6 +2,7 @@
 {% load humanize %}
 
 {% block title %}Simulation &middot; {{ lauf.szenario.name }}{% endblock %}
+{% block extra_head %}{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -77,7 +78,17 @@
         </svg>
     </div></div>
 
-    <p class="text-body-secondary small mt-3">Die animierte LEC-Kurve folgt in Phase 5 (Daten sind bereits berechnet).</p>
+    <h2 class="h5 mt-4">Loss Exceedance Curve (LEC)</h2>
+    <p class="text-body-secondary small mb-2">
+        Wahrscheinlichkeit, dass der Jahresschaden einen Wert überschreitet.
+        {% if toleranz_overlay %}<span class="text-danger">Gestrichelt: Risikotoleranz.</span>{% endif %}
+    </p>
+    <div class="card mb-3"><div class="card-body">
+        <div id="lec-chart" style="height: 420px;"></div>
+    </div></div>
+    {{ lauf.ergebnis.lec|json_script:"lec-data" }}
+    {{ toleranz_overlay|json_script:"toleranz-data" }}
+
     <form method="post" action="{% url 'berechnung:starten' lauf.szenario.pk %}" class="d-inline">
         {% csrf_token %}
         <button type="submit" class="btn btn-primary">Neu berechnen</button>
@@ -95,6 +106,37 @@
 {% endblock %}
 
 {% block extra_js %}
+{% if lauf.status == "fertig" %}
+<script>
+(function () {
+    if (typeof Plotly === 'undefined') return;
+    var lec = JSON.parse(document.getElementById('lec-data').textContent) || [];
+    var ov = JSON.parse(document.getElementById('toleranz-data').textContent);
+    var traces = [{
+        x: lec.map(function (p) { return p.verlust; }),
+        y: lec.map(function (p) { return p.ueberschreitung; }),
+        mode: 'lines', name: 'LEC', line: { color: '#7dd3fc', width: 2 }
+    }];
+    var shapes = [];
+    if (ov && ov.kind === 'curve') {
+        traces.push({ x: ov.x, y: ov.y, mode: 'lines', name: 'Risikotoleranz',
+                      line: { color: '#f87171', dash: 'dash', width: 2 } });
+    } else if (ov && ov.kind === 'vline') {
+        shapes.push({ type: 'line', x0: ov.value, x1: ov.value, y0: 0, y1: 1, yref: 'paper',
+                      line: { color: '#f87171', dash: 'dash' } });
+    }
+    var layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#cbd5e1', family: 'Bahnschrift, sans-serif' },
+        margin: { l: 70, r: 20, t: 10, b: 50 },
+        xaxis: { title: 'Jahresschaden (€)', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+        yaxis: { title: 'P(Schaden ≥ x)', gridcolor: '#1e293b', range: [0, 1], tickformat: '.0%' },
+        legend: { orientation: 'h', y: 1.1 }, shapes: shapes
+    };
+    Plotly.newPlot('lec-chart', traces, layout, { responsive: true, displayModeBar: false });
+})();
+</script>
+{% endif %}
 {% if lauf.status == "angelegt" or lauf.status == "laeuft" %}
 <script>
 (function () {
