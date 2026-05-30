@@ -8,12 +8,13 @@
     <select class="form-select form-select-sm angreifertyp-select">
         <option value="">– auswählen –</option>
         {% for a in angreifertypen %}
-        <option data-low="{{ a.low|unlocalize }}" data-mode="{{ a.mode|unlocalize }}" data-high="{{ a.high|unlocalize }}"
+        <option value="{{ a.name }}" data-low="{{ a.low|unlocalize }}" data-mode="{{ a.mode|unlocalize }}" data-high="{{ a.high|unlocalize }}"
                 title="{{ a.beschreibung }} · {{ a.begruendung }}">{{ a.name }} ({{ a.low|unlocalize }}/{{ a.mode|unlocalize }}/{{ a.high|unlocalize }})</option>
         {% endfor %}
     </select>
 </div>
 {% endif %}
+{{ form.angreifertyp }}
 
 <label class="form-label mb-1">Verteilung</label>
 {{ form.verteilung }}
@@ -38,7 +39,21 @@
     <label class="form-label mb-0 small">{{ form.rate.label }}</label>{{ form.rate }}
 </div>
 <div class="dist-params mt-2" data-dist="beta">
-    <label class="form-label mb-0 small">{{ form.beta_mean.label }}</label>{{ form.beta_mean }}
+    <label class="form-label mb-0 small">Eingabeart</label>
+    {{ form.beta_mode }}
+    <div class="beta-sub mt-1" data-bm="mean_k">
+        <label class="form-label mb-0 small">Mittelwert (0–1)</label>{{ form.beta_mean }}
+        <label class="form-label d-flex justify-content-between mb-0 mt-1"><span class="small">k (Konzentration)</span><span class="small text-info beta-k-readout"></span></label>
+        {{ form.beta_k }}
+    </div>
+    <div class="beta-sub mt-1" data-bm="ci">
+        <div class="row g-1">
+            <div class="col"><label class="form-label mb-0 small">low (0–1)</label>{{ form.beta_low }}</div>
+            <div class="col"><label class="form-label mb-0 small">high (0–1)</label>{{ form.beta_high }}</div>
+        </div>
+        <label class="form-label d-flex justify-content-between mb-0 mt-1"><span class="small">Konfidenz</span><span class="small text-info beta-conf-readout"></span></label>
+        {{ form.beta_confidence }}
+    </div>
 </div>
 <div class="dist-params mt-2" data-dist="lognormal">
     <label class="form-label mb-0 small">{{ form.ln_mean.label }}</label>{{ form.ln_mean }}
@@ -51,4 +66,9 @@
     </label>
     {{ form.unsicherheit }}
     <div class="d-flex justify-content-between small text-body-secondary"><span>niedrig</span><span>hoch</span></div>
+</div>
+
+<div class="mt-2">
+    <label class="form-label mb-0 small">Annahmen</label>
+    {{ form.annahmen }}
 </div>

@@ -116,8 +116,8 @@ class FaktorEingabe(models.Model):
         Verteilung.NORMAL: ("mean", "stdev"),
         Verteilung.CONSTANT: ("constant",),
         Verteilung.POISSON: ("lambda",),
-        Verteilung.BETA: ("mean",),
         Verteilung.LOGNORMAL: ("mean",),
+        # Beta wird separat validiert (zwei Eingabearten, siehe clean()).
     }
 
     szenario = models.ForeignKey(
@@ -141,6 +141,8 @@ class FaktorEingabe(models.Model):
         default=UNSICHERHEIT_DEFAULT,
         validators=[MinValueValidator(UNSICHERHEIT_MIN), MaxValueValidator(UNSICHERHEIT_MAX)],
     )
+    angreifertyp = models.CharField("Angreifertyp", max_length=120, blank=True)
+    annahmen = models.TextField("Annahmen", blank=True)
 
     class Meta:
         verbose_name = "Faktor-Eingabe"
@@ -188,7 +190,13 @@ class FaktorEingabe(models.Model):
         Poisson/Beta) wird ``confidence`` mitgegeben – pyfair leitet daraus
         gamma/sigma/k/range ab. Konstant/Normal kennen keine Konfidenz.
         """
-        kwargs = {"distribution": self.verteilung, "params": dict(self.params)}
+        params = dict(self.params)
+        # Beta: zwei explizite Eingabearten, keine confidence aus dem Slider.
+        if self.verteilung == self.Verteilung.BETA:
+            if "low" in params:  # Konfidenzintervall (low/high/confidence)
+                return {"distribution": "beta", "input_mode": "confidence_interval", "params": params}
+            return {"distribution": "beta", "params": params}  # Mittelwert + k
+        kwargs = {"distribution": self.verteilung, "params": params}
         if self.verteilung in CONFIDENCE_DISTRIBUTIONS:
             kwargs["confidence"] = self.confidence_level
         return kwargs
@@ -210,9 +218,23 @@ class FaktorEingabe(models.Model):
                     "PERT erfordert die Reihenfolge low ≤ mode ≤ high."
                 )
 
-        # Wahrscheinlichkeits-Faktoren müssen in [0, 1] liegen.
+        if self.verteilung == self.Verteilung.BETA:
+            if "low" in params:  # Konfidenzintervall
+                fehlend = [k for k in ("low", "high", "confidence") if k not in params]
+                if fehlend:
+                    raise ValidationError(f"Beta-Konfidenzintervall benötigt: {', '.join(fehlend)}.")
+                if not (params["low"] < params["high"]):
+                    raise ValidationError("Beta-Konfidenzintervall: low muss kleiner als high sein.")
+            else:  # Mittelwert + k
+                fehlend = [k for k in ("mean", "k") if k not in params]
+                if fehlend:
+                    raise ValidationError(f"Beta benötigt: {', '.join(fehlend)}.")
+
+        # Wahrscheinlichkeits-Faktoren müssen in [0, 1] liegen ("k" ist davon ausgenommen).
         if self.faktor and fair_tree.ist_gebunden(self.faktor):
             for key, value in params.items():
+                if key == "k":
+                    continue
                 if isinstance(value, (int, float)) and not (0.0 <= value <= 1.0):
                     raise ValidationError(
                         f"„{fair_tree.abbr(self.faktor)}“ ist eine Wahrscheinlichkeit – "
