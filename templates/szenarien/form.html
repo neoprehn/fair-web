@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %} &middot; fair-web{% endblock %}
+{% block container_class %}container-fluid px-4{% endblock %}
 
 {% block content %}
 <h1 class="h3 mb-3">{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %}</h1>
@@ -10,31 +11,30 @@
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
     {% if schnitt_fehler %}<div class="alert alert-warning">{{ schnitt_fehler }}</div>{% endif %}
 
-    {# Kopf: Metadaten links, FAIR-Baum-Übersicht (SVG) rechts #}
+    {# Kopf: Metadaten · Sim/Seed · Risikotoleranz · FAIR-Baum #}
     <div class="row g-4 mb-4">
-        <div class="col-lg-7">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label">Name</label>
-                    {{ form.name }}{{ form.name.errors }}
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Beschreibung</label>
-                    {{ form.beschreibung }}
-                </div>
-                <div class="col-6">
-                    <label class="form-label">Anzahl Simulationen</label>
-                    {{ form.n_simulations }}{{ form.n_simulations.errors }}
-                </div>
-                <div class="col-6">
-                    <label class="form-label">Zufalls-Seed</label>
-                    {{ form.random_seed }}{{ form.random_seed.errors }}
-                </div>
+        <div class="col-xl-3 col-lg-6">
+            <div class="mb-3">
+                <label class="form-label">Name</label>
+                {{ form.name }}{{ form.name.errors }}
             </div>
+            <label class="form-label">Beschreibung</label>
+            {{ form.beschreibung }}
         </div>
-        <div class="col-lg-5">
+        <div class="col-xl-2 col-lg-3">
+            <div class="mb-3">
+                <label class="form-label">Anzahl Simulationen</label>
+                {{ form.n_simulations }}{{ form.n_simulations.errors }}
+            </div>
+            <label class="form-label">Zufalls-Seed</label>
+            {{ form.random_seed }}{{ form.random_seed.errors }}
+        </div>
+        <div class="col-xl-3 col-lg-3">
+            {% include "szenarien/_risikotoleranz.html" %}
+        </div>
+        <div class="col-xl-4 col-lg-12">
             <label class="form-label">FAIR-Baum</label>
-            <div class="card"><div class="card-body py-2" style="overflow-x:auto;">
+            <div class="card"><div class="card-body py-2 svg-flaeche" style="overflow-x:auto;">
                 <svg id="fair-svg" viewBox="0 0 900 250" style="width:100%; min-width:520px; height:auto;">
                     {% for e in svg_edges %}
                     <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
@@ -161,6 +161,77 @@
     });
 
     syncAllDist();
+})();
+</script>
+
+{{ risikotoleranz|json_script:"rt-init" }}
+<script>
+(function () {
+    var typeSel = document.getElementById('rt-type');
+    if (!typeSel) return;
+    var blocks = document.querySelectorAll('.rt-block');
+    var distSel = document.getElementById('rt-dist');
+    var dps = document.querySelectorAll('.rt-dp');
+    var curveBody = document.getElementById('rt-curve-body');
+    var curveJson = document.getElementById('rt-curve-json');
+    var form = document.querySelector('form');
+
+    function showType() {
+        blocks.forEach(function (b) { b.style.display = (b.dataset.rt === typeSel.value) ? '' : 'none'; });
+    }
+    function showDist() {
+        dps.forEach(function (d) { d.style.display = (d.dataset.rtdist === distSel.value) ? '' : 'none'; });
+    }
+    function addRow(loss, level) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td><input type="number" step="any" class="form-control form-control-sm rt-loss"></td>' +
+                       '<td><input type="number" step="any" class="form-control form-control-sm rt-level"></td>' +
+                       '<td><button type="button" class="btn btn-sm btn-link text-danger p-0 rt-del">✕</button></td>';
+        curveBody.appendChild(tr);
+        if (loss !== undefined) tr.querySelector('.rt-loss').value = loss;
+        if (level !== undefined) tr.querySelector('.rt-level').value = level;
+    }
+    function sammleKurve() {
+        var pts = [];
+        curveBody.querySelectorAll('tr').forEach(function (tr) {
+            var l = tr.querySelector('.rt-loss').value, lv = tr.querySelector('.rt-level').value;
+            if (l !== '' && lv !== '') pts.push({ loss: l, level: lv });
+        });
+        curveJson.value = JSON.stringify(pts);
+    }
+
+    typeSel.addEventListener('change', showType);
+    if (distSel) distSel.addEventListener('change', showDist);
+    document.getElementById('rt-add-row').addEventListener('click', function () { addRow(); });
+    curveBody.addEventListener('click', function (e) {
+        if (e.target.classList.contains('rt-del')) e.target.closest('tr').remove();
+    });
+    if (form) form.addEventListener('submit', sammleKurve);
+
+    // Prefill beim Bearbeiten.
+    var init = JSON.parse(document.getElementById('rt-init').textContent);
+    if (init && init.type) {
+        typeSel.value = init.type;
+        if (init.type === 'constant') {
+            document.querySelector('[name="rt_value"]').value = init.value;
+        } else if (init.type === 'distribution' && distSel) {
+            distSel.value = init.distribution;
+            var p = init.params || {};
+            var map = {
+                pert: { low: 'rt_pert_low', mode: 'rt_pert_mode', high: 'rt_pert_high', gamma: 'rt_pert_gamma' },
+                lognormal: { mean: 'rt_ln_mean', sigma: 'rt_ln_sigma' },
+                normal: { mean: 'rt_no_mean', stdev: 'rt_no_stdev' }
+            }[init.distribution] || {};
+            Object.keys(map).forEach(function (k) {
+                if (p[k] !== undefined) { var el = document.querySelector('[name="' + map[k] + '"]'); if (el) el.value = p[k]; }
+            });
+            if (init.samples) document.querySelector('[name="rt_samples"]').value = init.samples;
+        } else if (init.type === 'curve') {
+            (init.points || []).forEach(function (pt) { addRow(pt.loss, pt.level); });
+        }
+    }
+    if (curveBody.children.length === 0) addRow();  // eine Startzeile
+    showType(); showDist();
 })();
 </script>
 {% endblock %}

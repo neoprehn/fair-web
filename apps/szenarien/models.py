@@ -52,6 +52,8 @@ class Szenario(models.Model):
     beschreibung = models.TextField("Beschreibung", blank=True)
     n_simulations = models.PositiveIntegerField("Anzahl Simulationen", default=10_000)
     random_seed = models.PositiveIntegerField("Zufalls-Seed", default=42)
+    # Risikotoleranz, kontextbasiert: {"type": "constant"|"curve"|"distribution", ...}
+    risikotoleranz = models.JSONField("Risikotoleranz", null=True, blank=True)
     erstellt_am = models.DateTimeField("Erstellt am", auto_now_add=True)
     geaendert_am = models.DateTimeField("Geändert am", auto_now=True)
 
