@@ -103,7 +103,9 @@ function formatDE(n) {
         ni.querySelectorAll('.dist-params').forEach(function (g) {
             g.style.display = (g.dataset.dist === vert) ? '' : 'none';
         });
-        var hatKonf = CONF.distributions.indexOf(vert) !== -1;
+        if (vert === 'beta') syncBeta(ni);
+        // Beta hat eigene Eingabearten – kein Unsicherheits-Slider.
+        var hatKonf = CONF.distributions.indexOf(vert) !== -1 && vert !== 'beta';
         var cg = ni.querySelector('.confidence-group');
         cg.style.display = hatKonf ? '' : 'none';
         if (hatKonf) {
@@ -113,6 +115,19 @@ function formatDE(n) {
             var key = Object.keys(shape)[0];
             ni.querySelector('.confidence-readout').textContent = CONF.labels[stufe] + ' · ' + key + ' = ' + shape[key];
         }
+    }
+
+    function syncBeta(ni) {
+        var modeSel = ni.querySelector('.beta-mode-select');
+        if (!modeSel) return;
+        var mode = modeSel.value || 'mean_k';
+        ni.querySelectorAll('.beta-sub').forEach(function (s) {
+            s.style.display = (s.dataset.bm === mode) ? '' : 'none';
+        });
+        var k = ni.querySelector('.beta-k-slider'), kr = ni.querySelector('.beta-k-readout');
+        if (k && kr) kr.textContent = 'k = ' + k.value;
+        var c = ni.querySelector('.beta-conf-slider'), cr = ni.querySelector('.beta-conf-readout');
+        if (c && cr) cr.textContent = c.value + ' %';
     }
 
     function syncAllDist() {
@@ -147,17 +162,31 @@ function formatDE(n) {
             if (vs) vs.addEventListener('change', function () { syncDist(tn); });
             var sl = ni.querySelector('.unsicherheit-slider');
             if (sl) sl.addEventListener('input', function () { syncDist(tn); });
-            // Angreifertyp-Vorlage füllt die PERT-Werte für Threat Capability.
-            var at = ni.querySelector('.angreifertyp-select');
-            if (at) at.addEventListener('change', function () {
-                var opt = at.options[at.selectedIndex];
-                if (!opt || opt.dataset.low === undefined) return;
-                if (vs) vs.value = 'pert';
-                ni.querySelector('[name$="-low"]').value = formatDE(parseFloat(opt.dataset.low));
-                ni.querySelector('[name$="-mode"]').value = formatDE(parseFloat(opt.dataset.mode));
-                ni.querySelector('[name$="-high"]').value = formatDE(parseFloat(opt.dataset.high));
-                syncDist(tn);
+            // Beta: Eingabeart-Wechsel und Slider.
+            var bm = ni.querySelector('.beta-mode-select');
+            if (bm) bm.addEventListener('change', function () { syncDist(tn); });
+            ni.querySelectorAll('.beta-k-slider, .beta-conf-slider').forEach(function (s) {
+                s.addEventListener('input', function () { syncBeta(ni); });
             });
+            // Angreifertyp: Auswahl in Überschrift + Hidden-Feld, füllt PERT vor.
+            var at = ni.querySelector('.angreifertyp-select');
+            var hidden = ni.querySelector('[name$="-angreifertyp"]');
+            var anzeige = child(tn, '.node-box').querySelector('.angreifertyp-anzeige');
+            if (at) {
+                if (hidden && hidden.value) at.value = hidden.value;  // Vorauswahl
+                at.addEventListener('change', function () {
+                    if (hidden) hidden.value = at.value;
+                    if (anzeige) anzeige.textContent = at.value ? '· ' + at.value : '';
+                    var opt = at.options[at.selectedIndex];
+                    if (opt && opt.dataset.low !== undefined) {
+                        if (vs) vs.value = 'pert';
+                        ni.querySelector('[name$="-low"]').value = formatDE(parseFloat(opt.dataset.low));
+                        ni.querySelector('[name$="-mode"]').value = formatDE(parseFloat(opt.dataset.mode));
+                        ni.querySelector('[name$="-high"]').value = formatDE(parseFloat(opt.dataset.high));
+                        syncDist(tn);
+                    }
+                });
+            }
         }
     });
 

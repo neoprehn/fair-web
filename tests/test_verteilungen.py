@@ -7,19 +7,35 @@ from apps.szenarien.models import FaktorEingabe, Szenario
 
 
 @pytest.mark.django_db
-def test_beta_wahrscheinlichkeit():
+def test_beta_mittelwert_k():
     form = FaktorEingabeForm(
-        data={"verteilung": "beta", "unsicherheit": 2, "beta_mean": 0.3},
+        data={"verteilung": "beta", "unsicherheit": 2, "beta_mode": "mean_k",
+              "beta_mean": 0.3, "beta_k": 15},
         faktor_code="VULN",
     )
     assert form.is_valid(), form.errors
-    assert form.instance.params == {"mean": 0.3}
+    assert form.instance.params == {"mean": 0.3, "k": 15}
+    assert "confidence" not in form.instance.to_fair_kwargs()
+
+
+@pytest.mark.django_db
+def test_beta_konfidenzintervall():
+    form = FaktorEingabeForm(
+        data={"verteilung": "beta", "unsicherheit": 2, "beta_mode": "ci",
+              "beta_low": 0.2, "beta_high": 0.6, "beta_confidence": 90},
+        faktor_code="VULN",
+    )
+    assert form.is_valid(), form.errors
+    assert form.instance.params == {"low": 0.2, "high": 0.6, "confidence": 0.9}
+    kw = form.instance.to_fair_kwargs()
+    assert kw["input_mode"] == "confidence_interval"
 
 
 @pytest.mark.django_db
 def test_beta_mittelwert_ueber_eins_fehler():
     form = FaktorEingabeForm(
-        data={"verteilung": "beta", "unsicherheit": 2, "beta_mean": 1.5},
+        data={"verteilung": "beta", "unsicherheit": 2, "beta_mode": "mean_k",
+              "beta_mean": 1.5, "beta_k": 15},
         faktor_code="VULN",
     )
     assert not form.is_valid()
@@ -54,7 +70,7 @@ def test_neue_verteilungen_rechnen_in_pyfair():
     FaktorEingabe.objects.create(szenario=s, faktor="TEF", verteilung="pert",
                                  params={"low": 1, "mode": 4, "high": 10}, unsicherheit=2)
     FaktorEingabe.objects.create(szenario=s, faktor="VULN", verteilung="beta",
-                                 params={"mean": 0.3}, unsicherheit=2)
+                                 params={"mean": 0.3, "k": 15}, unsicherheit=2)
     FaktorEingabe.objects.create(szenario=s, faktor="LM", verteilung="lognormal",
                                  params={"mean": 50000}, unsicherheit=2)
     assert s.schnitt_ist_gueltig()

@@ -56,8 +56,8 @@ FELD_MAP = {
     "normal": [("mean", "mean"), ("stdev", "stdev")],
     "constant": [("constant", "constant")],
     "poisson": [("rate", "lambda")],
-    "beta": [("beta_mean", "mean")],
     "lognormal": [("ln_mean", "mean")],
+    # Beta separat (zwei Eingabearten: mean+k oder Konfidenzintervall).
 }
 
 
@@ -73,16 +73,29 @@ class FaktorEingabeForm(forms.ModelForm):
     rate = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
     beta_mean = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
     ln_mean = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    # Beta-Eingabearten: Mittelwert+k oder Konfidenzintervall (low/high/confidence).
+    beta_k = forms.FloatField(required=False, localize=True,
+        widget=RangeInput(attrs={"class": "form-range beta-k-slider", "min": 2, "max": 100, "step": 1}))
+    beta_low = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    beta_high = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    beta_confidence = forms.FloatField(required=False,
+        widget=RangeInput(attrs={"class": "form-range beta-conf-slider", "min": 50, "max": 90, "step": 10}))
+    beta_mode = forms.ChoiceField(required=False,
+        choices=[("mean_k", "Mittelwert + k"), ("ci", "Konfidenzintervall")],
+        widget=forms.Select(attrs={"class": "form-select form-select-sm beta-mode-select"}))
 
     class Meta:
         model = FaktorEingabe
-        fields = ("verteilung", "unsicherheit")
+        fields = ("verteilung", "unsicherheit", "annahmen", "angreifertyp")
         widgets = {
             "verteilung": forms.Select(attrs={"class": "form-select form-select-sm verteilung-select"}),
             "unsicherheit": RangeInput(attrs={
                 "class": "form-range unsicherheit-slider",
                 "min": UNSICHERHEIT_MIN, "max": UNSICHERHEIT_MAX, "step": 1,
             }),
+            "annahmen": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 2,
+                                              "placeholder": "Annahmen / Begründung …"}),
+            "angreifertyp": forms.HiddenInput(),
         }
 
     def __init__(self, *args, faktor_code=None, **kwargs):
@@ -104,9 +117,23 @@ class FaktorEingabeForm(forms.ModelForm):
             # Bei ModelForms gewinnt self.initial (aus der Instanz) über field.initial.
             if not (self.instance and self.instance.pk):
                 self.initial["verteilung"] = fair_tree.standard_verteilung(self.faktor_code)
+        # Beta-Eingabearten vorbelegen (Defaults + beim Bearbeiten).
+        self.fields["beta_k"].initial = 15
+        self.fields["beta_confidence"].initial = 90
+        self.initial.setdefault("beta_mode", "mean_k")
         # Bestehende params auf die passenden Einzelfelder legen (Bearbeiten).
         if self.instance and self.instance.pk:
             vorhandene = self.instance.params or {}
+            if self.instance.verteilung == "beta":
+                if "low" in vorhandene:
+                    self.fields["beta_low"].initial = vorhandene.get("low")
+                    self.fields["beta_high"].initial = vorhandene.get("high")
+                    self.fields["beta_confidence"].initial = round(float(vorhandene.get("confidence", 0.9)) * 100)
+                    self.initial["beta_mode"] = "ci"
+                else:
+                    self.fields["beta_mean"].initial = vorhandene.get("mean")
+                    self.fields["beta_k"].initial = vorhandene.get("k", 15)
+                    self.initial["beta_mode"] = "mean_k"
             for feld, key in FELD_MAP.get(self.instance.verteilung, []):
                 if key in vorhandene:
                     self.fields[feld].initial = vorhandene[key]
@@ -115,6 +142,24 @@ class FaktorEingabeForm(forms.ModelForm):
         cleaned = super().clean()
         verteilung = cleaned.get("verteilung")
         if not verteilung:
+            return cleaned
+        # Beta: je nach Eingabeart mean+k oder Konfidenzintervall.
+        if verteilung == "beta":
+            params = {}
+            if (cleaned.get("beta_mode") or "mean_k") == "ci":
+                if cleaned.get("beta_low") is not None:
+                    params["low"] = cleaned["beta_low"]
+                if cleaned.get("beta_high") is not None:
+                    params["high"] = cleaned["beta_high"]
+                conf = cleaned.get("beta_confidence")
+                if conf is not None:
+                    params["confidence"] = conf / 100.0 if conf > 1 else conf
+            else:
+                if cleaned.get("beta_mean") is not None:
+                    params["mean"] = cleaned["beta_mean"]
+                if cleaned.get("beta_k") is not None:
+                    params["k"] = cleaned["beta_k"]
+            self.instance.params = params
             return cleaned
         # Felder der gewählten Verteilung in pyfair-Param-Keys übersetzen.
         params = {}

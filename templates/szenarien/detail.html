@@ -30,12 +30,15 @@
 <h2 class="h5 mt-4">FAIR-Faktoren</h2>
 <table class="table">
     <thead>
-        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th><th>Unsicherheit</th></tr>
+        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th><th>Unsicherheit</th><th>Annahmen</th></tr>
     </thead>
     <tbody>
     {% for faktor in szenario.faktoren.all %}
         <tr>
-            <td>{{ faktor.get_faktor_display }}</td>
+            <td>
+                {{ faktor.get_faktor_display }}
+                {% if faktor.angreifertyp %}<span class="text-info small d-block">{{ faktor.angreifertyp }}</span>{% endif %}
+            </td>
             <td>{{ faktor.get_verteilung_display }}</td>
             <td>
                 {% for key, value in faktor.params.items %}
@@ -43,16 +46,18 @@
                 {% endfor %}
             </td>
             <td>
+                {% if faktor.verteilung == "beta" %}<span class="text-body-secondary small">eigene Eingabeart</span>{% else %}
                 {{ faktor.unsicherheit_label }}
                 {% if faktor.confidence_shape %}
                     {% for key, value in faktor.confidence_shape.items %}
                         <span class="badge text-bg-light">{{ key }} = {{ value }}</span>
                     {% endfor %}
-                {% endif %}
+                {% endif %}{% endif %}
             </td>
+            <td class="small text-body-secondary">{{ faktor.annahmen|default:"–" }}</td>
         </tr>
     {% empty %}
-        <tr><td colspan="4" class="text-body-secondary">Noch keine Faktoren erfasst.</td></tr>
+        <tr><td colspan="5" class="text-body-secondary">Noch keine Faktoren erfasst.</td></tr>
     {% endfor %}
     </tbody>
 </table>

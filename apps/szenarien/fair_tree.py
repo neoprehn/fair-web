@@ -51,9 +51,15 @@ DISTS_BY_TYP = {
 
 # Vorgeschlagene Standard-Verteilung je Knoten (fett aus der FAIR-Tabelle).
 STANDARD_VERTEILUNG = {
-    "LEF": "pert", "TEF": "pert", "CF": "pert", "SLEF": "pert",
+    "LEF": "pert", "TEF": "pert", "CF": "poisson", "SLEF": "poisson",
     "POA": "beta", "VULN": "beta", "TC": "pert", "CS": "pert",
     "LM": "lognormal", "PL": "lognormal", "SLEM": "lognormal",
+}
+
+# Knoten-spezifische Abweichung der erlaubten Verteilungen (CF/SLEF: echte Counts → Poisson).
+ERLAUBTE_OVERRIDE = {
+    "CF": ["poisson", "pert", "normal", "constant"],
+    "SLEF": ["poisson", "pert", "normal", "constant"],
 }
 
 
@@ -84,6 +90,8 @@ def ist_gebunden(code):
 
 
 def erlaubte_verteilungen(code):
+    if code in ERLAUBTE_OVERRIDE:
+        return ERLAUBTE_OVERRIDE[code]
     return DISTS_BY_TYP[FAIR_NODES[code][3]]
 
 

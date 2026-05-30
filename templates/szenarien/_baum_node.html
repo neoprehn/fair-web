@@ -3,6 +3,7 @@
     <div class="node-box{% if not node.ist_blatt %} clickable{% endif %}{% if node.modus == 'aufschluesseln' %} expanded{% endif %}">
         <span class="badge text-bg-light">{{ node.abbr }}</span>
         <span class="node-name small">{{ node.name }}</span>
+        {% if node.code == "TC" %}<span class="angreifertyp-anzeige small text-info">{% if node.form.instance.angreifertyp %}· {{ node.form.instance.angreifertyp }}{% endif %}</span>{% endif %}
         {% if not node.ist_blatt %}
             <span class="node-toggle small">{% if node.modus == 'aufschluesseln' %}▾ aufgefaltet{% else %}▸ auffalten{% endif %}</span>
             <input type="hidden" class="modus-input" name="modus-{{ node.code }}" value="{{ node.modus }}">
