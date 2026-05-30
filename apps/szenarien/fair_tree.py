@@ -26,6 +26,9 @@ FAIR_NODES = {
     "SLEM": ("Secondary Loss Event Magnitude", "SLEM", "SL",   "magnitude"),
 }
 
+# pyfair-Knotenname -> unser Code (Umkehrung für Ergebnis-Auswertung).
+CODE_FUER_NAME = {name: code for code, (name, _a, _p, _t) in FAIR_NODES.items()}
+
 # Die zwei Top-Äste, die zusammen Risk ergeben (Risk = LEF × LM).
 ROOT_CHILDREN = ["LEF", "LM"]
 

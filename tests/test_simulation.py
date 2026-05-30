@@ -43,6 +43,20 @@ def test_simuliere_liefert_kennzahlen_und_lec():
 
 
 @pytest.mark.django_db
+def test_ergebnis_enthaelt_knoten_mit_status():
+    pytest.importorskip("pyfair")
+    s = _szenario_mit_faktoren()  # LEF (pert) + LM (constant) -> Eingaben
+    ergebnis = services.simuliere(s, n_simulations=200, random_seed=42, batches=2)
+
+    knoten = ergebnis["knoten"]
+    assert knoten["LEF"]["status"] == "eingabe"
+    assert knoten["LM"]["status"] == "eingabe"
+    assert knoten["Risk"]["status"] == "berechnet"
+    # Nicht genutzte Knoten (z. B. TEF) tauchen nicht auf.
+    assert "TEF" not in knoten
+
+
+@pytest.mark.django_db
 def test_run_simulation_setzt_lauf_auf_fertig():
     pytest.importorskip("pyfair")
     s = _szenario_mit_faktoren()

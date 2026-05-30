@@ -12,6 +12,8 @@ import threading
 
 from django.db import connection
 
+from apps.szenarien import fair_tree
+
 
 def _ergebnis_aus_sample(sample):
     """Kennzahlen + (heruntergerechnete) LEC-Kurve aus den Verlustwerten."""
@@ -45,6 +47,28 @@ def _ergebnis_aus_sample(sample):
     }
 
 
+def _knoten_stats(df, szenario):
+    """Mittelwert + Status (Eingabe/berechnet) je berechnetem FAIR-Knoten.
+
+    pyfairs Ergebnis-Tabelle hat eine Spalte je Knoten; nicht genutzte Knoten
+    bleiben leer (NaN) und werden ausgelassen.
+    """
+    eingegeben = set(szenario.schnitt_codes())
+    knoten = {}
+    for spalte in df.columns:
+        serie = df[spalte].dropna()
+        if serie.empty:
+            continue
+        code = "Risk" if spalte == "Risk" else fair_tree.CODE_FUER_NAME.get(spalte)
+        if code is None:
+            continue
+        knoten[code] = {
+            "mittelwert": float(serie.mean()),
+            "status": "eingabe" if code in eingegeben else "berechnet",
+        }
+    return knoten
+
+
 def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None):
     """Chunked Monte-Carlo-Simulation für ein Szenario.
 
@@ -61,7 +85,7 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
     fortschritt : callable(int) | None
         Wird nach jedem Batch mit dem Prozentwert (0–100) aufgerufen.
     """
-    import numpy as np
+    import pandas as pd
     import pyfair
 
     inputs = szenario.fair_inputs()
@@ -80,15 +104,17 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
         for target, kwargs in inputs.items():
             model.input_data(target, **kwargs)
         model.calculate_all()
-        teile.append(model.export_results()["Risk"].to_numpy())
+        teile.append(model.export_results())  # alle Knoten-Spalten
 
         erzeugt += n
         i += 1
         if fortschritt:
             fortschritt(min(100, round(erzeugt / n_simulations * 100)))
 
-    sample = np.concatenate(teile)
-    return _ergebnis_aus_sample(sample)
+    combined = pd.concat(teile, ignore_index=True)
+    ergebnis = _ergebnis_aus_sample(combined["Risk"].to_numpy())
+    ergebnis["knoten"] = _knoten_stats(combined, szenario)
+    return ergebnis
 
 
 def simuliere_meta(szenarien, n_simulations, random_seed, fortschritt=None):

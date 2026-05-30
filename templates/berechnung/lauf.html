@@ -56,6 +56,27 @@
         </tbody>
     </table>
 
+    <h2 class="h5 mt-4">FAIR-Baum</h2>
+    <p class="text-body-secondary small mb-2">
+        <span class="badge" style="background:var(--accent); color:#04223a;">Eingabe</span>
+        <span class="badge" style="background:var(--ok); color:#04223a;">simuliert / berechnet</span>
+        – Mittelwert je Knoten.
+    </p>
+    <div class="card mb-3"><div class="card-body py-2" style="overflow-x:auto;">
+        <svg viewBox="0 0 900 270" style="width:100%; max-width:900px; height:auto;">
+            {% for e in svg_edges %}
+            <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
+            {% endfor %}
+            {% for n in svg_nodes %}
+            <g class="svg-node {{ n.status }}" data-code="{{ n.code }}">
+                <rect x="{{ n.x|add:'-30' }}" y="{{ n.y|add:'-13' }}" width="60" height="26" rx="6"/>
+                <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y|add:'4' }}" text-anchor="middle">{{ n.label }}</text>
+            </g>
+            {% if n.wert %}<text class="svg-node-wert" x="{{ n.x }}" y="{{ n.y|add:'26' }}" text-anchor="middle">{{ n.wert }}</text>{% endif %}
+            {% endfor %}
+        </svg>
+    </div></div>
+
     <p class="text-body-secondary small mt-3">Die animierte LEC-Kurve folgt in Phase 5 (Daten sind bereits berechnet).</p>
     <form method="post" action="{% url 'berechnung:starten' lauf.szenario.pk %}" class="d-inline">
         {% csrf_token %}
