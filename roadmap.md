@@ -121,8 +121,8 @@
 - [ ] Einbindung von FAIR CAM (hierzu muss wahrscheinlich noch alles als pyfaircam entwickelt werden)
 - [ ] Wenn Modelle schon einmal simuliert wurden, dann Ergebnisse in der Eingabeseite mit angebeben und automatisch nachberechnen, wenn neue Eingaben stattgefunden haben (Knopf neuberechnen)
 - [ ] Historie in den Simulationen (aufklappbar) im Protokoll zeigen (wie eine Verzeichnisstruktur mit letzter Simulaion ganz oben)
-- [ ] 
-- [ ] 
+- [ ] Schnittpunkte in der LEC berechnen zwischen Toleranz und LEC bzw. bei mehreren Simulationen zwischen den individuellen LECs und der Risikotoleranz. Ergebnisdarstellung in Tabellenform (wie bei file:///C:/Users/mirko/OneDrive/Dokumente/Entwicklung/fair/results/Laptop_neu.html)
+- [ ] Punkte-Streudiagramm der primären und sekundären Verluste (in rot und blau) - wie bei Laptop_neu.html
 - [ ] 
 - [ ] Lokaler Test
 - [ ] Commit & Push → Branch `feature-export` mergen in `main`
