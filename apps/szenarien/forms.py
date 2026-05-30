@@ -24,11 +24,12 @@ class SzenarioForm(forms.ModelForm):
     class Meta:
         model = Szenario
         fields = ("name", "beschreibung", "n_simulations", "random_seed")
+        localized_fields = ("n_simulations", "random_seed")
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "beschreibung": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "n_simulations": forms.NumberInput(attrs={"class": "form-control form-control-sm"}),
-            "random_seed": forms.NumberInput(attrs={"class": "form-control form-control-sm"}),
+            "n_simulations": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+            "random_seed": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
         }
 
 
@@ -63,15 +64,15 @@ FELD_MAP = {
 class FaktorEingabeForm(forms.ModelForm):
     """ModelForm für genau einen FAIR-Knoten (Faktor steht fest)."""
 
-    low = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
-    mode = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
-    high = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
-    mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
-    stdev = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
-    constant = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
-    rate = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
-    beta_mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
-    ln_mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
+    low = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    mode = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    high = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    mean = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    stdev = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    constant = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    rate = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    beta_mean = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    ln_mean = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
 
     class Meta:
         model = FaktorEingabe

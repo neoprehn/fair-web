@@ -79,6 +79,13 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+// Zahl ins deutsche Format (Komma-Dezimal, Punkt-Tausender) – fürs Vorbefüllen.
+function formatDE(n) {
+    if (n === null || n === undefined || n === '' || isNaN(n)) return '';
+    return new Intl.NumberFormat('de-DE', { maximumFractionDigits: 12, useGrouping: true }).format(n);
+}
+</script>
 {{ confidence_config|json_script:"confidence-config" }}
 <script>
 (function () {
@@ -146,9 +153,9 @@
                 var opt = at.options[at.selectedIndex];
                 if (!opt || opt.dataset.low === undefined) return;
                 if (vs) vs.value = 'pert';
-                ni.querySelector('[name$="-low"]').value = opt.dataset.low;
-                ni.querySelector('[name$="-mode"]').value = opt.dataset.mode;
-                ni.querySelector('[name$="-high"]').value = opt.dataset.high;
+                ni.querySelector('[name$="-low"]').value = formatDE(parseFloat(opt.dataset.low));
+                ni.querySelector('[name$="-mode"]').value = formatDE(parseFloat(opt.dataset.mode));
+                ni.querySelector('[name$="-high"]').value = formatDE(parseFloat(opt.dataset.high));
                 syncDist(tn);
             });
         }
@@ -191,8 +198,8 @@
     }
     function addRow(loss, level) {
         var tr = document.createElement('tr');
-        tr.innerHTML = '<td><input type="number" step="any" class="form-control form-control-sm rt-loss"></td>' +
-                       '<td><input type="number" step="any" class="form-control form-control-sm rt-level"></td>' +
+        tr.innerHTML = '<td><input type="text" inputmode="decimal" class="form-control form-control-sm rt-loss"></td>' +
+                       '<td><input type="text" inputmode="decimal" class="form-control form-control-sm rt-level"></td>' +
                        '<td><button type="button" class="btn btn-sm btn-link text-danger p-0 rt-del">✕</button></td>';
         curveBody.appendChild(tr);
         if (loss !== undefined) tr.querySelector('.rt-loss').value = loss;
@@ -220,7 +227,7 @@
     if (init && init.type) {
         typeSel.value = init.type;
         if (init.type === 'constant') {
-            document.querySelector('[name="rt_value"]').value = init.value;
+            document.querySelector('[name="rt_value"]').value = formatDE(init.value);
         } else if (init.type === 'distribution' && distSel) {
             distSel.value = init.distribution;
             var p = init.params || {};
@@ -230,11 +237,11 @@
                 normal: { mean: 'rt_no_mean', stdev: 'rt_no_stdev' }
             }[init.distribution] || {};
             Object.keys(map).forEach(function (k) {
-                if (p[k] !== undefined) { var el = document.querySelector('[name="' + map[k] + '"]'); if (el) el.value = p[k]; }
+                if (p[k] !== undefined) { var el = document.querySelector('[name="' + map[k] + '"]'); if (el) el.value = formatDE(p[k]); }
             });
-            if (init.samples) document.querySelector('[name="rt_samples"]').value = init.samples;
+            if (init.samples) document.querySelector('[name="rt_samples"]').value = formatDE(init.samples);
         } else if (init.type === 'curve') {
-            (init.points || []).forEach(function (pt) { addRow(pt.loss, pt.level); });
+            (init.points || []).forEach(function (pt) { addRow(formatDE(pt.loss), formatDE(pt.level)); });
         }
     }
     if (curveBody.children.length === 0) addRow();  // eine Startzeile

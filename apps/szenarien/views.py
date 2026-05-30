@@ -79,12 +79,14 @@ class _SzenarioFormMixin:
 
     def _risikotoleranz_aus_post(self):
         """Baut die Risikotoleranz (kontextbasiert) aus den POST-Feldern."""
+        from django.utils.formats import sanitize_separators
+
         post = self.request.POST
         typ = post.get("rt_type")
 
         def zahl(name):
             v = post.get(name, "")
-            return float(v) if v not in ("", None) else None
+            return float(sanitize_separators(v)) if v not in ("", None) else None
 
         try:
             if typ == "constant":
@@ -106,7 +108,8 @@ class _SzenarioFormMixin:
                         "samples": int(samples) if samples else 20000}
             if typ == "curve":
                 punkte = json.loads(post.get("rt_curve") or "[]")
-                punkte = [{"loss": float(p["loss"]), "level": float(p["level"])}
+                punkte = [{"loss": float(sanitize_separators(str(p["loss"]))),
+                           "level": float(sanitize_separators(str(p["level"])))}
                           for p in punkte
                           if str(p.get("loss", "")) != "" and str(p.get("level", "")) != ""]
                 return {"type": "curve", "points": punkte} if punkte else None

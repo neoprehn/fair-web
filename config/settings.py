@@ -97,6 +97,8 @@ LANGUAGE_CODE = "de"
 TIME_ZONE = "Europe/Berlin"
 USE_I18N = True
 USE_TZ = True
+# Deutsches Zahlenformat: Komma als Dezimaltrennung, Punkt als Tausendertrennung.
+USE_THOUSAND_SEPARATOR = True
 
 
 STATIC_URL = "static/"

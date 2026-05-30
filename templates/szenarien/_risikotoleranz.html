@@ -10,7 +10,7 @@
 
     <div class="rt-block" data-rt="constant">
         <label class="form-label mb-0 small">Schwellenwert (€)</label>
-        <input type="number" step="any" name="rt_value" class="form-control form-control-sm">
+        <input type="text" inputmode="decimal" name="rt_value" class="form-control form-control-sm">
     </div>
 
     <div class="rt-block" data-rt="curve">
@@ -31,26 +31,26 @@
         </select>
         <div class="rt-dp" data-rtdist="pert">
             <div class="row g-1">
-                <div class="col"><label class="form-label mb-0 small">min (€)</label><input type="number" step="any" name="rt_pert_low" class="form-control form-control-sm"></div>
-                <div class="col"><label class="form-label mb-0 small">wahrsch. (€)</label><input type="number" step="any" name="rt_pert_mode" class="form-control form-control-sm"></div>
-                <div class="col"><label class="form-label mb-0 small">max (€)</label><input type="number" step="any" name="rt_pert_high" class="form-control form-control-sm"></div>
+                <div class="col"><label class="form-label mb-0 small">min (€)</label><input type="text" inputmode="decimal" name="rt_pert_low" class="form-control form-control-sm"></div>
+                <div class="col"><label class="form-label mb-0 small">wahrsch. (€)</label><input type="text" inputmode="decimal" name="rt_pert_mode" class="form-control form-control-sm"></div>
+                <div class="col"><label class="form-label mb-0 small">max (€)</label><input type="text" inputmode="decimal" name="rt_pert_high" class="form-control form-control-sm"></div>
             </div>
             <label class="form-label mb-0 small">gamma</label>
-            <input type="number" step="any" name="rt_pert_gamma" value="4" class="form-control form-control-sm">
+            <input type="text" inputmode="decimal" name="rt_pert_gamma" value="4" class="form-control form-control-sm">
         </div>
         <div class="rt-dp" data-rtdist="lognormal">
             <label class="form-label mb-0 small">Mittelwert (€)</label>
-            <input type="number" step="any" name="rt_ln_mean" class="form-control form-control-sm">
+            <input type="text" inputmode="decimal" name="rt_ln_mean" class="form-control form-control-sm">
             <label class="form-label mb-0 small">sigma</label>
-            <input type="number" step="any" name="rt_ln_sigma" value="0.5" class="form-control form-control-sm">
+            <input type="text" inputmode="decimal" name="rt_ln_sigma" value="0.5" class="form-control form-control-sm">
         </div>
         <div class="rt-dp" data-rtdist="normal">
             <label class="form-label mb-0 small">Mittelwert (€)</label>
-            <input type="number" step="any" name="rt_no_mean" class="form-control form-control-sm">
+            <input type="text" inputmode="decimal" name="rt_no_mean" class="form-control form-control-sm">
             <label class="form-label mb-0 small">Streuung (€)</label>
-            <input type="number" step="any" name="rt_no_stdev" class="form-control form-control-sm">
+            <input type="text" inputmode="decimal" name="rt_no_stdev" class="form-control form-control-sm">
         </div>
         <label class="form-label mb-0 small">Samples</label>
-        <input type="number" name="rt_samples" value="20000" class="form-control form-control-sm">
+        <input type="text" inputmode="numeric" name="rt_samples" value="20000" class="form-control form-control-sm">
     </div>
 </div></div>
