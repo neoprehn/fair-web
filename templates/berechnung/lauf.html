@@ -88,6 +88,7 @@
     </div></div>
     {{ lauf.ergebnis.lec|json_script:"lec-data" }}
     {{ toleranz_overlay|json_script:"toleranz-data" }}
+    {{ lauf.ergebnis.p90|json_script:"p90-data" }}
 
     <form method="post" action="{% url 'berechnung:starten' lauf.szenario.pk %}" class="d-inline">
         {% csrf_token %}
@@ -117,19 +118,35 @@
         y: lec.map(function (p) { return p.ueberschreitung; }),
         mode: 'lines', name: 'LEC', line: { color: '#7dd3fc', width: 2 }
     }];
+    var p90 = JSON.parse(document.getElementById('p90-data').textContent);
+
+    // Log-Schadensachse, so skaliert, dass P90 bei ~3/4 der Achsenbreite liegt.
+    var xs = lec.map(function (p) { return p.verlust; }).filter(function (v) { return v > 0; });
+    var xmin = xs.length ? Math.min.apply(null, xs) : 1;
+    var xType = 'linear', xRange = undefined;
+    if (xmin > 0 && p90 > xmin) {
+        var a = Math.log10(xmin);
+        var b = a + (Math.log10(p90) - a) / 0.75;  // P90 bei 75 %
+        xType = 'log';
+        xRange = [a, b];
+    }
+    // Auf Log-Achse müssen Shape-x-Werte als log10 angegeben werden.
+    var vx = function (v) { return xType === 'log' ? Math.log10(v) : v; };
+
     var shapes = [];
     if (ov && ov.kind === 'curve') {
         traces.push({ x: ov.x, y: ov.y, mode: 'lines', name: 'Risikotoleranz',
                       line: { color: '#f87171', dash: 'dash', width: 2 } });
-    } else if (ov && ov.kind === 'vline') {
-        shapes.push({ type: 'line', x0: ov.value, x1: ov.value, y0: 0, y1: 1, yref: 'paper',
+    } else if (ov && ov.kind === 'vline' && ov.value > 0) {
+        shapes.push({ type: 'line', x0: vx(ov.value), x1: vx(ov.value), y0: 0, y1: 1, yref: 'paper',
                       line: { color: '#f87171', dash: 'dash' } });
     }
     var layout = {
         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: '#cbd5e1', family: 'Bahnschrift, sans-serif' },
         margin: { l: 70, r: 20, t: 10, b: 50 },
-        xaxis: { title: 'Jahresschaden (€)', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+        xaxis: { title: 'Jahresschaden (€)', gridcolor: '#1e293b', zerolinecolor: '#1e293b',
+                 type: xType, range: xRange },
         yaxis: { title: 'P(Schaden ≥ x)', gridcolor: '#1e293b', range: [0, 1], tickformat: '.0%' },
         legend: { orientation: 'h', y: 1.1 }, shapes: shapes
     };
