@@ -43,13 +43,13 @@
 
 ---
 
-### Phase 4b – FAIR-Baum-Eingabe & Ergebnis-Baum (UI-Ausbau) — Branch `feature-fairbaum`
+### Phase 4b – FAIR-Baum-Eingabe & Ergebnis-Baum (UI-Ausbau) ✅ live
 - [x] **Slice 1:** Baumstruktur + Datenmodell (`fair_tree.py`, alle 12 Knoten, Typen, Schnitt-Validierung)
-- [ ] **Slice 2:** Dynamisches Baum-Formular (frei aufklappbar: „direkt angeben / aufschlüsseln"), Verteilungs-Auswahl je Faktor eingeschränkt, korrekte Beschriftungen, schmalere Eingabeboxen, Schnitt-Gültigkeit serverseitig
-- [ ] **Slice 3:** Interaktives SVG des FAIR-Baums (FAIR-Kürzel, Dark-Theme); aktiver Knoten leuchtet beim Reinklicken in ein Eingabefeld auf
-- [ ] **Slice 4:** Ergebnis-Baum nach der Simulation — je Knoten Wert anzeigen, farblich getrennt: **Eingabe = Sky-Blau**, **Simuliert/Berechnet = Grün** (Vorbild: pyfair-Bericht); zunächst für eine Einzel-Simulation
-- [ ] Lokaler Test je Slice; Vorschau vor jedem Live-Deploy
-- [ ] Commit & Push → `feature-fairbaum` mergen in `main`
+- [x] **Slice 2:** Dynamisches Baum-Formular, Verteilungs-Auswahl je Faktor eingeschränkt (inkl. Poisson/Beta/Lognormal), korrekte Beschriftungen, Schnitt-Gültigkeit serverseitig
+- [x] **Slice 3:** Interaktives SVG des FAIR-Baums; aktiver Knoten leuchtet beim Reinklicken auf
+- [x] **Slice 4:** Ergebnis-Baum nach der Simulation — Wert je Knoten, **Eingabe = Sky-Blau**, **berechnet = Grün** (Einzel-Simulation)
+- [x] **Umbau:** SVG nach oben (neben Name/Beschreibung), Faktoren als klickbarer FAIR-Baum (Klick = auffalten), 2-Spalten-/Baum-Fächerung, schmalere Karten
+- [x] Lokale Vorschau vor jedem Live-Deploy; Slices einzeln nach `main` gemergt
 
 ---
 
@@ -102,7 +102,7 @@
 > **CI/CD-Hinweis (29.05.2026):** Der Auto-Deploy griff lange Zeit NICHT – das Zielverzeichnis war kein Git-Checkout, und `deploy.yml` verbarg den Fehler hinter grünen Häkchen (kein `set -e`). Beides ist gefixt: Server-Ordner ist jetzt ein `main`-Checkout, `deploy.yml` nutzt `set -euo pipefail` + `git fetch`/`reset --hard`. Push/Merge nach `main` deployt jetzt zuverlässig.
 
 ---
-### ab hier alles von neoprehn
+### ab hier alles von @neoprehn
 ### Phase 9 - Sicherheit + Ideen
 - [ ] Prüfen des Deploys hinsichtlich Sicherheits-Design Fehler
 - [ ] Home Bildschirm verbessern (Modellerklärung. interaktives User-Durchklicken ohne Simulation)
@@ -115,12 +115,12 @@
 - [ ] Commit & Push → Branch `feature-export` mergen in `main`
 
 ---
-### ab hier alles von neoprehn
+### ab hier alles von @neoprehn
 ### Phase 10 - FAOR + FAIR CAM
 - [ ] Einbindung in die Webseite der FAOR - Logik
 - [ ] Einbindung von FAIR CAM (hierzu muss wahrscheinlich noch alles als pyfaircam entwickelt werden)
-- [ ] 
-- [ ] 
+- [ ] Wenn Modelle schon einmal simuliert wurden, dann Ergebnisse in der Eingabeseite mit angebeben und automatisch nachberechnen, wenn neue Eingaben stattgefunden haben (Knopf neuberechnen)
+- [ ] Historie in den Simulationen (aufklappbar) im Protokoll zeigen (wie eine Verzeichnisstruktur mit letzter Simulaion ganz oben)
 - [ ] 
 - [ ] 
 - [ ] 
