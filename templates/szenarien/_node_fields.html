@@ -1,5 +1,20 @@
-{# Eingabefelder eines FAIR-Knotens. Erwartet `form`. #}
+{# Eingabefelder eines FAIR-Knotens. Erwartet `form` (und optional `code`). #}
+{% load l10n %}
 {% if form.non_field_errors %}<div class="alert alert-danger py-1 small mb-2">{{ form.non_field_errors }}</div>{% endif %}
+
+{% if code == "TC" and angreifertypen %}
+<div class="mb-2">
+    <label class="form-label mb-1 small">Angreifertyp <span class="text-body-secondary">(füllt PERT vor)</span></label>
+    <select class="form-select form-select-sm angreifertyp-select">
+        <option value="">– auswählen –</option>
+        {% for a in angreifertypen %}
+        <option data-low="{{ a.low|unlocalize }}" data-mode="{{ a.mode|unlocalize }}" data-high="{{ a.high|unlocalize }}"
+                title="{{ a.beschreibung }} · {{ a.begruendung }}">{{ a.name }} ({{ a.low|unlocalize }}/{{ a.mode|unlocalize }}/{{ a.high|unlocalize }})</option>
+        {% endfor %}
+    </select>
+</div>
+{% endif %}
+
 <label class="form-label mb-1">Verteilung</label>
 {{ form.verteilung }}
 

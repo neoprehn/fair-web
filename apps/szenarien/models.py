@@ -22,6 +22,31 @@ from .fair_confidence import (
 )
 
 
+class Angreifertyp(models.Model):
+    """Vordefiniertes Threat-Capability-Profil (PERT für Threat Capability).
+
+    Dient als Auswahl-Vorlage im Formular (füllt die TC-Werte vor). Im
+    späteren Admin-Bereich editierbar (wie auch die Konfidenz-Vorgaben).
+    """
+
+    name = models.CharField("Bezeichnung", max_length=120, unique=True)
+    beschreibung = models.CharField("Beschreibung", max_length=200, blank=True)
+    low = models.FloatField("Minimum (0–1)")
+    mode = models.FloatField("Wahrscheinlich (0–1)")
+    high = models.FloatField("Maximum (0–1)")
+    begruendung = models.CharField("Begründung", max_length=200, blank=True)
+    typisches_szenario = models.CharField("Typisches Szenario", max_length=200, blank=True)
+    reihenfolge = models.PositiveSmallIntegerField("Reihenfolge", default=0)
+
+    class Meta:
+        verbose_name = "Angreifertyp"
+        verbose_name_plural = "Angreifertypen"
+        ordering = ["reihenfolge", "name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Szenario(models.Model):
     name = models.CharField("Name", max_length=200)
     beschreibung = models.TextField("Beschreibung", blank=True)

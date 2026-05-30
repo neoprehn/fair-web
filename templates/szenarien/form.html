@@ -133,6 +133,17 @@
             if (vs) vs.addEventListener('change', function () { syncDist(tn); });
             var sl = ni.querySelector('.unsicherheit-slider');
             if (sl) sl.addEventListener('input', function () { syncDist(tn); });
+            // Angreifertyp-Vorlage füllt die PERT-Werte für Threat Capability.
+            var at = ni.querySelector('.angreifertyp-select');
+            if (at) at.addEventListener('change', function () {
+                var opt = at.options[at.selectedIndex];
+                if (!opt || opt.dataset.low === undefined) return;
+                if (vs) vs.value = 'pert';
+                ni.querySelector('[name$="-low"]').value = opt.dataset.low;
+                ni.querySelector('[name$="-mode"]').value = opt.dataset.mode;
+                ni.querySelector('[name$="-high"]').value = opt.dataset.high;
+                syncDist(tn);
+            });
         }
     });
 
