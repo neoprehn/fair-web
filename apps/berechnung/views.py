@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView
 
+from apps.szenarien import fair_tree
 from apps.szenarien.models import Szenario
 
 from .models import MetaLauf, Simulationslauf
@@ -24,10 +25,31 @@ def simulation_starten(request, szenario_pk):
     return redirect("berechnung:lauf", pk=lauf.pk)
 
 
+def _formatiere_wert(code, wert):
+    """Wahrscheinlichkeiten mit 2 Nachkommastellen, sonst ganzzahlig (Tausenderpunkt)."""
+    if code != "Risk" and fair_tree.typ(code) == "probability":
+        return f"{wert:.2f}".replace(".", ",")
+    return f"{wert:,.0f}".replace(",", ".")
+
+
 class LaufDetailView(DetailView):
     model = Simulationslauf
     template_name = "berechnung/lauf.html"
     context_object_name = "lauf"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        nodes, edges = fair_tree.svg_layout()
+        knoten = {}
+        if self.object.ist_fertig and self.object.ergebnis:
+            knoten = self.object.ergebnis.get("knoten", {})
+        for n in nodes:
+            info = knoten.get(n["code"])
+            n["status"] = info["status"] if info else "unused"
+            n["wert"] = _formatiere_wert(n["code"], info["mittelwert"]) if info else None
+        context["svg_nodes"] = nodes
+        context["svg_edges"] = edges
+        return context
 
 
 def lauf_status(request, pk):
