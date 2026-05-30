@@ -44,10 +44,21 @@ LEAVES = [code for code in FAIR_NODES if code not in CHILDREN]
 # Erlaubte Verteilungen je Faktortyp (Wahrscheinlichkeiten ohne unbeschränkte
 # Normalverteilung; gebunden auf [0,1] wird zusätzlich validiert).
 DISTS_BY_TYP = {
-    "frequency":   ["pert", "poisson", "normal", "constant"],
+    "frequency":   ["pert", "normal", "constant"],
     "probability": ["pert", "beta", "constant"],
     "magnitude":   ["pert", "lognormal", "normal", "constant"],
 }
+
+# Vorgeschlagene Standard-Verteilung je Knoten (fett aus der FAIR-Tabelle).
+STANDARD_VERTEILUNG = {
+    "LEF": "pert", "TEF": "pert", "CF": "pert", "SLEF": "pert",
+    "POA": "beta", "VULN": "beta", "TC": "pert", "CS": "pert",
+    "LM": "lognormal", "PL": "lognormal", "SLEM": "lognormal",
+}
+
+
+def standard_verteilung(code):
+    return STANDARD_VERTEILUNG.get(code, "pert")
 
 
 def target(code):

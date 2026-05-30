@@ -7,17 +7,6 @@ from apps.szenarien.models import FaktorEingabe, Szenario
 
 
 @pytest.mark.django_db
-def test_poisson_haeufigkeit():
-    form = FaktorEingabeForm(
-        data={"verteilung": "poisson", "unsicherheit": 2, "rate": 5},
-        faktor_code="TEF",
-    )
-    assert form.is_valid(), form.errors
-    assert form.instance.params == {"lambda": 5}
-    assert form.instance.to_fair_kwargs()["confidence"] == "moderate"
-
-
-@pytest.mark.django_db
 def test_beta_wahrscheinlichkeit():
     form = FaktorEingabeForm(
         data={"verteilung": "beta", "unsicherheit": 2, "beta_mean": 0.3},
@@ -51,19 +40,19 @@ def test_erlaubte_verteilungen_je_typ():
     lef = [w for w, _ in FaktorEingabeForm(faktor_code="LEF").fields["verteilung"].choices]
     lm = [w for w, _ in FaktorEingabeForm(faktor_code="LM").fields["verteilung"].choices]
     assert "beta" in vuln and "normal" not in vuln and "lognormal" not in vuln
-    assert "poisson" in lef and "beta" not in lef
+    assert "pert" in lef and "beta" not in lef and "poisson" not in lef  # Poisson entfernt
     assert "lognormal" in lm and "poisson" not in lm
 
 
 @pytest.mark.django_db
 def test_neue_verteilungen_rechnen_in_pyfair():
-    """End-to-End: Poisson/Beta/Lognormal müssen in pyfair durchlaufen."""
+    """End-to-End: Beta/Lognormal müssen in pyfair durchlaufen."""
     pytest.importorskip("pyfair")
     from apps.berechnung.services import simuliere
 
     s = Szenario.objects.create(name="Mix", n_simulations=300)
-    FaktorEingabe.objects.create(szenario=s, faktor="TEF", verteilung="poisson",
-                                 params={"lambda": 5}, unsicherheit=2)
+    FaktorEingabe.objects.create(szenario=s, faktor="TEF", verteilung="pert",
+                                 params={"low": 1, "mode": 4, "high": 10}, unsicherheit=2)
     FaktorEingabe.objects.create(szenario=s, faktor="VULN", verteilung="beta",
                                  params={"mean": 0.3}, unsicherheit=2)
     FaktorEingabe.objects.create(szenario=s, faktor="LM", verteilung="lognormal",
