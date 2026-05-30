@@ -1,0 +1,21 @@
+{# Rekursiver FAIR-Baum-Knoten. Erwartet `node`. #}
+<div class="tree-node" data-code="{{ node.code }}" data-leaf="{{ node.ist_blatt|yesno:'true,false' }}">
+    <div class="node-box{% if not node.ist_blatt %} clickable{% endif %}{% if node.modus == 'aufschluesseln' %} expanded{% endif %}">
+        <span class="badge text-bg-light">{{ node.abbr }}</span>
+        <span class="node-name small">{{ node.name }}</span>
+        {% if not node.ist_blatt %}
+            <span class="node-toggle small">{% if node.modus == 'aufschluesseln' %}▾ aufgefaltet{% else %}▸ auffalten{% endif %}</span>
+            <input type="hidden" class="modus-input" name="modus-{{ node.code }}" value="{{ node.modus }}">
+        {% endif %}
+    </div>
+
+    <div class="node-input card"{% if not node.ist_blatt and node.modus == 'aufschluesseln' %} style="display:none"{% endif %}>
+        <div class="card-body py-2">{% include "szenarien/_node_fields.html" with form=node.form %}</div>
+    </div>
+
+    {% if node.children %}
+    <div class="children-row"{% if node.modus != 'aufschluesseln' %} style="display:none"{% endif %}>
+        {% for child in node.children %}{% include "szenarien/_baum_node.html" with node=child %}{% endfor %}
+    </div>
+    {% endif %}
+</div>

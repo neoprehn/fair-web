@@ -10,54 +10,57 @@
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
     {% if schnitt_fehler %}<div class="alert alert-warning">{{ schnitt_fehler }}</div>{% endif %}
 
-    <div class="row g-3 mb-4" style="max-width: 760px;">
-        <div class="col-12">
-            <label class="form-label">Name</label>
-            {{ form.name }}{{ form.name.errors }}
+    {# Kopf: Metadaten links, FAIR-Baum-Übersicht (SVG) rechts #}
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">Name</label>
+                    {{ form.name }}{{ form.name.errors }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Beschreibung</label>
+                    {{ form.beschreibung }}
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Anzahl Simulationen</label>
+                    {{ form.n_simulations }}{{ form.n_simulations.errors }}
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Zufalls-Seed</label>
+                    {{ form.random_seed }}{{ form.random_seed.errors }}
+                </div>
+            </div>
         </div>
-        <div class="col-12">
-            <label class="form-label">Beschreibung</label>
-            {{ form.beschreibung }}
-        </div>
-        <div class="col-6">
-            <label class="form-label">Anzahl Simulationen</label>
-            {{ form.n_simulations }}{{ form.n_simulations.errors }}
-        </div>
-        <div class="col-6">
-            <label class="form-label">Zufalls-Seed</label>
-            {{ form.random_seed }}{{ form.random_seed.errors }}
+        <div class="col-lg-5">
+            <label class="form-label">FAIR-Baum</label>
+            <div class="card"><div class="card-body py-2" style="overflow-x:auto;">
+                <svg id="fair-svg" viewBox="0 0 900 250" style="width:100%; min-width:520px; height:auto;">
+                    {% for e in svg_edges %}
+                    <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
+                    {% endfor %}
+                    {% for n in svg_nodes %}
+                    <g class="svg-node" data-code="{{ n.code }}">
+                        <rect x="{{ n.x|add:'-30' }}" y="{{ n.y|add:'-13' }}" width="60" height="26" rx="6"/>
+                        <text x="{{ n.x }}" y="{{ n.y|add:'4' }}" text-anchor="middle">{{ n.label }}</text>
+                    </g>
+                    {% endfor %}
+                </svg>
+            </div></div>
         </div>
     </div>
 
     <h2 class="h5">FAIR-Faktoren</h2>
     <p class="text-body-secondary small">
-        Risk = <strong>Häufigkeit</strong> × <strong>Schaden</strong>. Jeder Faktor kann
-        <em>direkt</em> angegeben oder in seine Teilfaktoren <em>aufgeschlüsselt</em> werden – beliebig tief.
-        Klicke in ein Eingabefeld – der Baum zeigt, wo du gerade bist.
+        Risk = <strong>Häufigkeit</strong> × <strong>Schaden</strong>.
+        <strong>Klick auf einen Faktor</strong> faltet ihn in seine Teilfaktoren auf (erneuter Klick: zurück).
+        Beim Reinklicken in ein Feld zeigt der Baum oben, wo du bist.
     </p>
 
-    <div class="card mb-3"><div class="card-body py-2" style="overflow-x:auto;">
-        <svg id="fair-svg" viewBox="0 0 900 250" style="width:100%; max-width:900px; height:auto;">
-            {% for e in svg_edges %}
-            <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
-            {% endfor %}
-            {% for n in svg_nodes %}
-            <g class="svg-node" data-code="{{ n.code }}">
-                <rect x="{{ n.x|add:'-30' }}" y="{{ n.y|add:'-13' }}" width="60" height="26" rx="6"/>
-                <text x="{{ n.x }}" y="{{ n.y|add:'4' }}" text-anchor="middle">{{ n.label }}</text>
-            </g>
-            {% endfor %}
-        </svg>
-    </div></div>
-
-    <div class="row g-4 fair-baum">
-        <div class="col-lg-6">
-            <h3 class="h6 text-info">Schadenshäufigkeit (LEF)</h3>
-            {% for row in baum_lef %}{% include "szenarien/_baum_row.html" %}{% endfor %}
-        </div>
-        <div class="col-lg-6">
-            <h3 class="h6 text-info">Schadenshöhe (LM)</h3>
-            {% for row in baum_lm %}{% include "szenarien/_baum_row.html" %}{% endfor %}
+    <div style="overflow-x:auto;">
+        <div class="d-flex gap-5 justify-content-center align-items-start baum-roots py-2">
+            {% include "szenarien/_baum_node.html" with node=baum_lef %}
+            {% include "szenarien/_baum_node.html" with node=baum_lm %}
         </div>
     </div>
 
@@ -73,59 +76,67 @@
 <script>
 (function () {
     var CONF = JSON.parse(document.getElementById('confidence-config').textContent);
-    var rows = Array.prototype.slice.call(document.querySelectorAll('.baum-row'));
+    var form = document.querySelector('form');
 
-    function modusOf(row) {
-        var sel = row.querySelector('.modus-select');
-        return sel ? sel.value : 'direkt';
-    }
-    function parentCode(row) {
-        // Eltern = die letzte vorherige Zeile mit kleinerer Einrückung.
-        var ml = parseFloat(row.style.marginLeft) || 0;
-        var idx = rows.indexOf(row);
-        for (var i = idx - 1; i >= 0; i--) {
-            if ((parseFloat(rows[i].style.marginLeft) || 0) < ml) return rows[i];
-        }
-        return null;
-    }
+    function child(el, sel) { return el.querySelector(':scope > ' + sel); }
 
-    function syncDist(row) {
-        var sel = row.querySelector('.verteilung-select');
+    function syncDist(tn) {
+        var ni = child(tn, '.node-input');
+        if (!ni) return;
+        var sel = ni.querySelector('.verteilung-select');
         if (!sel) return;
         var vert = sel.value;
-        row.querySelectorAll('.dist-params').forEach(function (g) {
+        ni.querySelectorAll('.dist-params').forEach(function (g) {
             g.style.display = (g.dataset.dist === vert) ? '' : 'none';
         });
         var hatKonf = CONF.distributions.indexOf(vert) !== -1;
-        var cg = row.querySelector('.confidence-group');
+        var cg = ni.querySelector('.confidence-group');
         cg.style.display = hatKonf ? '' : 'none';
         if (hatKonf) {
-            var stufe = parseInt(row.querySelector('.unsicherheit-slider').value, 10);
+            var stufe = parseInt(ni.querySelector('.unsicherheit-slider').value, 10);
             var conf = CONF.unsicherheitToConfidence[stufe];
             var shape = CONF.defaults[conf][vert];
             var key = Object.keys(shape)[0];
-            row.querySelector('.confidence-readout').textContent = CONF.labels[stufe] + ' · ' + key + ' = ' + shape[key];
+            ni.querySelector('.confidence-readout').textContent = CONF.labels[stufe] + ' · ' + key + ' = ' + shape[key];
         }
     }
 
-    function syncBaum() {
-        var reached = {};
-        rows.forEach(function (row) {
-            var p = parentCode(row);
-            var istReached = !p ? true : (reached[p.dataset.code] && modusOf(p) === 'aufschluesseln');
-            reached[row.dataset.code] = istReached;
-
-            var leaf = row.dataset.leaf === 'true';
-            var direkt = leaf || modusOf(row) === 'direkt';
-            // Zeile sichtbar, wenn erreichbar.
-            row.style.display = istReached ? '' : 'none';
-            // Eingabe-Karte nur bei erreichbaren Eingabe-Knoten (Frontier).
-            row.querySelector('.baum-eingabe').style.display = (istReached && direkt) ? '' : 'none';
-            if (istReached && direkt) syncDist(row);
-        });
+    function syncAllDist() {
+        document.querySelectorAll('.tree-node').forEach(syncDist);
     }
 
-    // Aktiven Knoten im SVG hervorheben, sobald man in eine Zeile klickt/fokussiert.
+    function setExpanded(tn, expanded) {
+        var box = child(tn, '.node-box');
+        var input = box.querySelector('.modus-input');
+        var ni = child(tn, '.node-input');
+        var cr = child(tn, '.children-row');
+        if (input) input.value = expanded ? 'aufschluesseln' : 'direkt';
+        box.classList.toggle('expanded', expanded);
+        var tg = box.querySelector('.node-toggle');
+        if (tg) tg.textContent = expanded ? '▾ aufgefaltet' : '▸ auffalten';
+        if (ni) ni.style.display = expanded ? 'none' : '';
+        if (cr) cr.style.display = expanded ? '' : 'none';
+    }
+
+    document.querySelectorAll('.tree-node').forEach(function (tn) {
+        var box = child(tn, '.node-box');
+        if (box.classList.contains('clickable')) {
+            box.addEventListener('click', function () {
+                var input = box.querySelector('.modus-input');
+                setExpanded(tn, input.value !== 'aufschluesseln');
+                syncAllDist();
+            });
+        }
+        var ni = child(tn, '.node-input');
+        if (ni) {
+            var vs = ni.querySelector('.verteilung-select');
+            if (vs) vs.addEventListener('change', function () { syncDist(tn); });
+            var sl = ni.querySelector('.unsicherheit-slider');
+            if (sl) sl.addEventListener('input', function () { syncDist(tn); });
+        }
+    });
+
+    // SVG-Knoten hervorheben, sobald man in ein Feld eines Knotens klickt.
     var svg = document.getElementById('fair-svg');
     function highlight(code) {
         if (!svg) return;
@@ -133,17 +144,12 @@
             g.classList.toggle('aktiv', g.dataset.code === code);
         });
     }
-
-    rows.forEach(function (row) {
-        var ms = row.querySelector('.modus-select');
-        if (ms) ms.addEventListener('change', syncBaum);
-        var vs = row.querySelector('.verteilung-select');
-        if (vs) vs.addEventListener('change', function () { syncDist(row); });
-        var sl = row.querySelector('.unsicherheit-slider');
-        if (sl) sl.addEventListener('input', function () { syncDist(row); });
-        row.addEventListener('focusin', function () { highlight(row.dataset.code); });
+    if (form) form.addEventListener('focusin', function (e) {
+        var tn = e.target.closest('.tree-node');
+        if (tn) highlight(tn.dataset.code);
     });
-    syncBaum();
+
+    syncAllDist();
 })();
 </script>
 {% endblock %}
