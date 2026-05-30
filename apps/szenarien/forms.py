@@ -27,8 +27,8 @@ class SzenarioForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "beschreibung": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "n_simulations": forms.NumberInput(attrs={"class": "form-control"}),
-            "random_seed": forms.NumberInput(attrs={"class": "form-control"}),
+            "n_simulations": forms.NumberInput(attrs={"class": "form-control form-control-sm"}),
+            "random_seed": forms.NumberInput(attrs={"class": "form-control form-control-sm"}),
         }
 
 
@@ -63,15 +63,15 @@ FELD_MAP = {
 class FaktorEingabeForm(forms.ModelForm):
     """ModelForm für genau einen FAIR-Knoten (Faktor steht fest)."""
 
-    low = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
-    mode = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
-    high = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
-    mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
-    stdev = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
-    constant = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
-    rate = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
-    beta_mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
-    ln_mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control"}))
+    low = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
+    mode = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
+    high = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
+    mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
+    stdev = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
+    constant = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
+    rate = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
+    beta_mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
+    ln_mean = forms.FloatField(required=False, widget=forms.NumberInput(attrs={"class": "form-control form-control-sm"}))
 
     class Meta:
         model = FaktorEingabe
@@ -99,6 +99,10 @@ class FaktorEingabeForm(forms.ModelForm):
             # Param-Labels typgerecht setzen.
             for key, label in _PARAM_LABELS[typ].items():
                 self.fields[key].label = label
+            # Standard-Verteilung je Faktor vorschlagen (nur bei neuen Eingaben).
+            # Bei ModelForms gewinnt self.initial (aus der Instanz) über field.initial.
+            if not (self.instance and self.instance.pk):
+                self.initial["verteilung"] = fair_tree.standard_verteilung(self.faktor_code)
         # Bestehende params auf die passenden Einzelfelder legen (Bearbeiten).
         if self.instance and self.instance.pk:
             vorhandene = self.instance.params or {}

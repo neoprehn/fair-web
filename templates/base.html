@@ -65,7 +65,7 @@
         .breadcrumb-item.active { color: var(--txt-dim); }
         footer.bg-body-tertiary { background: var(--bg-2) !important; border-top:1px solid var(--border) !important; }
         .lead { color: var(--txt-muted); }
-        .svg-edge { stroke: var(--border); stroke-width: 1.5; }
+        .svg-edge { stroke: #b8c9e6; stroke-width: 1.5; opacity: .8; }
         .svg-node rect { fill: var(--bg-3); stroke: var(--border); stroke-width: 1.5; transition: fill .15s, stroke .15s; }
         .svg-node text { fill: var(--txt-dim); font-size: 12px; font-family: Bahnschrift, "Segoe UI", sans-serif; pointer-events: none; }
         .svg-node.aktiv rect { fill: var(--accent); stroke: var(--accent); }
@@ -92,12 +92,13 @@
         .children-row { display: flex; gap: 1.2rem; align-items: flex-start; }
         /* Unterste Ebene (nur Blätter) untereinander statt nebeneinander */
         .children-row.gestapelt { flex-direction: column; align-items: center; gap: .6rem; }
-        .node-input.card { width: 300px; margin-top: .6rem; }
+        .node-input.card { width: 340px; margin-top: .6rem; }
+        .node-input .form-control, .node-input .form-select { font-size: .82rem; }
+        .node-input .form-label { font-size: .72rem; white-space: nowrap; }
         /* Hellerer Hintergrund hinter dem SVG-Baum */
         .svg-flaeche { background: #17243c; border-radius: .75rem; }
         /* Farbige Block-Karten im Formularkopf */
-        .card-meta { background: #181c3a; border: 1px solid #2e3361; }
-        .card-config { background: #102a2f; border: 1px solid #1f4d54; }
+        .card-meta, .card-config { background: #181c3a; border: 1px solid #2e3361; }
         .node-box.expanded::after {
             content: ''; position: absolute; left: 50%; bottom: -1rem;
             width: 2px; height: 1rem; background: var(--border);
