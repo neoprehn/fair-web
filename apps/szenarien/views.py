@@ -75,17 +75,26 @@ class _SzenarioFormMixin:
     def _modus_aus_post(self):
         return {c: self.request.POST.get(f"modus-{c}", "direkt") for c in fair_tree.NICHT_BLATT}
 
-    def _baum_rows(self, node_forms, modus, eintraege):
-        return [
-            {
-                "code": code, "tiefe": tiefe,
-                "abbr": fair_tree.abbr(code), "name": fair_tree.target(code),
-                "ist_blatt": fair_tree.ist_blatt(code),
-                "modus": modus.get(code, "direkt"),
-                "form": node_forms[code],
-            }
-            for code, tiefe in eintraege
-        ]
+    def _node_dict(self, code, node_forms, modus):
+        """Rekursiver Knoten für die Baum-Darstellung."""
+        return {
+            "code": code,
+            "abbr": fair_tree.abbr(code),
+            "name": fair_tree.target(code),
+            "ist_blatt": fair_tree.ist_blatt(code),
+            "modus": modus.get(code, "direkt"),
+            "form": node_forms[code],
+            "children": [
+                self._node_dict(kind, node_forms, modus)
+                for kind in fair_tree.CHILDREN.get(code, [])
+            ],
+        }
+
+    def _baum_kontext(self, node_forms, modus):
+        return {
+            "baum_lef": self._node_dict("LEF", node_forms, modus),
+            "baum_lm": self._node_dict("LM", node_forms, modus),
+        }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -102,8 +111,7 @@ class _SzenarioFormMixin:
                     if self.object
                     else {c: "direkt" for c in fair_tree.NICHT_BLATT}
                 )
-            context["baum_lef"] = self._baum_rows(node_forms, modus, fair_tree.traversal_ast("LEF"))
-            context["baum_lm"] = self._baum_rows(node_forms, modus, fair_tree.traversal_ast("LM"))
+            context.update(self._baum_kontext(node_forms, modus))
         return context
 
     def form_valid(self, form):
@@ -115,11 +123,7 @@ class _SzenarioFormMixin:
         alle_ok = all(f.is_valid() for f in frontier_forms.values())
         schnitt_ok = fair_tree.schnitt_ist_gueltig(frontier)
         if not (alle_ok and schnitt_ok):
-            context = self.get_context_data(
-                form=form,
-                baum_lef=self._baum_rows(node_forms, modus, fair_tree.traversal_ast("LEF")),
-                baum_lm=self._baum_rows(node_forms, modus, fair_tree.traversal_ast("LM")),
-            )
+            context = self.get_context_data(form=form, **self._baum_kontext(node_forms, modus))
             if not schnitt_ok:
                 context["schnitt_fehler"] = (
                     "Bitte einen vollständigen, rechenbaren Schnitt angeben "

@@ -77,6 +77,24 @@
         .svg-node.eingabe .svg-node-label,
         .svg-node.berechnet .svg-node-label { fill: #04223a; font-weight: 700; }
         .svg-node-wert { fill: var(--txt-muted); font-size: 10px; font-family: Bahnschrift, "Segoe UI", sans-serif; }
+        /* Klickbarer FAIR-Baum im Eingabeformular */
+        .baum-roots { min-width: max-content; }
+        .tree-node { display: flex; flex-direction: column; align-items: center; }
+        .node-box {
+            display: inline-flex; align-items: center; gap: .4rem;
+            background: var(--bg-2); border: 1px solid var(--border); border-radius: 999px;
+            padding: .25rem .85rem; white-space: nowrap; position: relative; margin-top: 1rem;
+        }
+        .node-box.clickable { cursor: pointer; }
+        .node-box.clickable:hover { border-color: var(--accent); }
+        .node-box.expanded { border-color: var(--accent); }
+        .node-toggle { color: var(--accent); }
+        .children-row { display: flex; gap: 1.2rem; align-items: flex-start; }
+        .node-input.card { width: 240px; margin-top: .6rem; }
+        .node-box.expanded::after {
+            content: ''; position: absolute; left: 50%; bottom: -1rem;
+            width: 2px; height: 1rem; background: var(--border);
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>

@@ -1,0 +1,39 @@
+{# Eingabefelder eines FAIR-Knotens. Erwartet `form`. #}
+{% if form.non_field_errors %}<div class="alert alert-danger py-1 small mb-2">{{ form.non_field_errors }}</div>{% endif %}
+<label class="form-label mb-1">Verteilung</label>
+{{ form.verteilung }}
+
+<div class="dist-params mt-2" data-dist="pert">
+    <div class="row g-1">
+        <div class="col"><label class="form-label mb-0 small">{{ form.low.label }}</label>{{ form.low }}</div>
+        <div class="col"><label class="form-label mb-0 small">{{ form.mode.label }}</label>{{ form.mode }}</div>
+        <div class="col"><label class="form-label mb-0 small">{{ form.high.label }}</label>{{ form.high }}</div>
+    </div>
+</div>
+<div class="dist-params mt-2" data-dist="normal">
+    <div class="row g-1">
+        <div class="col"><label class="form-label mb-0 small">{{ form.mean.label }}</label>{{ form.mean }}</div>
+        <div class="col"><label class="form-label mb-0 small">{{ form.stdev.label }}</label>{{ form.stdev }}</div>
+    </div>
+</div>
+<div class="dist-params mt-2" data-dist="constant">
+    <label class="form-label mb-0 small">{{ form.constant.label }}</label>{{ form.constant }}
+</div>
+<div class="dist-params mt-2" data-dist="poisson">
+    <label class="form-label mb-0 small">{{ form.rate.label }}</label>{{ form.rate }}
+</div>
+<div class="dist-params mt-2" data-dist="beta">
+    <label class="form-label mb-0 small">{{ form.beta_mean.label }}</label>{{ form.beta_mean }}
+</div>
+<div class="dist-params mt-2" data-dist="lognormal">
+    <label class="form-label mb-0 small">{{ form.ln_mean.label }}</label>{{ form.ln_mean }}
+</div>
+
+<div class="confidence-group mt-2">
+    <label class="form-label d-flex justify-content-between mb-1">
+        <span class="small">Unsicherheit</span>
+        <span class="confidence-readout small text-info"></span>
+    </label>
+    {{ form.unsicherheit }}
+    <div class="d-flex justify-content-between small text-body-secondary"><span>niedrig</span><span>hoch</span></div>
+</div>
