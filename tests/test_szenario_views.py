@@ -92,7 +92,7 @@ def test_create_aufgeschluesselter_schnitt(client):
         "name": "Tief", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,
         "modus-LEF": "aufschluesseln", "modus-TEF": "direkt", "modus-VULN": "direkt",
         "TEF-verteilung": "pert", "TEF-low": "1", "TEF-mode": "4", "TEF-high": "10", "TEF-unsicherheit": "2",
-        "VULN-verteilung": "constant", "VULN-constant": "0.3", "VULN-unsicherheit": "2",
+        "VULN-verteilung": "constant", "VULN-constant": "0,3", "VULN-unsicherheit": "2",
         "LM-verteilung": "constant", "LM-constant": "5000", "LM-unsicherheit": "2",
     }
     resp = client.post(reverse("szenarien:create"), data=data)
@@ -108,7 +108,7 @@ def test_create_wahrscheinlichkeit_ueber_eins_fehler(client):
         "name": "Ungueltig", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,
         "modus-LEF": "aufschluesseln", "modus-TEF": "direkt", "modus-VULN": "direkt",
         "TEF-verteilung": "constant", "TEF-constant": "5", "TEF-unsicherheit": "2",
-        "VULN-verteilung": "constant", "VULN-constant": "1.5", "VULN-unsicherheit": "2",  # > 1
+        "VULN-verteilung": "constant", "VULN-constant": "1,5", "VULN-unsicherheit": "2",  # > 1
         "LM-verteilung": "constant", "LM-constant": "5000", "LM-unsicherheit": "2",
     }
     resp = client.post(reverse("szenarien:create"), data=data)
@@ -132,6 +132,19 @@ def test_update_wechselt_schnitt(client):
     s.refresh_from_db()
     assert s.name == "Neu"
     assert set(s.schnitt_codes()) == {"LEF", "LM"}
+
+
+@pytest.mark.django_db
+def test_create_deutsche_zahlen(client):
+    # Tausenderpunkt + Komma-Dezimal müssen geparst werden.
+    data = _post_lef_lm(name="DE")
+    data["LM-constant"] = "1.000.000"   # eine Million
+    data["LEF-mode"] = "3,5"            # Komma-Dezimal
+    resp = client.post(reverse("szenarien:create"), data=data)
+    assert resp.status_code == 302
+    s = Szenario.objects.get(name="DE")
+    assert s.faktoren.get(faktor="LM").params == {"constant": 1000000.0}
+    assert s.faktoren.get(faktor="LEF").params["mode"] == 3.5
 
 
 @pytest.mark.django_db

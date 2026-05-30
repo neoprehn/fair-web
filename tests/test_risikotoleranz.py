@@ -27,7 +27,7 @@ def test_konstante_toleranz(client):
 def test_verteilungs_toleranz_lognormal(client):
     client.post(reverse("szenarien:create"), data=_post(
         "V", rt_type="distribution", rt_dist="lognormal",
-        rt_ln_mean="10000", rt_ln_sigma="0.5", rt_samples="20000"))
+        rt_ln_mean="10000", rt_ln_sigma="0,5", rt_samples="20000"))
     s = Szenario.objects.get(name="V")
     assert s.risikotoleranz == {
         "type": "distribution", "distribution": "lognormal",
@@ -39,7 +39,7 @@ def test_verteilungs_toleranz_lognormal(client):
 def test_kurven_toleranz(client):
     client.post(reverse("szenarien:create"), data=_post(
         "Kurve", rt_type="curve",
-        rt_curve='[{"loss":"1000","level":"1.0"},{"loss":"5000","level":"0.5"}]'))
+        rt_curve='[{"loss":"1000","level":"1,0"},{"loss":"5000","level":"0,5"}]'))
     s = Szenario.objects.get(name="Kurve")
     assert s.risikotoleranz == {
         "type": "curve",
