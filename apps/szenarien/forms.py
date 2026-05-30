@@ -34,16 +34,16 @@ class SzenarioForm(forms.ModelForm):
 
 # Sprechende Labels je Verteilungs-Parameter, abhängig vom Faktortyp.
 _PARAM_LABELS = {
-    "frequency": {"low": "Minimum (pro Jahr)", "mode": "Wahrscheinlich (pro Jahr)",
-                  "high": "Maximum (pro Jahr)", "mean": "Mittelwert (pro Jahr)",
-                  "stdev": "Streuung", "constant": "Fester Wert (pro Jahr)",
-                  "rate": "λ (Ereignisse pro Jahr)"},
-    "probability": {"low": "Minimum (0–1)", "mode": "Wahrscheinlich (0–1)",
-                    "high": "Maximum (0–1)", "mean": "Mittelwert (0–1)",
+    "frequency": {"low": "min (/Jahr)", "mode": "wahrsch. (/Jahr)",
+                  "high": "max (/Jahr)", "mean": "Mittelwert (/Jahr)",
+                  "stdev": "Streuung", "constant": "Fester Wert (/Jahr)",
+                  "rate": "λ (Ereignisse/Jahr)"},
+    "probability": {"low": "min (0–1)", "mode": "wahrsch. (0–1)",
+                    "high": "max (0–1)", "mean": "Mittelwert (0–1)",
                     "stdev": "Streuung", "constant": "Fester Wert (0–1)",
                     "beta_mean": "Mittelwert (0–1)"},
-    "magnitude": {"low": "Minimum (€)", "mode": "Wahrscheinlich (€)",
-                  "high": "Maximum (€)", "mean": "Mittelwert (€)",
+    "magnitude": {"low": "min (€)", "mode": "wahrsch. (€)",
+                  "high": "max (€)", "mean": "Mittelwert (€)",
                   "stdev": "Streuung (€)", "constant": "Fester Wert (€)",
                   "ln_mean": "Mittelwert (€)"},
 }

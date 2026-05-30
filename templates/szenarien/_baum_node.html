@@ -14,7 +14,7 @@
     </div>
 
     {% if node.children %}
-    <div class="children-row"{% if node.modus != 'aufschluesseln' %} style="display:none"{% endif %}>
+    <div class="children-row{% if node.kinder_sind_blaetter %} gestapelt{% endif %}"{% if node.modus != 'aufschluesseln' %} style="display:none"{% endif %}>
         {% for child in node.children %}{% include "szenarien/_baum_node.html" with node=child %}{% endfor %}
     </div>
     {% endif %}

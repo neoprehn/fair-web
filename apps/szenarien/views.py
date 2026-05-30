@@ -4,6 +4,8 @@ Ein Szenario wird zusammen mit seinen Faktor-Eingaben (LEF + LM) über ein
 Inline-Formset angelegt und bearbeitet.
 """
 
+import json
+
 from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
@@ -75,8 +77,46 @@ class _SzenarioFormMixin:
     def _modus_aus_post(self):
         return {c: self.request.POST.get(f"modus-{c}", "direkt") for c in fair_tree.NICHT_BLATT}
 
+    def _risikotoleranz_aus_post(self):
+        """Baut die Risikotoleranz (kontextbasiert) aus den POST-Feldern."""
+        post = self.request.POST
+        typ = post.get("rt_type")
+
+        def zahl(name):
+            v = post.get(name, "")
+            return float(v) if v not in ("", None) else None
+
+        try:
+            if typ == "constant":
+                v = zahl("rt_value")
+                return {"type": "constant", "value": v} if v is not None else None
+            if typ == "distribution":
+                dist = post.get("rt_dist") or "pert"
+                felder = {
+                    "pert": [("low", "rt_pert_low"), ("mode", "rt_pert_mode"),
+                             ("high", "rt_pert_high"), ("gamma", "rt_pert_gamma")],
+                    "lognormal": [("mean", "rt_ln_mean"), ("sigma", "rt_ln_sigma")],
+                    "normal": [("mean", "rt_no_mean"), ("stdev", "rt_no_stdev")],
+                }.get(dist, [])
+                params = {k: zahl(feld) for k, feld in felder if zahl(feld) is not None}
+                if not params:
+                    return None
+                samples = post.get("rt_samples")
+                return {"type": "distribution", "distribution": dist, "params": params,
+                        "samples": int(samples) if samples else 20000}
+            if typ == "curve":
+                punkte = json.loads(post.get("rt_curve") or "[]")
+                punkte = [{"loss": float(p["loss"]), "level": float(p["level"])}
+                          for p in punkte
+                          if str(p.get("loss", "")) != "" and str(p.get("level", "")) != ""]
+                return {"type": "curve", "points": punkte} if punkte else None
+        except (ValueError, TypeError, KeyError):
+            return None
+        return None
+
     def _node_dict(self, code, node_forms, modus):
         """Rekursiver Knoten für die Baum-Darstellung."""
+        kinder = fair_tree.CHILDREN.get(code, [])
         return {
             "code": code,
             "abbr": fair_tree.abbr(code),
@@ -84,10 +124,9 @@ class _SzenarioFormMixin:
             "ist_blatt": fair_tree.ist_blatt(code),
             "modus": modus.get(code, "direkt"),
             "form": node_forms[code],
-            "children": [
-                self._node_dict(kind, node_forms, modus)
-                for kind in fair_tree.CHILDREN.get(code, [])
-            ],
+            # Unterste Ebene: wenn alle Kinder Blätter sind, gestapelt darstellen.
+            "kinder_sind_blaetter": bool(kinder) and all(fair_tree.ist_blatt(k) for k in kinder),
+            "children": [self._node_dict(kind, node_forms, modus) for kind in kinder],
         }
 
     def _baum_kontext(self, node_forms, modus):
@@ -100,6 +139,7 @@ class _SzenarioFormMixin:
         context = super().get_context_data(**kwargs)
         context["confidence_config"] = _CONFIDENCE_CONFIG
         context["angreifertypen"] = Angreifertyp.objects.all()
+        context["risikotoleranz"] = self.object.risikotoleranz if self.object else None
         context["svg_nodes"], context["svg_edges"] = fair_tree.svg_layout()
         if "baum_lef" not in context:
             if self.request.method == "POST":
@@ -134,6 +174,8 @@ class _SzenarioFormMixin:
 
         with transaction.atomic():
             self.object = form.save()
+            self.object.risikotoleranz = self._risikotoleranz_aus_post()
+            self.object.save(update_fields=["risikotoleranz"])
             self.object.faktoren.all().delete()
             for code, f in frontier_forms.items():
                 eingabe = f.save(commit=False)

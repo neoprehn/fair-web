@@ -90,7 +90,11 @@
         .node-box.expanded { border-color: var(--accent); }
         .node-toggle { color: var(--accent); }
         .children-row { display: flex; gap: 1.2rem; align-items: flex-start; }
-        .node-input.card { width: 240px; margin-top: .6rem; }
+        /* Unterste Ebene (nur Blätter) untereinander statt nebeneinander */
+        .children-row.gestapelt { flex-direction: column; align-items: center; gap: .6rem; }
+        .node-input.card { width: 300px; margin-top: .6rem; }
+        /* Hellerer Hintergrund hinter dem SVG-Baum */
+        .svg-flaeche { background: #17243c; border-radius: .75rem; }
         .node-box.expanded::after {
             content: ''; position: absolute; left: 50%; bottom: -1rem;
             width: 2px; height: 1rem; background: var(--border);
@@ -114,7 +118,7 @@
     </div>
 </nav>
 
-<main class="container-xxl py-4 flex-grow-1">
+<main class="{% block container_class %}container-xxl{% endblock %} py-4 flex-grow-1">
     {% block content %}{% endblock %}
 </main>
 
