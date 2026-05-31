@@ -1,0 +1,125 @@
+{% extends "admin/change_form.html" %}
+
+{% block after_field_sets %}
+{{ block.super }}
+
+<fieldset class="module aligned" style="padding:12px 16px;">
+    <h2>Unternehmens-Risikotoleranz – Editor</h2>
+    <p class="help" style="margin-left:0;">Gleiche Logik wie in der Szenarioeingabe. Wird nur angewandt, wenn oben „Risikotoleranz global erzwingen" aktiv ist.</p>
+
+    <div class="form-row">
+        <label for="rt-type" style="display:inline-block; width:8em;">Typ:</label>
+        <select name="rt_type" id="rt-type">
+            <option value="">– keine –</option>
+            <option value="constant">Konstant (Schwellenwert)</option>
+            <option value="curve">Kurve (Punkte)</option>
+            <option value="distribution">Verteilung</option>
+        </select>
+    </div>
+
+    <div class="rt-block form-row" data-rt="constant">
+        <label style="display:inline-block; width:8em;">Schwellenwert (€):</label>
+        <input type="text" name="rt_value" size="18">
+    </div>
+
+    <div class="rt-block form-row" data-rt="curve">
+        <table style="width:auto;">
+            <thead><tr><th>Verlust (€)</th><th>Level (0–1)</th><th></th></tr></thead>
+            <tbody id="rt-curve-body"></tbody>
+        </table>
+        <button type="button" id="rt-add-row" class="button" style="margin-top:6px;">+ Zeile</button>
+        <input type="hidden" name="rt_curve" id="rt-curve-json">
+    </div>
+
+    <div class="rt-block form-row" data-rt="distribution">
+        <label style="display:inline-block; width:8em;">Verteilung:</label>
+        <select name="rt_dist" id="rt-dist">
+            <option value="pert">PERT</option>
+            <option value="lognormal">Lognormal</option>
+            <option value="normal">Normal</option>
+        </select>
+        <div class="rt-dp" data-rtdist="pert" style="margin-top:6px;">
+            min <input type="text" name="rt_pert_low" size="10">
+            wahrsch. <input type="text" name="rt_pert_mode" size="10">
+            max <input type="text" name="rt_pert_high" size="10">
+            gamma <input type="text" name="rt_pert_gamma" value="4" size="6">
+        </div>
+        <div class="rt-dp" data-rtdist="lognormal" style="margin-top:6px;">
+            Mittelwert <input type="text" name="rt_ln_mean" size="12">
+            sigma <input type="text" name="rt_ln_sigma" value="0.5" size="6">
+        </div>
+        <div class="rt-dp" data-rtdist="normal" style="margin-top:6px;">
+            Mittelwert <input type="text" name="rt_no_mean" size="12">
+            Streuung <input type="text" name="rt_no_stdev" size="12">
+        </div>
+        <div style="margin-top:6px;">Samples <input type="text" name="rt_samples" value="20000" size="8"></div>
+    </div>
+</fieldset>
+
+{% if original %}{{ original.unternehmens_risikotoleranz|json_script:"rt-init" }}{% endif %}
+<script>
+(function () {
+    var typeSel = document.getElementById('rt-type');
+    if (!typeSel) return;
+    var form = typeSel.closest('form');
+    var distSel = document.getElementById('rt-dist');
+    var blocks = document.querySelectorAll('.rt-block');
+    var dps = document.querySelectorAll('.rt-dp');
+    var body = document.getElementById('rt-curve-body');
+    var curveJson = document.getElementById('rt-curve-json');
+
+    function showType() { blocks.forEach(function (b) { b.style.display = (b.dataset.rt === typeSel.value) ? '' : 'none'; }); }
+    function showDist() { dps.forEach(function (d) { d.style.display = (d.dataset.rtdist === distSel.value) ? '' : 'none'; }); }
+    function addRow(loss, level) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td><input type="text" class="rt-loss" size="12"></td>' +
+                       '<td><input type="text" class="rt-level" size="8"></td>' +
+                       '<td><button type="button" class="button rt-del">✕</button></td>';
+        body.appendChild(tr);
+        if (loss !== undefined) tr.querySelector('.rt-loss').value = loss;
+        if (level !== undefined) tr.querySelector('.rt-level').value = level;
+    }
+    function sammleKurve() {
+        var pts = [];
+        body.querySelectorAll('tr').forEach(function (tr) {
+            var l = tr.querySelector('.rt-loss').value, lv = tr.querySelector('.rt-level').value;
+            if (l !== '' && lv !== '') pts.push({ loss: l, level: lv });
+        });
+        curveJson.value = JSON.stringify(pts);
+    }
+
+    typeSel.addEventListener('change', showType);
+    if (distSel) distSel.addEventListener('change', showDist);
+    document.getElementById('rt-add-row').addEventListener('click', function () { addRow(); });
+    body.addEventListener('click', function (e) {
+        if (e.target.classList.contains('rt-del')) e.target.closest('tr').remove();
+    });
+    if (form) form.addEventListener('submit', sammleKurve);
+
+    var initEl = document.getElementById('rt-init');
+    var init = initEl ? JSON.parse(initEl.textContent || 'null') : null;
+    if (init && init.type) {
+        typeSel.value = init.type;
+        if (init.type === 'constant') {
+            document.querySelector('[name="rt_value"]').value = init.value;
+        } else if (init.type === 'distribution' && distSel) {
+            distSel.value = init.distribution;
+            var p = init.params || {};
+            var map = {
+                pert: { low: 'rt_pert_low', mode: 'rt_pert_mode', high: 'rt_pert_high', gamma: 'rt_pert_gamma' },
+                lognormal: { mean: 'rt_ln_mean', sigma: 'rt_ln_sigma' },
+                normal: { mean: 'rt_no_mean', stdev: 'rt_no_stdev' }
+            }[init.distribution] || {};
+            Object.keys(map).forEach(function (k) {
+                if (p[k] !== undefined) { var el = document.querySelector('[name="' + map[k] + '"]'); if (el) el.value = p[k]; }
+            });
+            if (init.samples) document.querySelector('[name="rt_samples"]').value = init.samples;
+        } else if (init.type === 'curve') {
+            (init.points || []).forEach(function (pt) { addRow(pt.loss, pt.level); });
+        }
+    }
+    if (body.children.length === 0) addRow();
+    showType(); if (distSel) showDist();
+})();
+</script>
+{% endblock %}
