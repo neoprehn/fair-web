@@ -26,63 +26,59 @@
         {{ lauf.ergebnis.n|intcomma }} Iterationen &middot; Seed {{ lauf.random_seed }}
     </p>
 
-    <div class="row g-3 mb-4">
-        <div class="col-lg-7">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="card h-100"><div class="card-body">
-                        <div class="text-body-secondary small">Erwarteter Jahresschaden (Mittelwert)</div>
-                        <div class="h4 mb-0 text-info">{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} €</div>
-                    </div></div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100"><div class="card-body">
-                        <div class="text-body-secondary small">Median</div>
-                        <div class="h4 mb-0">{{ lauf.ergebnis.median|floatformat:0|intcomma }} €</div>
-                    </div></div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100"><div class="card-body">
-                        <div class="text-body-secondary small">Maximum (Worst Case P95)</div>
-                        <div class="h4 mb-0">{{ lauf.ergebnis.p95|floatformat:0|intcomma }} €</div>
-                    </div></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-5">
-            <div class="card mb-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
-                <h2 class="h6 text-info mb-2">Value at Risk (VaR)</h2>
-                <div class="d-flex flex-wrap gap-2">
-                {% for stufe, wert in lauf.ergebnis.perzentile.items %}
-                    <div class="text-center px-2 py-1">
-                        <div class="text-body-secondary small">VaR {{ stufe }} %</div>
-                        <div class="fw-semibold text-nowrap">{{ wert|floatformat:0|intcomma }} €</div>
-                    </div>
-                {% endfor %}
-                </div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Erwarteter Jahresschaden (Mittelwert)</div>
+                <div class="h4 mb-0 text-info">{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} €</div>
             </div></div>
-
-            <div class="card" style="border:1px solid var(--danger);"><div class="card-body py-2">
-                <h2 class="h6 text-danger mb-2">Risikotoleranz-Betrachtung</h2>
-                {% if schnittpunkt %}
-                <div class="d-flex flex-wrap gap-3 align-items-end">
-                    <div class="text-center px-2 py-1">
-                        <div class="text-body-secondary small">Schnittpunkt (Loss)</div>
-                        <div class="fw-semibold text-nowrap">{{ schnittpunkt.loss|floatformat:0|intcomma }} €</div>
-                    </div>
-                    <div class="text-center px-2 py-1">
-                        <div class="text-body-secondary small">Toleranz dort</div>
-                        <div class="fw-semibold">{% widthratio schnittpunkt.tolerance 1 100 %} %</div>
-                    </div>
-                </div>
-                {% else %}
-                <p class="text-body-secondary small mb-0">
-                    {% if toleranz_overlay %}Kein Schnittpunkt im betrachteten Bereich.{% else %}Keine Risikotoleranz definiert.{% endif %}
-                </p>
-                {% endif %}
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Median</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.median|floatformat:0|intcomma }} €</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Maximum (Worst Case P95)</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.p95|floatformat:0|intcomma }} €</div>
             </div></div>
         </div>
     </div>
+
+    <div class="card mb-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
+        <h2 class="h6 text-info mb-2">Value at Risk (VaR)</h2>
+        <div class="d-flex flex-wrap gap-2">
+        {% for stufe, wert in lauf.ergebnis.perzentile.items %}
+            <div class="text-center px-3 py-1">
+                <div class="text-body-secondary small">VaR {{ stufe }} %</div>
+                <div class="fw-semibold text-nowrap">{{ wert|floatformat:0|intcomma }} €</div>
+            </div>
+        {% endfor %}
+        </div>
+    </div></div>
+
+    <div class="card mb-3" style="border:1px solid var(--danger); background:rgba(239,68,68,0.10);"><div class="card-body py-2">
+        <h2 class="h6 text-danger mb-2">Risikotoleranz-Betrachtung</h2>
+        {% if schnittpunkt %}
+        <div class="d-flex flex-wrap gap-4 align-items-end">
+            <div class="text-center px-3 py-1">
+                <div class="text-body-secondary small">Schnittpunkt (Loss)</div>
+                <div class="fw-semibold text-nowrap">{{ schnittpunkt.loss|floatformat:0|intcomma }} €</div>
+            </div>
+            <div class="text-center px-3 py-1">
+                <div class="text-body-secondary small">Toleranz dort</div>
+                <div class="fw-semibold">{% widthratio schnittpunkt.tolerance 1 100 %} %</div>
+            </div>
+            <div class="text-body-secondary small py-1">Wo LEC und Risikotoleranz sich schneiden.</div>
+        </div>
+        {% else %}
+        <p class="text-body-secondary small mb-0">
+            {% if toleranz_overlay %}Kein Schnittpunkt im betrachteten Bereich.{% else %}Keine Risikotoleranz definiert.{% endif %}
+        </p>
+        {% endif %}
+    </div></div>
 
     <h2 class="h5 mt-4">FAIR-Baum</h2>
     <p class="text-body-secondary small mb-2">
@@ -141,7 +137,7 @@
     {% if knoten_tabelle %}
     <h2 class="h5 mt-5 pt-3">Knoten-Details</h2>
     <div class="card mb-3"><div class="card-body" style="overflow-x:auto;">
-        <table class="table table-sm align-middle mb-0">
+        <table class="table table-sm align-top mb-0">
             <thead>
                 <tr>
                     <th>Target</th><th>Verteilung</th><th>Parameter</th><th>Konfidenz</th>
@@ -153,7 +149,7 @@
             {% for z in knoten_tabelle %}
                 <tr>
                     <td>{{ z.name }}</td><td>{{ z.verteilung }}</td>
-                    <td class="small">{{ z.params }}</td><td>{{ z.confidence }}</td>
+                    <td class="small">{% for p in z.params %}{{ p }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td><td>{{ z.confidence }}</td>
                     <td class="text-end">{{ z.mean }}</td><td class="text-end">{{ z.stdev }}</td>
                     <td class="text-end">{{ z.p90 }}</td><td class="text-end">{{ z.p95 }}</td><td class="text-end">{{ z.max }}</td>
                 </tr>

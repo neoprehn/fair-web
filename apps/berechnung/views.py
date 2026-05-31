@@ -32,6 +32,24 @@ def _de(v, dezimal=2):
     return f"{v:,.{dezimal}f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def _param_de(v):
+    """Parameterwert 'wie eingegeben' – ohne künstliche Nachkommastellen.
+
+    Ganzzahlen ohne Dezimalstellen (mit Tausenderpunkt), sonst Komma-Dezimal
+    mit abgeschnittenen Null-Endstellen.
+    """
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return str(v)
+    v = float(v)
+    if v.is_integer():
+        return f"{int(v):,}".replace(",", ".")
+    s = f"{v:.6f}".rstrip("0").rstrip(".")
+    ganz, _, dez = s.partition(".")
+    vorz = "-" if ganz.startswith("-") else ""
+    ganz = f"{abs(int(ganz)):,}".replace(",", ".")
+    return vorz + ganz + ("," + dez if dez else "")
+
+
 def _formatiere_wert(code, wert):
     """Wahrscheinlichkeiten mit 2 Nachkommastellen, sonst ganzzahlig (Tausenderpunkt)."""
     if code != "Risk" and fair_tree.typ(code) == "probability":
@@ -71,10 +89,10 @@ def _knoten_tabelle(knoten):
         name = "Risk" if code == "Risk" else fair_tree.target(code)
         if info["status"] == "berechnet":
             name += " (berechnet)"
-        params = " ".join(
-            f"{k}={_de(v, 4) if isinstance(v, (int, float)) else v}"
+        params = [
+            f"{k} = {_param_de(v)}"
             for k, v in (info.get("params") or {}).items()
-        )
+        ]
         wahrscheinlich = code != "Risk" and fair_tree.typ(code) == "probability"
         dez = 4 if wahrscheinlich else 2
         zeilen.append({

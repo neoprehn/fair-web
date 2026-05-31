@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from apps.berechnung.views import _knoten_tabelle, schnittpunkt, toleranz_overlay
+from apps.berechnung.views import _knoten_tabelle, _param_de, schnittpunkt, toleranz_overlay
 from apps.berechnung.services import _ergebnis_aus_sample, _histogramm
 
 
@@ -78,6 +78,23 @@ def test_histogramm_struktur():
 def test_histogramm_leer():
     h = _histogramm(np.array([], dtype=float))
     assert h == {"x": [], "y": [], "breite": 0.0}
+
+
+def test_param_de_wie_eingegeben():
+    assert _param_de(1) == "1"
+    assert _param_de(1.0) == "1"
+    assert _param_de(0.6) == "0,6"
+    assert _param_de(40000) == "40.000"
+    assert _param_de(3.5) == "3,5"
+    assert _param_de(150000.0) == "150.000"
+
+
+def test_knoten_tabelle_params_als_liste():
+    knoten = {"POA": {"status": "eingabe", "mittelwert": 0.5, "stdev": 0.1, "min": 0.0,
+                      "max": 1.0, "p90": 0.7, "p95": 0.8, "verteilung": "beta",
+                      "params": {"mean": 0.5, "k": 10}, "confidence": "90%"}}
+    zeile = _knoten_tabelle(knoten)[0]
+    assert zeile["params"] == ["mean = 0,5", "k = 10"]
 
 
 def test_knoten_tabelle_reihenfolge_und_format():
