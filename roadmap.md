@@ -66,7 +66,7 @@
 - [x] Lokaler Test _(76 Tests grün)_
 - [x] Commit & Push → Branch `feature-ergebnis-grafik` mergen in `main`
 - [x] Weitere Grafiken: **Verteilung** des Jahresschadens + **Häufigkeit** der Schadenereignisse (Histogramme); Ergebnis-SVG schmaler; VaR + Risikotoleranz horizontal angeordnet
-- [ ] Schieber bewegen → Kurve aktualisiert sich live
+- [x] Schieber bewegen → Kurve aktualisiert sich live _(Live-LEC-Vorschau auf der Eingabeseite: debounced Mini-Simulation via AJAX `lec-vorschau`, inkl. Toleranz-Overlay + Schnittpunkt)_
 - [ ] Mehrere Szenarien in einem Chart vergleichen
 
 ---

@@ -156,6 +156,26 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
     return ergebnis
 
 
+def simuliere_vorschau(inputs, n_simulations=1500, random_seed=42):
+    """Schnelle Einmal-Simulation aus einem fertigen ``inputs``-Dict.
+
+    Für die Live-LEC-Vorschau auf der Eingabeseite: nur ein FairModel,
+    kleine Iterationszahl, liefert Kennzahlen + LEC (ohne Knoten/Histogramme).
+    """
+    import pyfair
+
+    if not inputs:
+        raise ValueError("Keine Eingaben.")
+    model = pyfair.FairModel(
+        name="Vorschau", n_simulations=n_simulations, random_seed=random_seed
+    )
+    for target, kwargs in inputs.items():
+        model.input_data(target, **kwargs)
+    model.calculate_all()
+    df = model.export_results()
+    return _ergebnis_aus_sample(df["Risk"].to_numpy())
+
+
 def simuliere_meta(szenarien, n_simulations, random_seed, fortschritt=None):
     """Gemeinsamer Lauf über mehrere Szenarien (Gesamtrisiko = Summe).
 

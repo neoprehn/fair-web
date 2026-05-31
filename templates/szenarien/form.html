@@ -2,6 +2,7 @@
 
 {% block title %}{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %} &middot; fair-web{% endblock %}
 {% block container_class %}container-fluid px-4{% endblock %}
+{% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endblock %}
 
 {% block content %}
 <h1 class="h3 mb-3">{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %}</h1>
@@ -53,6 +54,12 @@
                     </g>
                     {% endfor %}
                 </svg>
+            </div></div>
+
+            <div class="card mt-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
+                <label class="form-label mb-1 text-info">Live-Vorschau (LEC)</label>
+                <div id="lec-vorschau" style="height:230px;"></div>
+                <div id="lec-vorschau-info" class="small text-body-secondary mt-1">Werte ändern → Kurve aktualisiert sich.</div>
             </div></div>
         </div>
     </div>
@@ -275,6 +282,89 @@ function formatDE(n) {
     }
     if (curveBody.children.length === 0) addRow();  // eine Startzeile
     showType(); showDist();
+})();
+</script>
+
+<script>
+// Live-Vorschau der LEC: bei jeder Eingabe (debounced) eine schnelle Mini-Simulation.
+(function () {
+    if (typeof Plotly === 'undefined') return;
+    var url = "{% url 'szenarien:lec_vorschau' %}";
+    var form = document.querySelector('form');
+    var ziel = document.getElementById('lec-vorschau');
+    var info = document.getElementById('lec-vorschau-info');
+    if (!form || !ziel) return;
+    var token = form.querySelector('[name=csrfmiddlewaretoken]');
+    var timer = null, laeuft = false, erneut = false;
+
+    function curveSync() {
+        var cj = document.getElementById('rt-curve-json');
+        var body = document.getElementById('rt-curve-body');
+        if (!cj || !body) return;
+        var pts = [];
+        body.querySelectorAll('tr').forEach(function (tr) {
+            var l = tr.querySelector('.rt-loss'), lv = tr.querySelector('.rt-level');
+            if (l && lv && l.value !== '' && lv.value !== '') pts.push({ loss: l.value, level: lv.value });
+        });
+        cj.value = JSON.stringify(pts);
+    }
+
+    function zeichne(d) {
+        var lec = d.lec || [];
+        var xs = lec.map(function (p) { return p.verlust; });
+        var ys = lec.map(function (p) { return p.ueberschreitung; });
+        var traces = [{ x: xs, y: ys, mode: 'lines', name: 'LEC', line: { color: '#7dd3fc', width: 2 } }];
+        var posX = xs.filter(function (v) { return v > 0; });
+        var xmin = posX.length ? Math.min.apply(null, posX) : 1;
+        var xType = 'linear', xRange;
+        if (xmin > 0 && d.p90 > xmin) {
+            var a = Math.log10(xmin); xType = 'log'; xRange = [a, a + (Math.log10(d.p90) - a) / 0.75];
+        }
+        var vx = function (v) { return xType === 'log' ? Math.log10(v) : v; };
+        var shapes = [], ov = d.overlay;
+        if (ov && ov.kind === 'curve') {
+            traces.push({ x: ov.x, y: ov.y, mode: 'lines', name: 'Toleranz',
+                          line: { color: '#f87171', dash: 'dash', width: 2 } });
+        } else if (ov && ov.kind === 'vline' && ov.value > 0) {
+            shapes.push({ type: 'line', x0: vx(ov.value), x1: vx(ov.value), y0: 0, y1: 1, yref: 'paper',
+                          line: { color: '#f87171', dash: 'dash' } });
+        }
+        if (d.schnittpunkt && d.schnittpunkt.loss != null) {
+            traces.push({ x: [d.schnittpunkt.loss], y: [d.schnittpunkt.tolerance], mode: 'markers',
+                          name: 'Schnittpunkt', marker: { color: '#fbbf24', size: 9, line: { color: '#fff', width: 1 } } });
+        }
+        Plotly.react(ziel, traces, {
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#cbd5e1', family: 'Bahnschrift, sans-serif', size: 11 },
+            margin: { l: 55, r: 10, t: 6, b: 38 }, showlegend: false, shapes: shapes,
+            xaxis: { title: 'Schaden (€)', gridcolor: '#1e293b', type: xType, range: xRange },
+            yaxis: { title: 'P(≥x)', gridcolor: '#1e293b', range: [0, 1], tickformat: '.0%' }
+        }, { responsive: true, displayModeBar: false });
+    }
+
+    function aktualisiere() {
+        if (laeuft) { erneut = true; return; }
+        laeuft = true;
+        curveSync();
+        fetch(url, { method: 'POST', body: new FormData(form),
+                     headers: { 'X-CSRFToken': token ? token.value : '' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.ok) {
+                    zeichne(d);
+                    info.textContent = 'VaR 90 %: ' + Math.round(d.perzentile['90']).toLocaleString('de-DE') + ' €';
+                } else {
+                    info.textContent = d.fehler || 'Vorschau nicht möglich.';
+                }
+            })
+            .catch(function () { info.textContent = 'Vorschau fehlgeschlagen.'; })
+            .finally(function () { laeuft = false; if (erneut) { erneut = false; aktualisiere(); } });
+    }
+
+    function anstoss() { clearTimeout(timer); timer = setTimeout(aktualisiere, 500); }
+    form.addEventListener('input', anstoss);
+    form.addEventListener('change', anstoss);
+    aktualisiere();  // initiale Vorschau
 })();
 </script>
 {% endblock %}
