@@ -109,7 +109,7 @@
 - [x] Standard-Simulationsanzahl konfigurierbar (globale Variable; wenn global → „nur lesend")
 - [ ] Benutzer & Zugriffsrechte einrichten
 - [ ] Vorschlagswerte für Konfidenzen editierbar machen (wahrscheinlich mit Eingriff in pyfair)
-- [ ] Hell/Dunkel-Design Schalter
+- [x] Hell/Dunkel-Design Schalter _(Navbar-Umschalter, Bootstrap data-bs-theme, Light-/Dark-Palette via CSS-Variablen, in localStorage gemerkt; Plotly-Charts theme-abhängig)_
 - [ ] Euro/ Dollar Schalter und damit verbunden "." und "," für die Separatoren tauschen
 - [x] „Unternehmens-Risikotoleranz" als global konfigurierbar (App-Konfiguration; wenn vorgegeben → Eingabe „nur lesend", gilt für alle Szenarien)
 - [ ] Lokaler Test

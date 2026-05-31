@@ -351,10 +351,10 @@ function formatDE(n) {
         }
         Plotly.react(ziel, traces, {
             paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
-            font: { color: '#cbd5e1', family: 'Bahnschrift, sans-serif', size: 11 },
+            font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif', size: 11 },
             margin: { l: 55, r: 10, t: 6, b: 38 }, showlegend: false, shapes: shapes,
-            xaxis: { title: 'Schaden (€)', gridcolor: '#1e293b', type: xType, range: xRange },
-            yaxis: { title: 'P(≥x)', gridcolor: '#1e293b', range: [0, 1], tickformat: '.0%' }
+            xaxis: { title: 'Schaden (€)', gridcolor: window.fairChartGrid(), type: xType, range: xRange },
+            yaxis: { title: 'P(≥x)', gridcolor: window.fairChartGrid(), range: [0, 1], tickformat: '.0%' }
         }, { responsive: true, displayModeBar: false });
     }
 
