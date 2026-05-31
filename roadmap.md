@@ -54,13 +54,20 @@
 ---
 
 ### Phase 5 – Grafiken & Auswertung
-- [ ] Plotly einbinden
-- [ ] LEC-Kurve animiert aufbauen
+- [x] Plotly einbinden _(Plotly.js CDN, LEC-Chart im Dark-Theme)_
+- [x] LEC-Kurve **logarithmische Schadensachse** _(P90 bei ~3/4 der Achse)_
+- [x] **Risikotoleranz-Overlay** _(constant→vline, curve→Punkte, distribution→Exceedance)_
+- [x] LEC-Kurve **animiert aufbauen**
+- [x] **Schnittpunkt LEC × Risikotoleranz** berechnen + im Chart markieren + in Tabelle (Loss €, Toleranz %)
+- [x] **Risikoperzentile als VaR** 10/20/50/80/90/95/99 (farblich umrandete Gruppe)
+- [x] **SVG-Baum-Tooltips** je Knoten (5 Nachkommastellen; berechnet: Mittelwert/StdAbw/P90/P95, Eingabe: Parameter)
+- [x] **Knoten-Detailtabelle** unter der Grafik (pyfair-Report-Form + P90/P95)
+- [x] „Neu berechnen" → führt zum Szenario-Bearbeiten
+- [x] Lokaler Test _(76 Tests grün)_
+- [x] Commit & Push → Branch `feature-ergebnis-grafik` mergen in `main`
 - [ ] Weitere Grafiken (Verteilung, Häufigkeit etc.)
 - [ ] Schieber bewegen → Kurve aktualisiert sich live
 - [ ] Mehrere Szenarien in einem Chart vergleichen
-- [ ] Lokaler Test
-- [ ] Commit & Push → Branch `feature-grafiken` mergen in `main`
 
 ---
 
