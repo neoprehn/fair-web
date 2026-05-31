@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Vergleich löschen &middot; fair-web{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Vergleich löschen</h1>
+<p>Soll der Vergleich <strong>„{{ vergleich.name }}"</strong> wirklich gelöscht werden?
+   Die enthaltenen Szenarien bleiben erhalten; nur die Gruppierung und ihre Läufe werden entfernt.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Endgültig löschen</button>
+    <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Abbrechen</a>
+</form>
+{% endblock %}

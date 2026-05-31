@@ -84,6 +84,40 @@ class Szenario(models.Model):
         return fair_tree.schnitt_ist_gueltig(self.schnitt_codes())
 
 
+class Vergleich(models.Model):
+    """Benannte Gruppe bestehender Szenarien für einen gemeinsamen Lauf.
+
+    Ein Vergleich referenziert mehrere ``Szenario``-Objekte (Gruppierung).
+    Der Lauf (``berechnung.MetaLauf``) rechnet jedes Szenario einzeln (für
+    die Compare-Überlagerung der LECs) und summiert sie (Add =
+    Gesamtrisiko). Änderungen an einem Szenario wirken sich beim
+    Neuberechnen aus (es wird referenziert, nicht eingefroren).
+    """
+
+    name = models.CharField("Name", max_length=200)
+    beschreibung = models.TextField("Beschreibung", blank=True)
+    szenarien = models.ManyToManyField(
+        "Szenario", related_name="vergleiche", verbose_name="Szenarien"
+    )
+    n_simulations = models.PositiveIntegerField("Anzahl Simulationen", default=10_000)
+    random_seed = models.PositiveIntegerField("Zufalls-Seed", default=42)
+    erstellt_am = models.DateTimeField("Erstellt am", auto_now_add=True)
+    geaendert_am = models.DateTimeField("Geändert am", auto_now=True)
+
+    class Meta:
+        verbose_name = "Vergleich"
+        verbose_name_plural = "Vergleiche"
+        ordering = ["-geaendert_am"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def letzter_lauf(self):
+        """Jüngster zugehöriger Meta-Lauf (oder None)."""
+        return self.laeufe.order_by("-erstellt_am").first()
+
+
 class FaktorEingabe(models.Model):
     """Eine Verteilungs-Eingabe für genau einen FAIR-Faktor eines Szenarios."""
 

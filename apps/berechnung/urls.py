@@ -7,6 +7,7 @@ from .views import (
     meta_starten,
     meta_status,
     simulation_starten,
+    vergleich_starten,
 )
 
 app_name = "berechnung"
@@ -16,6 +17,7 @@ urlpatterns = [
     path("lauf/<int:pk>/", LaufDetailView.as_view(), name="lauf"),
     path("lauf/<int:pk>/status/", lauf_status, name="status"),
     path("meta/starten/", meta_starten, name="meta_starten"),
+    path("vergleich/<int:pk>/starten/", vergleich_starten, name="vergleich_starten"),
     path("meta/<int:pk>/", MetaLaufDetailView.as_view(), name="meta_lauf"),
     path("meta/<int:pk>/status/", meta_status, name="meta_status"),
 ]
