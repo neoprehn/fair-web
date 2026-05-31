@@ -86,30 +86,7 @@
 
 ---
 
-### Phase 6 – Export
-- [ ] Excel Export mit openpyxl
-- [ ] PPT Bericht mit python-pptx
-- [ ] PDF Bericht 
-- [ ] Grafiken in Export einbetten
-- [ ] Download-Button in der Oberfläche
-- [ ] Lokaler Test
-- [ ] Commit & Push → Branch `feature-export` mergen in `main`
-
----
-
-### Phase 7 – Admin-Bereich
-- [ ] Django Admin einrichten
-- [ ] Standard-Seed konfigurierbar machen
-- [ ] Standard-Simulationsanzahl konfigurierbar machen
-- [ ] Benutzer & Zugriffsrechte einrichten
-- [ ] Vorschlagswerte für Konfidenzen editierbar machen (wahrscheinlich mit Eingriff in pyfair)
-- [ ] Hell/Dunkel-Design Schalter
-- [ ] Lokaler Test
-- [ ] Commit & Push → Branch `feature-admin` mergen in `main`
-
----
-
-### Phase 8 – Deployment auf IONOS VPS
+### Phase 6 – Deployment auf IONOS VPS ✅ erledigt
 - [x] Per SSH auf VPS verbinden
 - [x] Ubuntu aktualisieren
 - [x] Python & pip installieren
@@ -123,6 +100,31 @@
 - [x] Finaler Test auf neoprehn.de _(Phase-3-App ist live – Dashboard & Anlege-Formular erreichbar)_
 
 > **CI/CD-Hinweis (29.05.2026):** Der Auto-Deploy griff lange Zeit NICHT – das Zielverzeichnis war kein Git-Checkout, und `deploy.yml` verbarg den Fehler hinter grünen Häkchen (kein `set -e`). Beides ist gefixt: Server-Ordner ist jetzt ein `main`-Checkout, `deploy.yml` nutzt `set -euo pipefail` + `git fetch`/`reset --hard`. Push/Merge nach `main` deployt jetzt zuverlässig.
+
+---
+
+### Phase 7 – Admin-Bereich
+- [ ] Django Admin einrichten
+- [ ] Standard-Seed konfigurierbar machen mit Otion als globale Variable. Wenn global, dann in der Szenarioeingabe nur noch als "nur lesend" anzeigen
+- [ ] Standard-Simulationsanzahl konfigurierbar machen mit Otion als globale Variable. Wenn global, dann in der Szenarioeingabe nur noch als "nur lesend" anzeigen
+- [ ] Benutzer & Zugriffsrechte einrichten
+- [ ] Vorschlagswerte für Konfidenzen editierbar machen (wahrscheinlich mit Eingriff in pyfair)
+- [ ] Hell/Dunkel-Design Schalter
+- [ ] Euro/ Dollar Schalter und damit verbunden "." und "," für die Separatoren tauschen
+- [ ] "Unternehmens-Risikotoleranz" als global konfigurierbar machen. Wenn diese vorgegeben ist, dann aus der Eingabe nur noch als "nur lesend" anzeigen
+- [ ] Lokaler Test
+- [ ] Commit & Push → Branch `feature-admin` mergen in `main`
+
+---
+
+### Phase 8 – Export _(ganz nach hinten gestellt)_
+- [ ] Excel Export mit openpyxl
+- [ ] PPT Bericht mit python-pptx
+- [ ] PDF Bericht 
+- [ ] Grafiken in Export einbetten
+- [ ] Download-Button in der Oberfläche
+- [ ] Lokaler Test
+- [ ] Commit & Push → Branch `feature-export` mergen in `main`
 
 ---
 ### ab hier alles von @neoprehn
