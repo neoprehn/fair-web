@@ -27,58 +27,62 @@
     </p>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-body-secondary small">Erwarteter Jahresschaden (Mittelwert)</div>
-                <div class="h4 mb-0 text-info">{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} €</div>
-            </div></div>
+        <div class="col-lg-7">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card h-100"><div class="card-body">
+                        <div class="text-body-secondary small">Erwarteter Jahresschaden (Mittelwert)</div>
+                        <div class="h4 mb-0 text-info">{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} €</div>
+                    </div></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100"><div class="card-body">
+                        <div class="text-body-secondary small">Median</div>
+                        <div class="h4 mb-0">{{ lauf.ergebnis.median|floatformat:0|intcomma }} €</div>
+                    </div></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100"><div class="card-body">
+                        <div class="text-body-secondary small">Maximum (Worst Case P95)</div>
+                        <div class="h4 mb-0">{{ lauf.ergebnis.p95|floatformat:0|intcomma }} €</div>
+                    </div></div>
+                </div>
+            </div>
         </div>
-        <div class="col-md-4">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-body-secondary small">Median</div>
-                <div class="h4 mb-0">{{ lauf.ergebnis.median|floatformat:0|intcomma }} €</div>
+        <div class="col-lg-5">
+            <div class="card mb-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
+                <h2 class="h6 text-info mb-2">Value at Risk (VaR)</h2>
+                <div class="d-flex flex-wrap gap-2">
+                {% for stufe, wert in lauf.ergebnis.perzentile.items %}
+                    <div class="text-center px-2 py-1">
+                        <div class="text-body-secondary small">VaR {{ stufe }} %</div>
+                        <div class="fw-semibold text-nowrap">{{ wert|floatformat:0|intcomma }} €</div>
+                    </div>
+                {% endfor %}
+                </div>
             </div></div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-body-secondary small">Maximum (Worst Case)</div>
-                <div class="h4 mb-0">{{ lauf.ergebnis.max|floatformat:0|intcomma }} €</div>
+
+            <div class="card" style="border:1px solid var(--danger);"><div class="card-body py-2">
+                <h2 class="h6 text-danger mb-2">Risikotoleranz-Betrachtung</h2>
+                {% if schnittpunkt %}
+                <div class="d-flex flex-wrap gap-3 align-items-end">
+                    <div class="text-center px-2 py-1">
+                        <div class="text-body-secondary small">Schnittpunkt (Loss)</div>
+                        <div class="fw-semibold text-nowrap">{{ schnittpunkt.loss|floatformat:0|intcomma }} €</div>
+                    </div>
+                    <div class="text-center px-2 py-1">
+                        <div class="text-body-secondary small">Toleranz dort</div>
+                        <div class="fw-semibold">{% widthratio schnittpunkt.tolerance 1 100 %} %</div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-body-secondary small mb-0">
+                    {% if toleranz_overlay %}Kein Schnittpunkt im betrachteten Bereich.{% else %}Keine Risikotoleranz definiert.{% endif %}
+                </p>
+                {% endif %}
             </div></div>
         </div>
     </div>
-
-    <div class="card mb-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
-        <h2 class="h6 text-info mb-2">Value at Risk (VaR)</h2>
-        <div class="d-flex flex-wrap gap-2">
-        {% for stufe, wert in lauf.ergebnis.perzentile.items %}
-            <div class="text-center px-3 py-1">
-                <div class="text-body-secondary small">VaR {{ stufe }} %</div>
-                <div class="fw-semibold text-nowrap">{{ wert|floatformat:0|intcomma }} €</div>
-            </div>
-        {% endfor %}
-        </div>
-    </div></div>
-
-    <div class="card mb-3" style="border:1px solid var(--danger);"><div class="card-body py-2">
-        <h2 class="h6 text-danger mb-2">Risikotoleranz-Betrachtung</h2>
-        {% if schnittpunkt %}
-        <div class="d-flex flex-wrap gap-4 align-items-end">
-            <div class="text-center px-3 py-1">
-                <div class="text-body-secondary small">Schnittpunkt (Loss)</div>
-                <div class="fw-semibold text-nowrap">{{ schnittpunkt.loss|floatformat:0|intcomma }} €</div>
-            </div>
-            <div class="text-center px-3 py-1">
-                <div class="text-body-secondary small">Toleranz dort</div>
-                <div class="fw-semibold">{% widthratio schnittpunkt.tolerance 1 100 %} %</div>
-            </div>
-            <div class="text-body-secondary small py-1">Wo LEC und Risikotoleranz sich schneiden.</div>
-        </div>
-        {% else %}
-        <p class="text-body-secondary small mb-0">
-            {% if toleranz_overlay %}Kein Schnittpunkt im betrachteten Bereich.{% else %}Keine Risikotoleranz definiert.{% endif %}
-        </p>
-        {% endif %}
-    </div></div>
 
     <h2 class="h5 mt-4">FAIR-Baum</h2>
     <p class="text-body-secondary small mb-2">
@@ -87,18 +91,18 @@
         – Mittelwert je Knoten.
     </p>
     <div class="row mb-3"><div class="col-12 col-xl-9">
-    <div class="card h-100"><div class="card-body py-2" style="overflow-x:auto;">
-        <svg viewBox="0 0 900 270" style="width:100%; max-width:760px; height:auto;">
+    <div class="card h-100"><div class="card-body py-2" style="overflow-x:auto; text-align:center;">
+        <svg viewBox="0 0 900 280" style="width:100%; max-width:760px; height:auto; margin:0 auto; display:block;">
             {% for e in svg_edges %}
             <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
             {% endfor %}
             {% for n in svg_nodes %}
             <g class="svg-node {{ n.status }}" data-code="{{ n.code }}">
                 <title>{{ n.label }}{% if n.tooltip %}&#10;{{ n.tooltip }}{% endif %}</title>
-                <rect x="{{ n.x|add:'-30' }}" y="{{ n.y|add:'-13' }}" width="60" height="26" rx="6" style="cursor:help;"/>
-                <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y|add:'4' }}" text-anchor="middle">{{ n.label }}</text>
+                <rect x="{{ n.x|add:'-36' }}" y="{{ n.y|add:'-16' }}" width="72" height="32" rx="7" style="cursor:help;"/>
+                <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y }}" text-anchor="middle" dominant-baseline="central">{{ n.label }}</text>
             </g>
-            {% if n.wert %}<text class="svg-node-wert" x="{{ n.x }}" y="{{ n.y|add:'26' }}" text-anchor="middle">{{ n.wert }}</text>{% endif %}
+            {% if n.wert %}<text class="svg-node-wert" x="{{ n.x }}" y="{{ n.y|add:'30' }}" text-anchor="middle">{{ n.wert }}</text>{% endif %}
             {% endfor %}
         </svg>
     </div></div>
@@ -107,7 +111,7 @@
     <h2 class="h5 mt-4">Loss Exceedance Curve (LEC)</h2>
     <p class="text-body-secondary small mb-2">
         Wahrscheinlichkeit, dass der Jahresschaden einen Wert überschreitet.
-        {% if toleranz_overlay %}<span class="text-danger">Gestrichelt: Risikotoleranz.</span>{% endif %}
+        {% if toleranz_overlay %}<span class="text-danger">Rot durchgezogen: Risikotoleranz.</span>{% endif %}
     </p>
     <div class="card mb-3"><div class="card-body">
         <div id="lec-chart" style="height: 420px;"></div>
@@ -135,15 +139,14 @@
     {{ lauf.ergebnis.haeufigkeit_hist|json_script:"haeuf-data" }}
 
     {% if knoten_tabelle %}
-    <h2 class="h5 mt-4">Knoten-Details</h2>
+    <h2 class="h5 mt-5 pt-3">Knoten-Details</h2>
     <div class="card mb-3"><div class="card-body" style="overflow-x:auto;">
         <table class="table table-sm align-middle mb-0">
             <thead>
                 <tr>
                     <th>Target</th><th>Verteilung</th><th>Parameter</th><th>Konfidenz</th>
                     <th class="text-end">Mittelwert</th><th class="text-end">Std.-Abw.</th>
-                    <th class="text-end">Min</th><th class="text-end">Max</th>
-                    <th class="text-end">P90</th><th class="text-end">P95</th>
+                    <th class="text-end">P90</th><th class="text-end">P95</th><th class="text-end">Max</th>
                 </tr>
             </thead>
             <tbody>
@@ -152,8 +155,7 @@
                     <td>{{ z.name }}</td><td>{{ z.verteilung }}</td>
                     <td class="small">{{ z.params }}</td><td>{{ z.confidence }}</td>
                     <td class="text-end">{{ z.mean }}</td><td class="text-end">{{ z.stdev }}</td>
-                    <td class="text-end">{{ z.min }}</td><td class="text-end">{{ z.max }}</td>
-                    <td class="text-end">{{ z.p90 }}</td><td class="text-end">{{ z.p95 }}</td>
+                    <td class="text-end">{{ z.p90 }}</td><td class="text-end">{{ z.p95 }}</td><td class="text-end">{{ z.max }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -206,10 +208,10 @@
     var shapes = [];
     if (ov && ov.kind === 'curve') {
         traces.push({ x: ov.x, y: ov.y, mode: 'lines', name: 'Risikotoleranz',
-                      line: { color: '#f87171', dash: 'dash', width: 2 } });
+                      line: { color: '#ef4444', width: 2.5 } });
     } else if (ov && ov.kind === 'vline' && ov.value > 0) {
         shapes.push({ type: 'line', x0: vx(ov.value), x1: vx(ov.value), y0: 0, y1: 1, yref: 'paper',
-                      line: { color: '#f87171', dash: 'dash' } });
+                      line: { color: '#ef4444', width: 2.5 } });
     }
     var layout = {
         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',

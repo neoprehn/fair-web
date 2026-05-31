@@ -64,6 +64,34 @@ def test_vergleich_create_view(client):
 
 
 @pytest.mark.django_db
+def test_vergleich_form_referenz_muss_enthalten_sein():
+    a, b, c = _szenario("A"), _szenario("B"), _szenario("C")
+    f = VergleichForm(data={"name": "V", "n_simulations": "1000", "random_seed": "42",
+                            "szenarien": [a.pk, b.pk], "referenz_szenario": c.pk})
+    assert not f.is_valid() and "referenz_szenario" in f.errors
+
+
+@pytest.mark.django_db
+def test_meta_detail_referenz_overlay_und_schnittpunkte(client):
+    pytest.importorskip("pyfair")
+    from apps.berechnung import services
+    a, b = _szenario("A", 1000), _szenario("B", 2000)
+    a.risikotoleranz = {"type": "constant", "value": 5000}
+    a.save()
+    v = Vergleich.objects.create(name="V", n_simulations=300, random_seed=42, referenz_szenario=a)
+    v.szenarien.set([a, b])
+    lauf = MetaLauf.objects.create(vergleich=v, n_simulations=300, random_seed=42)
+    lauf.szenarien.set([a, b])
+    services._run_meta(lauf.pk)
+
+    resp = client.get(reverse("berechnung:meta_lauf", kwargs={"pk": lauf.pk}))
+    assert resp.status_code == 200
+    assert resp.context["referenz_overlay"]["kind"] == "vline"
+    assert resp.context["referenz_name"] == "A"
+    assert len(resp.context["vergleich_schnittpunkte"]) == 2
+
+
+@pytest.mark.django_db
 def test_vergleich_starten(client, monkeypatch):
     a, b = _szenario("A"), _szenario("B", 2000)
     v = Vergleich.objects.create(name="V", n_simulations=500, random_seed=9)

@@ -49,6 +49,11 @@
                 <p class="text-body-secondary small mb-0">Keine rechenbaren Szenarien vorhanden – erst Szenarien mit gültigem Schnitt anlegen.</p>
                 {% endif %}
                 {{ form.szenarien.errors }}
+
+                <hr class="my-3">
+                <label class="form-label text-danger">Referenz für Risikotoleranz</label>
+                {{ form.referenz_szenario }}{{ form.referenz_szenario.errors }}
+                <div class="form-text">Dessen Risikotoleranz wird im Compare-Chart rot gezeichnet (Schnittpunkte je Szenario).</div>
             </div></div>
         </div>
     </div>

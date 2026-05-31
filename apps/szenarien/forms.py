@@ -38,12 +38,14 @@ class VergleichForm(forms.ModelForm):
 
     class Meta:
         model = Vergleich
-        fields = ("name", "beschreibung", "szenarien", "n_simulations", "random_seed")
+        fields = ("name", "beschreibung", "szenarien", "referenz_szenario",
+                  "n_simulations", "random_seed")
         localized_fields = ("n_simulations", "random_seed")
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "beschreibung": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "szenarien": forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
+            "referenz_szenario": forms.Select(attrs={"class": "form-select"}),
             "n_simulations": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
             "random_seed": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
         }
@@ -52,13 +54,25 @@ class VergleichForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Nur rechenbare Szenarien (gültiger Schnitt) zur Auswahl anbieten.
         waehlbar = [s.pk for s in Szenario.objects.all() if s.schnitt_ist_gueltig()]
-        self.fields["szenarien"].queryset = Szenario.objects.filter(pk__in=waehlbar)
+        qs = Szenario.objects.filter(pk__in=waehlbar)
+        self.fields["szenarien"].queryset = qs
+        self.fields["referenz_szenario"].queryset = qs
+        self.fields["referenz_szenario"].empty_label = "— keine Risikotoleranz zeichnen —"
 
     def clean_szenarien(self):
         szenarien = self.cleaned_data["szenarien"]
         if szenarien.count() < 2:
             raise forms.ValidationError("Bitte mindestens zwei Szenarien auswählen.")
         return szenarien
+
+    def clean(self):
+        cleaned = super().clean()
+        ref = cleaned.get("referenz_szenario")
+        szenarien = cleaned.get("szenarien")
+        if ref and szenarien is not None and ref not in szenarien:
+            self.add_error("referenz_szenario",
+                           "Das Referenz-Szenario muss zu den ausgewählten Szenarien gehören.")
+        return cleaned
 
 
 # Sprechende Labels je Verteilungs-Parameter, abhängig vom Faktortyp.

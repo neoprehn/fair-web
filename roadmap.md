@@ -71,6 +71,21 @@
 
 ---
 
+### Phase 5b – Feinschliff der Auswertungen
+- [x] Einzeichnen der Risikotoleranzkurve bei Compare (durchgezogen in rot) _(Referenz-Szenario am Vergleich wählbar)_
+- [x] Risikotoleranzkurve auf rot durchgezogen ändern _(Einzel- + Vergleichs-Chart)_
+- [x] Risikotoleranz-Eingabe wird jetzt auf der Szenario-Detailseite angezeigt
+- [x] In der Version Vergleichen die Schnittpunkte mit der Risikotoleranz – als Punkt in der Grafik + Tabelle
+- [x] Designänderung bei der einzelnen Simulation:
+    - [x] Maximum-Karte → „Maximum (Worst Case P95)", zeigt P95
+    - [x] SVG: Baum im Kästchen zentriert, 20 % größere Knoten-Kästchen
+    - [x] VaR & Risikotoleranz-Kästchen auf Median-Zeilen-Höhe, rechtsbündig
+    - [x] mehr Abstand zwischen Knoten-Detailtabelle und Grafik-Block
+    - [x] Knoten-Detailtabelle: Min raus, Spalten enden mit P90/P95/Max
+
+
+---
+
 ### Phase 6 – Export
 - [ ] Excel Export mit openpyxl
 - [ ] PPT Bericht mit python-pptx
