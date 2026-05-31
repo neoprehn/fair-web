@@ -47,15 +47,38 @@
         </div>
     </div>
 
-    <h2 class="h5">Risiko-Perzentile</h2>
-    <table class="table w-auto">
-        <tbody>
-            <tr><th class="pe-4">P90</th><td>{{ lauf.ergebnis.p90|floatformat:0|intcomma }} €</td></tr>
-            <tr><th class="pe-4">P95</th><td>{{ lauf.ergebnis.p95|floatformat:0|intcomma }} €</td></tr>
-            <tr><th class="pe-4">P99</th><td>{{ lauf.ergebnis.p99|floatformat:0|intcomma }} €</td></tr>
-            <tr><th class="pe-4">Minimum</th><td>{{ lauf.ergebnis.min|floatformat:0|intcomma }} €</td></tr>
-        </tbody>
-    </table>
+    <div class="row g-3 mb-2">
+        <div class="col-lg-5">
+            <div class="card h-100" style="border:1px solid var(--accent);"><div class="card-body py-2">
+                <h2 class="h6 text-info mb-2">Value at Risk (VaR)</h2>
+                <table class="table table-sm w-auto mb-0">
+                    <tbody>
+                    {% for stufe, wert in lauf.ergebnis.perzentile.items %}
+                        <tr><th class="pe-4">VaR {{ stufe }} %</th><td>{{ wert|floatformat:0|intcomma }} €</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div></div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card h-100" style="border:1px solid var(--danger);"><div class="card-body py-2">
+                <h2 class="h6 text-danger mb-2">Risikotoleranz-Betrachtung</h2>
+                {% if schnittpunkt %}
+                <table class="table table-sm w-auto mb-0">
+                    <tbody>
+                        <tr><th class="pe-4">Schnittpunkt (Loss)</th><td>{{ schnittpunkt.loss|floatformat:0|intcomma }} €</td></tr>
+                        <tr><th class="pe-4">Toleranz dort</th><td>{% widthratio schnittpunkt.tolerance 1 100 %} %</td></tr>
+                    </tbody>
+                </table>
+                <p class="text-body-secondary small mb-0 mt-1">Wo LEC und Risikotoleranz sich schneiden.</p>
+                {% else %}
+                <p class="text-body-secondary small mb-0">
+                    {% if toleranz_overlay %}Kein Schnittpunkt im betrachteten Bereich.{% else %}Keine Risikotoleranz definiert.{% endif %}
+                </p>
+                {% endif %}
+            </div></div>
+        </div>
+    </div>
 
     <h2 class="h5 mt-4">FAIR-Baum</h2>
     <p class="text-body-secondary small mb-2">
@@ -70,7 +93,8 @@
             {% endfor %}
             {% for n in svg_nodes %}
             <g class="svg-node {{ n.status }}" data-code="{{ n.code }}">
-                <rect x="{{ n.x|add:'-30' }}" y="{{ n.y|add:'-13' }}" width="60" height="26" rx="6"/>
+                <title>{{ n.label }}{% if n.tooltip %}&#10;{{ n.tooltip }}{% endif %}</title>
+                <rect x="{{ n.x|add:'-30' }}" y="{{ n.y|add:'-13' }}" width="60" height="26" rx="6" style="cursor:help;"/>
                 <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y|add:'4' }}" text-anchor="middle">{{ n.label }}</text>
             </g>
             {% if n.wert %}<text class="svg-node-wert" x="{{ n.x }}" y="{{ n.y|add:'26' }}" text-anchor="middle">{{ n.wert }}</text>{% endif %}
@@ -89,11 +113,36 @@
     {{ lauf.ergebnis.lec|json_script:"lec-data" }}
     {{ toleranz_overlay|json_script:"toleranz-data" }}
     {{ lauf.ergebnis.p90|json_script:"p90-data" }}
+    {{ schnittpunkt|json_script:"schnittpunkt-data" }}
 
-    <form method="post" action="{% url 'berechnung:starten' lauf.szenario.pk %}" class="d-inline">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary">Neu berechnen</button>
-    </form>
+    {% if knoten_tabelle %}
+    <h2 class="h5 mt-4">Knoten-Details</h2>
+    <div class="card mb-3"><div class="card-body" style="overflow-x:auto;">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Target</th><th>Verteilung</th><th>Parameter</th><th>Konfidenz</th>
+                    <th class="text-end">Mittelwert</th><th class="text-end">Std.-Abw.</th>
+                    <th class="text-end">Min</th><th class="text-end">Max</th>
+                    <th class="text-end">P90</th><th class="text-end">P95</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for z in knoten_tabelle %}
+                <tr>
+                    <td>{{ z.name }}</td><td>{{ z.verteilung }}</td>
+                    <td class="small">{{ z.params }}</td><td>{{ z.confidence }}</td>
+                    <td class="text-end">{{ z.mean }}</td><td class="text-end">{{ z.stdev }}</td>
+                    <td class="text-end">{{ z.min }}</td><td class="text-end">{{ z.max }}</td>
+                    <td class="text-end">{{ z.p90 }}</td><td class="text-end">{{ z.p95 }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+    {% endif %}
+
+    <a class="btn btn-primary" href="{% url 'szenarien:update' lauf.szenario.pk %}">Szenario bearbeiten</a>
     <a class="btn btn-link" href="{% url 'szenarien:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
 
 {% else %}
@@ -113,12 +162,14 @@
     if (typeof Plotly === 'undefined') return;
     var lec = JSON.parse(document.getElementById('lec-data').textContent) || [];
     var ov = JSON.parse(document.getElementById('toleranz-data').textContent);
+    var fullX = lec.map(function (p) { return p.verlust; });
+    var fullY = lec.map(function (p) { return p.ueberschreitung; });
     var traces = [{
-        x: lec.map(function (p) { return p.verlust; }),
-        y: lec.map(function (p) { return p.ueberschreitung; }),
+        x: [], y: [],
         mode: 'lines', name: 'LEC', line: { color: '#7dd3fc', width: 2 }
     }];
     var p90 = JSON.parse(document.getElementById('p90-data').textContent);
+    var sp = JSON.parse(document.getElementById('schnittpunkt-data').textContent);
 
     // Log-Schadensachse, so skaliert, dass P90 bei ~3/4 der Achsenbreite liegt.
     var xs = lec.map(function (p) { return p.verlust; }).filter(function (v) { return v > 0; });
@@ -150,7 +201,25 @@
         yaxis: { title: 'P(Schaden ≥ x)', gridcolor: '#1e293b', range: [0, 1], tickformat: '.0%' },
         legend: { orientation: 'h', y: 1.1 }, shapes: shapes
     };
-    Plotly.newPlot('lec-chart', traces, layout, { responsive: true, displayModeBar: false });
+    Plotly.newPlot('lec-chart', traces, layout, { responsive: true, displayModeBar: false })
+        .then(function () {
+            // LEC animiert aufbauen.
+            var i = 0, step = Math.max(1, Math.round(fullX.length / 40));
+            function grow() {
+                i = Math.min(fullX.length, i + step);
+                Plotly.restyle('lec-chart', { x: [fullX.slice(0, i)], y: [fullY.slice(0, i)] }, [0]);
+                if (i < fullX.length) {
+                    requestAnimationFrame(grow);
+                } else if (sp && sp.loss != null) {
+                    // Schnittpunkt LEC × Risikotoleranz markieren.
+                    Plotly.addTraces('lec-chart', {
+                        x: [sp.loss], y: [sp.tolerance], mode: 'markers', name: 'Schnittpunkt',
+                        marker: { color: '#fbbf24', size: 12, line: { color: '#fff', width: 1.5 } }
+                    });
+                }
+            }
+            grow();
+        });
 })();
 </script>
 {% endif %}

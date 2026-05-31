@@ -43,17 +43,22 @@ def _ergebnis_aus_sample(sample):
         "p90": perz(90),
         "p95": perz(95),
         "p99": perz(99),
+        # VaR-Stufen (Perzentile des Jahresschadens).
+        "perzentile": {str(p): perz(p) for p in (10, 20, 50, 80, 90, 95, 99)},
         "lec": lec,
     }
 
 
 def _knoten_stats(df, szenario):
-    """Mittelwert + Status (Eingabe/berechnet) je berechnetem FAIR-Knoten.
+    """Statistik je berechnetem FAIR-Knoten (für Ergebnis-Baum + Tabelle).
 
-    pyfairs Ergebnis-Tabelle hat eine Spalte je Knoten; nicht genutzte Knoten
-    bleiben leer (NaN) und werden ausgelassen.
+    Berechnete Knoten: Mittelwert/StdAbw/Min/Max/P90/P95. Eingabe-Knoten
+    zusätzlich Verteilung/Parameter/Konfidenz (für Tooltip + Tabelle).
     """
-    eingegeben = set(szenario.schnitt_codes())
+    import numpy as np
+    from apps.szenarien.fair_confidence import CONFIDENCE_DISTRIBUTIONS
+
+    eingaben = {f.faktor: f for f in szenario.faktoren.all()}
     knoten = {}
     for spalte in df.columns:
         serie = df[spalte].dropna()
@@ -62,10 +67,23 @@ def _knoten_stats(df, szenario):
         code = "Risk" if spalte == "Risk" else fair_tree.CODE_FUER_NAME.get(spalte)
         if code is None:
             continue
-        knoten[code] = {
-            "mittelwert": float(serie.mean()),
-            "status": "eingabe" if code in eingegeben else "berechnet",
+        arr = serie.to_numpy()
+        eintrag = {
+            "status": "eingabe" if code in eingaben else "berechnet",
+            "mittelwert": float(arr.mean()),
+            "stdev": float(arr.std()),
+            "min": float(arr.min()),
+            "max": float(arr.max()),
+            "p90": float(np.percentile(arr, 90)),
+            "p95": float(np.percentile(arr, 95)),
         }
+        if code in eingaben:
+            fe = eingaben[code]
+            eintrag["verteilung"] = fe.verteilung
+            eintrag["params"] = fe.params
+            eintrag["confidence"] = fe.confidence_level if fe.verteilung in CONFIDENCE_DISTRIBUTIONS and fe.verteilung != "beta" else None
+            eintrag["angreifertyp"] = fe.angreifertyp
+        knoten[code] = eintrag
     return knoten
 
 

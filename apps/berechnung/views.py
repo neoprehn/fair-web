@@ -25,11 +25,96 @@ def simulation_starten(request, szenario_pk):
     return redirect("berechnung:lauf", pk=lauf.pk)
 
 
+def _de(v, dezimal=2):
+    """Deutsches Zahlenformat (Tausenderpunkt, Komma-Dezimal)."""
+    if v is None:
+        return ""
+    return f"{v:,.{dezimal}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 def _formatiere_wert(code, wert):
     """Wahrscheinlichkeiten mit 2 Nachkommastellen, sonst ganzzahlig (Tausenderpunkt)."""
     if code != "Risk" and fair_tree.typ(code) == "probability":
         return f"{wert:.2f}".replace(".", ",")
     return f"{wert:,.0f}".replace(",", ".")
+
+
+def _node_tooltip(code, info):
+    """SVG-Tooltip-Text (5 Nachkommastellen)."""
+    if not info:
+        return "nicht genutzt"
+    if info["status"] == "eingabe":
+        zeilen = ["Eingabe · Verteilung: " + info.get("verteilung", "")]
+        for k, v in (info.get("params") or {}).items():
+            zeilen.append(f"{k} = {_de(v, 5) if isinstance(v, (int, float)) else v}")
+        if info.get("confidence"):
+            zeilen.append("Konfidenz: " + info["confidence"])
+        if info.get("angreifertyp"):
+            zeilen.append("Angreifertyp: " + info["angreifertyp"])
+        return "\n".join(zeilen)
+    return (f"berechnet\nMittelwert: {_de(info['mittelwert'], 5)}\n"
+            f"Std.-Abw.: {_de(info['stdev'], 5)}\n"
+            f"P90: {_de(info['p90'], 5)}\nP95: {_de(info['p95'], 5)}")
+
+
+_TABELLE_ORDER = ["LEF", "TEF", "CF", "POA", "VULN", "TC", "CS",
+                  "LM", "PL", "SL", "SLEF", "SLEM", "Risk"]
+
+
+def _knoten_tabelle(knoten):
+    """Zeilen für die pyfair-ähnliche Tabelle (Target/Verteilung/Params/… + P90/P95)."""
+    zeilen = []
+    for code in _TABELLE_ORDER:
+        info = knoten.get(code)
+        if not info:
+            continue
+        name = "Risk" if code == "Risk" else fair_tree.target(code)
+        if info["status"] == "berechnet":
+            name += " (berechnet)"
+        params = " ".join(
+            f"{k}={_de(v, 4) if isinstance(v, (int, float)) else v}"
+            for k, v in (info.get("params") or {}).items()
+        )
+        wahrscheinlich = code != "Risk" and fair_tree.typ(code) == "probability"
+        dez = 4 if wahrscheinlich else 2
+        zeilen.append({
+            "name": name, "verteilung": info.get("verteilung", ""),
+            "params": params, "confidence": info.get("confidence") or "",
+            "mean": _de(info["mittelwert"], dez), "stdev": _de(info["stdev"], dez),
+            "min": _de(info["min"], dez), "max": _de(info["max"], dez),
+            "p90": _de(info["p90"], dez), "p95": _de(info["p95"], dez),
+        })
+    return zeilen
+
+
+def schnittpunkt(lec, overlay):
+    """Schnittpunkt LEC × Risikotoleranz: {"loss": €, "tolerance": Anteil 0–1} oder None."""
+    if not lec or not overlay:
+        return None
+    try:
+        import numpy as np
+        lx = np.array([p["verlust"] for p in lec], dtype=float)
+        ly = np.array([p["ueberschreitung"] for p in lec], dtype=float)
+        if overlay["kind"] == "vline":
+            v = float(overlay["value"])
+            return {"loss": v, "tolerance": float(np.interp(v, lx, ly))}
+        tx = np.array(overlay["x"], dtype=float)
+        ty = np.array(overlay["y"], dtype=float)
+        order = np.argsort(tx)
+        tx, ty = tx[order], ty[order]
+        xs = np.linspace(max(lx.min(), tx.min()), min(lx.max(), tx.max()), 400)
+        if xs[0] >= xs[-1]:
+            return None
+        diff = np.interp(xs, lx, ly) - np.interp(xs, tx, ty)
+        wechsel = np.where(np.diff(np.sign(diff)) != 0)[0]
+        if not len(wechsel):
+            return None
+        i = wechsel[0]
+        x0, x1, d0, d1 = xs[i], xs[i + 1], diff[i], diff[i + 1]
+        xc = x0 - d0 * (x1 - x0) / (d1 - d0) if d1 != d0 else x0
+        return {"loss": float(xc), "tolerance": float(np.interp(xc, lx, ly))}
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def toleranz_overlay(rt):
@@ -80,9 +165,14 @@ class LaufDetailView(DetailView):
             info = knoten.get(n["code"])
             n["status"] = info["status"] if info else "unused"
             n["wert"] = _formatiere_wert(n["code"], info["mittelwert"]) if info else None
+            n["tooltip"] = _node_tooltip(n["code"], info)
         context["svg_nodes"] = nodes
         context["svg_edges"] = edges
-        context["toleranz_overlay"] = toleranz_overlay(self.object.szenario.risikotoleranz)
+        ov = toleranz_overlay(self.object.szenario.risikotoleranz)
+        context["toleranz_overlay"] = ov
+        context["knoten_tabelle"] = _knoten_tabelle(knoten)
+        if self.object.ist_fertig and self.object.ergebnis:
+            context["schnittpunkt"] = schnittpunkt(self.object.ergebnis.get("lec"), ov)
         return context
 
 
