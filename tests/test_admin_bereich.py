@@ -100,6 +100,35 @@ def test_admin_editor_kurve(admin_client):
 
 
 @pytest.mark.django_db
+def test_update_erzwingt_globale_werte(client):
+    # Szenario zunächst ohne globale Vorgaben mit eigenen Werten anlegen.
+    client.post(reverse("szenarien:create"),
+                data=_post(name="U", random_seed=5, n_simulations=99,
+                           rt_type="constant", rt_value="3000"))
+    s = Szenario.objects.get(name="U")
+    assert s.random_seed == 5 and s.n_simulations == 99
+
+    # Jetzt global schalten und das Szenario bearbeiten.
+    k = AppKonfiguration.load()
+    k.standard_seed = 777
+    k.standard_n_simulations = 5000
+    k.seed_global = True
+    k.n_simulations_global = True
+    k.unternehmens_risikotoleranz = {"type": "constant", "value": 99000}
+    k.risikotoleranz_global = True
+    k.save()
+
+    resp = client.post(reverse("szenarien:update", kwargs={"pk": s.pk}),
+                       data=_post(name="U", random_seed=1, n_simulations=2,
+                                  rt_type="constant", rt_value="1"))
+    assert resp.status_code == 302
+    s.refresh_from_db()
+    assert s.random_seed == 777
+    assert s.n_simulations == 5000
+    assert s.risikotoleranz == {"type": "constant", "value": 99000}
+
+
+@pytest.mark.django_db
 def test_create_ohne_global_nutzt_eingaben(client):
     # Default-Konfiguration: nichts global -> eigene Werte greifen.
     resp = client.post(reverse("szenarien:create"),
