@@ -7,8 +7,9 @@ Inline-Formset angelegt und bearbeitet.
 import json
 
 from django.db import transaction
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse_lazy
+from django.views.decorators.http import require_POST
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -26,6 +27,50 @@ from .fair_confidence import (
 )
 from .forms import FaktorEingabeForm, SzenarioForm
 from .models import Angreifertyp, FaktorEingabe, Szenario
+
+
+def risikotoleranz_aus_post(post):
+    """Baut die Risikotoleranz (kontextbasiert) aus den POST-Feldern.
+
+    Modul-Funktion, damit sowohl das Form-Mixin als auch der Live-Vorschau-
+    Endpoint dieselbe Logik nutzen.
+    """
+    from django.utils.formats import sanitize_separators
+
+    typ = post.get("rt_type")
+
+    def zahl(name):
+        v = post.get(name, "")
+        return float(sanitize_separators(v)) if v not in ("", None) else None
+
+    try:
+        if typ == "constant":
+            v = zahl("rt_value")
+            return {"type": "constant", "value": v} if v is not None else None
+        if typ == "distribution":
+            dist = post.get("rt_dist") or "pert"
+            felder = {
+                "pert": [("low", "rt_pert_low"), ("mode", "rt_pert_mode"),
+                         ("high", "rt_pert_high"), ("gamma", "rt_pert_gamma")],
+                "lognormal": [("mean", "rt_ln_mean"), ("sigma", "rt_ln_sigma")],
+                "normal": [("mean", "rt_no_mean"), ("stdev", "rt_no_stdev")],
+            }.get(dist, [])
+            params = {k: zahl(feld) for k, feld in felder if zahl(feld) is not None}
+            if not params:
+                return None
+            samples = post.get("rt_samples")
+            return {"type": "distribution", "distribution": dist, "params": params,
+                    "samples": int(samples) if samples else 20000}
+        if typ == "curve":
+            punkte = json.loads(post.get("rt_curve") or "[]")
+            punkte = [{"loss": float(sanitize_separators(str(p["loss"]))),
+                       "level": float(sanitize_separators(str(p["level"])))}
+                      for p in punkte
+                      if str(p.get("loss", "")) != "" and str(p.get("level", "")) != ""]
+            return {"type": "curve", "points": punkte} if punkte else None
+    except (ValueError, TypeError, KeyError):
+        return None
+    return None
 
 
 # Konfiguration für das Slider-JS (Single Source: fair_confidence).
@@ -78,44 +123,7 @@ class _SzenarioFormMixin:
         return {c: self.request.POST.get(f"modus-{c}", "direkt") for c in fair_tree.NICHT_BLATT}
 
     def _risikotoleranz_aus_post(self):
-        """Baut die Risikotoleranz (kontextbasiert) aus den POST-Feldern."""
-        from django.utils.formats import sanitize_separators
-
-        post = self.request.POST
-        typ = post.get("rt_type")
-
-        def zahl(name):
-            v = post.get(name, "")
-            return float(sanitize_separators(v)) if v not in ("", None) else None
-
-        try:
-            if typ == "constant":
-                v = zahl("rt_value")
-                return {"type": "constant", "value": v} if v is not None else None
-            if typ == "distribution":
-                dist = post.get("rt_dist") or "pert"
-                felder = {
-                    "pert": [("low", "rt_pert_low"), ("mode", "rt_pert_mode"),
-                             ("high", "rt_pert_high"), ("gamma", "rt_pert_gamma")],
-                    "lognormal": [("mean", "rt_ln_mean"), ("sigma", "rt_ln_sigma")],
-                    "normal": [("mean", "rt_no_mean"), ("stdev", "rt_no_stdev")],
-                }.get(dist, [])
-                params = {k: zahl(feld) for k, feld in felder if zahl(feld) is not None}
-                if not params:
-                    return None
-                samples = post.get("rt_samples")
-                return {"type": "distribution", "distribution": dist, "params": params,
-                        "samples": int(samples) if samples else 20000}
-            if typ == "curve":
-                punkte = json.loads(post.get("rt_curve") or "[]")
-                punkte = [{"loss": float(sanitize_separators(str(p["loss"]))),
-                           "level": float(sanitize_separators(str(p["level"])))}
-                          for p in punkte
-                          if str(p.get("loss", "")) != "" and str(p.get("level", "")) != ""]
-                return {"type": "curve", "points": punkte} if punkte else None
-        except (ValueError, TypeError, KeyError):
-            return None
-        return None
+        return risikotoleranz_aus_post(self.request.POST)
 
     def _node_dict(self, code, node_forms, modus):
         """Rekursiver Knoten für die Baum-Darstellung."""
@@ -204,3 +212,48 @@ class SzenarioDeleteView(DeleteView):
     template_name = "szenarien/confirm_delete.html"
     context_object_name = "szenario"
     success_url = reverse_lazy("szenarien:dashboard")
+
+
+def _inputs_aus_post(post):
+    """Validiert den Schnitt + die Frontier-Faktoren aus POST und liefert
+    ein pyfair-``inputs``-Dict – oder ``(None, fehlertext)``.
+    """
+    modus = {c: post.get(f"modus-{c}", "direkt") for c in fair_tree.NICHT_BLATT}
+    frontier = fair_tree.frontier_aus_modus(modus)
+    if not fair_tree.schnitt_ist_gueltig(frontier):
+        return None, "Schnitt unvollständig – jeden Ast bis zu einer Eingabe herunterbrechen."
+    inputs = {}
+    for code in frontier:
+        f = FaktorEingabeForm(post, instance=FaktorEingabe(faktor=code),
+                              prefix=code, faktor_code=code)
+        if not f.is_valid():
+            return None, f"Faktor {fair_tree.abbr(code)} noch unvollständig."
+        inst = f.instance
+        inputs[inst.fair_target] = inst.to_fair_kwargs()
+    return inputs, None
+
+
+@require_POST
+def lec_vorschau(request):
+    """Live-Vorschau: schnelle Mini-Simulation + LEC/Toleranz aus dem aktuellen
+    (ungespeicherten) Formularzustand. Antwortet als JSON."""
+    from apps.berechnung.services import simuliere_vorschau
+    from apps.berechnung.views import schnittpunkt, toleranz_overlay
+
+    inputs, fehler = _inputs_aus_post(request.POST)
+    if inputs is None:
+        return JsonResponse({"ok": False, "fehler": fehler})
+    try:
+        erg = simuliere_vorschau(inputs, n_simulations=1500)
+    except Exception as exc:  # noqa: BLE001 – Vorschau soll nie 500en
+        return JsonResponse({"ok": False, "fehler": str(exc)})
+
+    overlay = toleranz_overlay(risikotoleranz_aus_post(request.POST))
+    return JsonResponse({
+        "ok": True,
+        "lec": erg["lec"],
+        "perzentile": erg["perzentile"],
+        "p90": erg["p90"],
+        "overlay": overlay,
+        "schnittpunkt": schnittpunkt(erg["lec"], overlay),
+    })
