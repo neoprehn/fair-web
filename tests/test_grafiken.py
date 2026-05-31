@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from apps.berechnung.views import _knoten_tabelle, schnittpunkt, toleranz_overlay
-from apps.berechnung.services import _ergebnis_aus_sample
+from apps.berechnung.services import _ergebnis_aus_sample, _histogramm
 
 
 def _lec(xs, ys):
@@ -66,6 +66,18 @@ def test_perzentile_im_ergebnis():
     # Monoton steigend über die Stufen.
     werte = [erg["perzentile"][s] for s in ("10", "20", "50", "80", "90", "95", "99")]
     assert werte == sorted(werte)
+
+
+def test_histogramm_struktur():
+    h = _histogramm(np.arange(0, 100, dtype=float), bins=10)
+    assert len(h["x"]) == 10 and len(h["y"]) == 10
+    assert sum(h["y"]) == 100  # jede Beobachtung in genau einem Bin
+    assert h["breite"] == pytest.approx(99 / 10, rel=0.01)
+
+
+def test_histogramm_leer():
+    h = _histogramm(np.array([], dtype=float))
+    assert h == {"x": [], "y": [], "breite": 0.0}
 
 
 def test_knoten_tabelle_reihenfolge_und_format():

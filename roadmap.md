@@ -65,7 +65,7 @@
 - [x] „Neu berechnen" → führt zum Szenario-Bearbeiten
 - [x] Lokaler Test _(76 Tests grün)_
 - [x] Commit & Push → Branch `feature-ergebnis-grafik` mergen in `main`
-- [ ] Weitere Grafiken (Verteilung, Häufigkeit etc.)
+- [x] Weitere Grafiken: **Verteilung** des Jahresschadens + **Häufigkeit** der Schadenereignisse (Histogramme); Ergebnis-SVG schmaler; VaR + Risikotoleranz horizontal angeordnet
 - [ ] Schieber bewegen → Kurve aktualisiert sich live
 - [ ] Mehrere Szenarien in einem Chart vergleichen
 
@@ -74,6 +74,7 @@
 ### Phase 6 – Export
 - [ ] Excel Export mit openpyxl
 - [ ] PPT Bericht mit python-pptx
+- [ ] PDF Bericht 
 - [ ] Grafiken in Export einbetten
 - [ ] Download-Button in der Oberfläche
 - [ ] Lokaler Test
