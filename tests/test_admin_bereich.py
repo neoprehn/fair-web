@@ -72,6 +72,34 @@ def test_create_erzwingt_globale_risikotoleranz(client):
 
 
 @pytest.mark.django_db
+def test_admin_editor_speichert_risikotoleranz(admin_client):
+    url = reverse("admin:admin_bereich_appkonfiguration_add")
+    resp = admin_client.post(url, {
+        "standard_seed": 42, "standard_n_simulations": 10000,
+        "rt_type": "constant", "rt_value": "150000",
+    })
+    assert resp.status_code == 302
+    k = AppKonfiguration.objects.get()
+    assert k.unternehmens_risikotoleranz == {"type": "constant", "value": 150000.0}
+
+
+@pytest.mark.django_db
+def test_admin_editor_kurve(admin_client):
+    import json
+    url = reverse("admin:admin_bereich_appkonfiguration_add")
+    resp = admin_client.post(url, {
+        "standard_seed": 42, "standard_n_simulations": 10000,
+        "rt_type": "curve",
+        "rt_curve": json.dumps([{"loss": "1000", "level": "0.9"}, {"loss": "50000", "level": "0.1"}]),
+    })
+    assert resp.status_code == 302
+    k = AppKonfiguration.objects.get()
+    assert k.unternehmens_risikotoleranz["type"] == "curve"
+    assert k.unternehmens_risikotoleranz["points"] == [
+        {"loss": 1000.0, "level": 0.9}, {"loss": 50000.0, "level": 0.1}]
+
+
+@pytest.mark.django_db
 def test_create_ohne_global_nutzt_eingaben(client):
     # Default-Konfiguration: nichts global -> eigene Werte greifen.
     resp = client.post(reverse("szenarien:create"),
