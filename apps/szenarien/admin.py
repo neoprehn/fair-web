@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Angreifertyp, FaktorEingabe, Szenario
+from .models import Angreifertyp, FaktorEingabe, Szenario, Vergleich
 
 
 @admin.register(Angreifertyp)
@@ -26,3 +26,10 @@ class SzenarioAdmin(admin.ModelAdmin):
 class FaktorEingabeAdmin(admin.ModelAdmin):
     list_display = ("szenario", "faktor", "verteilung")
     list_filter = ("faktor", "verteilung")
+
+
+@admin.register(Vergleich)
+class VergleichAdmin(admin.ModelAdmin):
+    list_display = ("name", "referenz_szenario", "n_simulations", "geaendert_am")
+    filter_horizontal = ("szenarien",)
+    search_fields = ("name",)

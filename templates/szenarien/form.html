@@ -30,13 +30,29 @@
                         <div class="mb-3">
                             <label class="form-label">Anzahl Simulationen</label>
                             {{ form.n_simulations }}{{ form.n_simulations.errors }}
+                            {% if konfig.n_simulations_global %}<div class="form-text text-info">Global vorgegeben (nur lesend).</div>{% endif %}
                         </div>
                         <label class="form-label">Zufalls-Seed</label>
                         {{ form.random_seed }}{{ form.random_seed.errors }}
+                        {% if konfig.seed_global %}<div class="form-text text-info">Global vorgegeben (nur lesend).</div>{% endif %}
                     </div></div>
                 </div>
                 <div class="col-md-8">
+                    {% if konfig.risikotoleranz_global %}
+                    <label class="form-label">Risikotoleranz</label>
+                    <div class="card" style="border:1px solid var(--danger); background:rgba(239,68,68,0.10);"><div class="card-body py-2">
+                        <p class="text-info small mb-2">Unternehmensweit vorgegeben (nur lesend).</p>
+                        {% with rt=konfig.unternehmens_risikotoleranz %}
+                        {% if rt %}
+                            {% if rt.type == "constant" %}<p class="mb-0">Konstante Schwelle: <strong>{{ rt.value }} €</strong></p>
+                            {% elif rt.type == "curve" %}<p class="mb-0">Kurve mit {{ rt.points|length }} Punkt(en)</p>
+                            {% elif rt.type == "distribution" %}<p class="mb-0">Verteilung: <strong>{{ rt.distribution }}</strong></p>{% endif %}
+                        {% else %}<p class="text-body-secondary mb-0">Keine definiert.</p>{% endif %}
+                        {% endwith %}
+                    </div></div>
+                    {% else %}
                     {% include "szenarien/_risikotoleranz.html" %}
+                    {% endif %}
                 </div>
             </div>
         </div>

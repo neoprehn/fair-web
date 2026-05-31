@@ -32,6 +32,18 @@ class SzenarioForm(forms.ModelForm):
             "random_seed": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Global vorgegebene Werte: Feld deaktivieren + globalen Wert vorbelegen.
+        from apps.admin_bereich.models import AppKonfiguration
+        konfig = AppKonfiguration.load()
+        if konfig.seed_global:
+            self.fields["random_seed"].disabled = True
+            self.initial["random_seed"] = konfig.standard_seed
+        if konfig.n_simulations_global:
+            self.fields["n_simulations"].disabled = True
+            self.initial["n_simulations"] = konfig.standard_n_simulations
+
 
 class VergleichForm(forms.ModelForm):
     """Anlegen/Bearbeiten eines Szenario-Vergleichs (Gruppe bestehender Szenarien)."""

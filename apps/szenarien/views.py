@@ -152,9 +152,12 @@ class _SzenarioFormMixin:
         }
 
     def get_context_data(self, **kwargs):
+        from apps.admin_bereich.models import AppKonfiguration
+
         context = super().get_context_data(**kwargs)
         context["confidence_config"] = _CONFIDENCE_CONFIG
         context["angreifertypen"] = Angreifertyp.objects.all()
+        context["konfig"] = AppKonfiguration.load()
         context["risikotoleranz"] = self.object.risikotoleranz if self.object else None
         context["svg_nodes"], context["svg_edges"] = fair_tree.svg_layout()
         if "baum_lef" not in context:
@@ -188,10 +191,19 @@ class _SzenarioFormMixin:
                 )
             return self.render_to_response(context)
 
+        from apps.admin_bereich.models import AppKonfiguration
+        konfig = AppKonfiguration.load()
         with transaction.atomic():
             self.object = form.save()
-            self.object.risikotoleranz = self._risikotoleranz_aus_post()
-            self.object.save(update_fields=["risikotoleranz"])
+            if konfig.seed_global:
+                self.object.random_seed = konfig.standard_seed
+            if konfig.n_simulations_global:
+                self.object.n_simulations = konfig.standard_n_simulations
+            if konfig.risikotoleranz_global:
+                self.object.risikotoleranz = konfig.unternehmens_risikotoleranz
+            else:
+                self.object.risikotoleranz = self._risikotoleranz_aus_post()
+            self.object.save(update_fields=["risikotoleranz", "random_seed", "n_simulations"])
             self.object.faktoren.all().delete()
             for code, f in frontier_forms.items():
                 eingabe = f.save(commit=False)
@@ -269,6 +281,8 @@ def lec_vorschau(request):
     from apps.berechnung.services import simuliere_vorschau
     from apps.berechnung.views import schnittpunkt, toleranz_overlay
 
+    from apps.admin_bereich.models import AppKonfiguration
+
     inputs, fehler = _inputs_aus_post(request.POST)
     if inputs is None:
         return JsonResponse({"ok": False, "fehler": fehler})
@@ -277,7 +291,9 @@ def lec_vorschau(request):
     except Exception as exc:  # noqa: BLE001 – Vorschau soll nie 500en
         return JsonResponse({"ok": False, "fehler": str(exc)})
 
-    overlay = toleranz_overlay(risikotoleranz_aus_post(request.POST))
+    konfig = AppKonfiguration.load()
+    rt = konfig.unternehmens_risikotoleranz if konfig.risikotoleranz_global else risikotoleranz_aus_post(request.POST)
+    overlay = toleranz_overlay(rt)
     return JsonResponse({
         "ok": True,
         "lec": erg["lec"],

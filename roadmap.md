@@ -104,14 +104,14 @@
 ---
 
 ### Phase 7 – Admin-Bereich
-- [ ] Django Admin einrichten
-- [ ] Standard-Seed konfigurierbar machen mit Otion als globale Variable. Wenn global, dann in der Szenarioeingabe nur noch als "nur lesend" anzeigen
-- [ ] Standard-Simulationsanzahl konfigurierbar machen mit Otion als globale Variable. Wenn global, dann in der Szenarioeingabe nur noch als "nur lesend" anzeigen
+- [x] Django Admin einrichten _(Modelle registriert: Szenario/Faktor/Angreifertyp/Vergleich/Läufe + App-Konfiguration)_
+- [x] Standard-Seed konfigurierbar (globale Variable in der App-Konfiguration; wenn global → in der Szenarioeingabe „nur lesend")
+- [x] Standard-Simulationsanzahl konfigurierbar (globale Variable; wenn global → „nur lesend")
 - [ ] Benutzer & Zugriffsrechte einrichten
 - [ ] Vorschlagswerte für Konfidenzen editierbar machen (wahrscheinlich mit Eingriff in pyfair)
 - [ ] Hell/Dunkel-Design Schalter
 - [ ] Euro/ Dollar Schalter und damit verbunden "." und "," für die Separatoren tauschen
-- [ ] "Unternehmens-Risikotoleranz" als global konfigurierbar machen. Wenn diese vorgegeben ist, dann aus der Eingabe nur noch als "nur lesend" anzeigen
+- [x] „Unternehmens-Risikotoleranz" als global konfigurierbar (App-Konfiguration; wenn vorgegeben → Eingabe „nur lesend", gilt für alle Szenarien)
 - [ ] Lokaler Test
 - [ ] Commit & Push → Branch `feature-admin` mergen in `main`
 
