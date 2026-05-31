@@ -49,6 +49,22 @@ def _ergebnis_aus_sample(sample):
     }
 
 
+def _histogramm(arr, bins=40):
+    """Histogramm (Balken) aus einem Sample: Balkenmitten + Häufigkeiten."""
+    import numpy as np
+
+    arr = np.asarray(arr, dtype=float)
+    arr = arr[np.isfinite(arr)]
+    if arr.size == 0:
+        return {"x": [], "y": [], "breite": 0.0}
+    counts, kanten = np.histogram(arr, bins=bins)
+    mitten = (kanten[:-1] + kanten[1:]) / 2.0
+    breite = float(kanten[1] - kanten[0]) if len(kanten) > 1 else 0.0
+    return {"x": [float(m) for m in mitten],
+            "y": [int(c) for c in counts],
+            "breite": breite}
+
+
 def _knoten_stats(df, szenario):
     """Statistik je berechnetem FAIR-Knoten (für Ergebnis-Baum + Tabelle).
 
@@ -132,6 +148,11 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
     combined = pd.concat(teile, ignore_index=True)
     ergebnis = _ergebnis_aus_sample(combined["Risk"].to_numpy())
     ergebnis["knoten"] = _knoten_stats(combined, szenario)
+    # Histogramme für die Auswertungs-Grafiken.
+    ergebnis["verteilung_hist"] = _histogramm(combined["Risk"].to_numpy())
+    lef_spalte = fair_tree.target("LEF")  # "Loss Event Frequency"
+    if lef_spalte in combined.columns:
+        ergebnis["haeufigkeit_hist"] = _histogramm(combined[lef_spalte].to_numpy())
     return ergebnis
 
 

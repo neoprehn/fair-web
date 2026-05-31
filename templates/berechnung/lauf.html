@@ -47,38 +47,38 @@
         </div>
     </div>
 
-    <div class="row g-3 mb-2">
-        <div class="col-lg-5">
-            <div class="card h-100" style="border:1px solid var(--accent);"><div class="card-body py-2">
-                <h2 class="h6 text-info mb-2">Value at Risk (VaR)</h2>
-                <table class="table table-sm w-auto mb-0">
-                    <tbody>
-                    {% for stufe, wert in lauf.ergebnis.perzentile.items %}
-                        <tr><th class="pe-4">VaR {{ stufe }} %</th><td>{{ wert|floatformat:0|intcomma }} €</td></tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div></div>
+    <div class="card mb-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
+        <h2 class="h6 text-info mb-2">Value at Risk (VaR)</h2>
+        <div class="d-flex flex-wrap gap-2">
+        {% for stufe, wert in lauf.ergebnis.perzentile.items %}
+            <div class="text-center px-3 py-1">
+                <div class="text-body-secondary small">VaR {{ stufe }} %</div>
+                <div class="fw-semibold text-nowrap">{{ wert|floatformat:0|intcomma }} €</div>
+            </div>
+        {% endfor %}
         </div>
-        <div class="col-lg-5">
-            <div class="card h-100" style="border:1px solid var(--danger);"><div class="card-body py-2">
-                <h2 class="h6 text-danger mb-2">Risikotoleranz-Betrachtung</h2>
-                {% if schnittpunkt %}
-                <table class="table table-sm w-auto mb-0">
-                    <tbody>
-                        <tr><th class="pe-4">Schnittpunkt (Loss)</th><td>{{ schnittpunkt.loss|floatformat:0|intcomma }} €</td></tr>
-                        <tr><th class="pe-4">Toleranz dort</th><td>{% widthratio schnittpunkt.tolerance 1 100 %} %</td></tr>
-                    </tbody>
-                </table>
-                <p class="text-body-secondary small mb-0 mt-1">Wo LEC und Risikotoleranz sich schneiden.</p>
-                {% else %}
-                <p class="text-body-secondary small mb-0">
-                    {% if toleranz_overlay %}Kein Schnittpunkt im betrachteten Bereich.{% else %}Keine Risikotoleranz definiert.{% endif %}
-                </p>
-                {% endif %}
-            </div></div>
+    </div></div>
+
+    <div class="card mb-3" style="border:1px solid var(--danger);"><div class="card-body py-2">
+        <h2 class="h6 text-danger mb-2">Risikotoleranz-Betrachtung</h2>
+        {% if schnittpunkt %}
+        <div class="d-flex flex-wrap gap-4 align-items-end">
+            <div class="text-center px-3 py-1">
+                <div class="text-body-secondary small">Schnittpunkt (Loss)</div>
+                <div class="fw-semibold text-nowrap">{{ schnittpunkt.loss|floatformat:0|intcomma }} €</div>
+            </div>
+            <div class="text-center px-3 py-1">
+                <div class="text-body-secondary small">Toleranz dort</div>
+                <div class="fw-semibold">{% widthratio schnittpunkt.tolerance 1 100 %} %</div>
+            </div>
+            <div class="text-body-secondary small py-1">Wo LEC und Risikotoleranz sich schneiden.</div>
         </div>
-    </div>
+        {% else %}
+        <p class="text-body-secondary small mb-0">
+            {% if toleranz_overlay %}Kein Schnittpunkt im betrachteten Bereich.{% else %}Keine Risikotoleranz definiert.{% endif %}
+        </p>
+        {% endif %}
+    </div></div>
 
     <h2 class="h5 mt-4">FAIR-Baum</h2>
     <p class="text-body-secondary small mb-2">
@@ -86,8 +86,9 @@
         <span class="badge" style="background:var(--ok); color:#04223a;">simuliert / berechnet</span>
         – Mittelwert je Knoten.
     </p>
-    <div class="card mb-3"><div class="card-body py-2" style="overflow-x:auto;">
-        <svg viewBox="0 0 900 270" style="width:100%; max-width:900px; height:auto;">
+    <div class="row mb-3"><div class="col-12 col-xl-9">
+    <div class="card h-100"><div class="card-body py-2" style="overflow-x:auto;">
+        <svg viewBox="0 0 900 270" style="width:100%; max-width:760px; height:auto;">
             {% for e in svg_edges %}
             <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
             {% endfor %}
@@ -100,6 +101,7 @@
             {% if n.wert %}<text class="svg-node-wert" x="{{ n.x }}" y="{{ n.y|add:'26' }}" text-anchor="middle">{{ n.wert }}</text>{% endif %}
             {% endfor %}
         </svg>
+    </div></div>
     </div></div>
 
     <h2 class="h5 mt-4">Loss Exceedance Curve (LEC)</h2>
@@ -114,6 +116,23 @@
     {{ toleranz_overlay|json_script:"toleranz-data" }}
     {{ lauf.ergebnis.p90|json_script:"p90-data" }}
     {{ schnittpunkt|json_script:"schnittpunkt-data" }}
+
+    <div class="row g-3 mb-3">
+        <div class="col-lg-6">
+            <h2 class="h5 mt-2">Verteilung des Jahresschadens</h2>
+            <div class="card h-100"><div class="card-body">
+                <div id="vert-chart" style="height:320px;"></div>
+            </div></div>
+        </div>
+        <div class="col-lg-6">
+            <h2 class="h5 mt-2">Häufigkeit der Schadenereignisse</h2>
+            <div class="card h-100"><div class="card-body">
+                <div id="haeuf-chart" style="height:320px;"></div>
+            </div></div>
+        </div>
+    </div>
+    {{ lauf.ergebnis.verteilung_hist|json_script:"vert-data" }}
+    {{ lauf.ergebnis.haeufigkeit_hist|json_script:"haeuf-data" }}
 
     {% if knoten_tabelle %}
     <h2 class="h5 mt-4">Knoten-Details</h2>
@@ -220,6 +239,26 @@
             }
             grow();
         });
+
+    // Histogramme: Verteilung des Jahresschadens + Häufigkeit der Schadenereignisse.
+    function balken(divId, elId, farbe, xtitel) {
+        var el = document.getElementById(elId);
+        if (!el) return;
+        var d = JSON.parse(el.textContent || 'null');
+        if (!d || !d.x || !d.x.length) return;
+        Plotly.newPlot(divId, [{
+            x: d.x, y: d.y, type: 'bar', marker: { color: farbe },
+            width: d.breite ? d.breite * 0.9 : undefined
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#cbd5e1', family: 'Bahnschrift, sans-serif' },
+            margin: { l: 60, r: 15, t: 10, b: 45 }, bargap: 0.02,
+            xaxis: { title: xtitel, gridcolor: '#1e293b' },
+            yaxis: { title: 'Häufigkeit', gridcolor: '#1e293b' }
+        }, { responsive: true, displayModeBar: false });
+    }
+    balken('vert-chart', 'vert-data', '#7dd3fc', 'Jahresschaden (€)');
+    balken('haeuf-chart', 'haeuf-data', '#86efac', 'Schadenereignisse pro Jahr');
 })();
 </script>
 {% endif %}
