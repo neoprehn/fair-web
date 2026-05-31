@@ -222,6 +222,22 @@ class MetaLaufDetailView(DetailView):
     template_name = "berechnung/meta_lauf.html"
     context_object_name = "lauf"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        lauf = self.object
+        overlay = None
+        schnittpunkte = []
+        ref = lauf.vergleich.referenz_szenario if lauf.vergleich else None
+        if lauf.ist_fertig and lauf.ergebnis and ref:
+            overlay = toleranz_overlay(ref.risikotoleranz)
+            for s in lauf.ergebnis.get("szenarien", []):
+                sp = schnittpunkt(s.get("stats", {}).get("lec"), overlay)
+                schnittpunkte.append({"name": s.get("name"), "schnittpunkt": sp})
+        context["referenz_overlay"] = overlay
+        context["referenz_name"] = ref.name if ref else None
+        context["vergleich_schnittpunkte"] = schnittpunkte
+        return context
+
 
 def meta_status(request, pk):
     lauf = get_object_or_404(MetaLauf, pk=pk)

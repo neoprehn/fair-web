@@ -62,6 +62,31 @@
     </tbody>
 </table>
 
+<h2 class="h5 mt-4">Risikotoleranz</h2>
+{% with rt=szenario.risikotoleranz %}
+{% if rt %}
+    {% if rt.type == "constant" %}
+    <p class="mb-3">Konstante Schwelle: <strong>{{ rt.value|floatformat:0|intcomma }} €</strong></p>
+    {% elif rt.type == "curve" %}
+    <table class="table table-sm w-auto">
+        <thead><tr><th>Schaden (€)</th><th>akzeptierte Wahrscheinlichkeit</th></tr></thead>
+        <tbody>
+        {% for p in rt.points %}
+            <tr><td>{{ p.loss|floatformat:0|intcomma }} €</td><td>{% widthratio p.level 1 100 %} %</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% elif rt.type == "distribution" %}
+    <p class="mb-1">Verteilung: <strong>{{ rt.distribution }}</strong></p>
+    <p class="mb-3">
+        {% for key, value in rt.params.items %}<span class="badge text-bg-light">{{ key }} = {{ value }}</span> {% endfor %}
+    </p>
+    {% endif %}
+{% else %}
+    <p class="text-body-secondary mb-3">Keine Risikotoleranz definiert.</p>
+{% endif %}
+{% endwith %}
+
 <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
     <h2 class="h5 mb-0">Simulation</h2>
     {% if szenario.faktoren.all %}

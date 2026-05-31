@@ -99,6 +99,15 @@ class Vergleich(models.Model):
     szenarien = models.ManyToManyField(
         "Szenario", related_name="vergleiche", verbose_name="Szenarien"
     )
+    # Dessen Risikotoleranz wird im Compare-Chart gezeichnet (Schnittpunkte je Szenario-LEC).
+    referenz_szenario = models.ForeignKey(
+        "Szenario",
+        related_name="referenz_fuer",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Referenz-Szenario (Risikotoleranz)",
+    )
     n_simulations = models.PositiveIntegerField("Anzahl Simulationen", default=10_000)
     random_seed = models.PositiveIntegerField("Zufalls-Seed", default=42)
     erstellt_am = models.DateTimeField("Erstellt am", auto_now_add=True)

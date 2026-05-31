@@ -78,6 +78,30 @@
     {{ lauf.ergebnis.gesamt.lec|json_script:"gesamt-lec" }}
     {{ lauf.ergebnis.szenarien|json_script:"szenarien-data" }}
     {{ lauf.ergebnis.gesamt.p90|json_script:"gesamt-p90" }}
+    {{ referenz_overlay|json_script:"referenz-overlay" }}
+    {{ vergleich_schnittpunkte|json_script:"schnittpunkte-data" }}
+
+    {% if referenz_name and vergleich_schnittpunkte %}
+    <div class="card mb-3" style="border:1px solid var(--danger);"><div class="card-body py-2">
+        <h2 class="h6 text-danger mb-2">Schnittpunkte mit Risikotoleranz (Referenz: {{ referenz_name }})</h2>
+        <table class="table table-sm w-auto mb-0">
+            <thead><tr><th>Szenario</th><th class="text-end">Schnittpunkt (Loss)</th><th class="text-end">Toleranz dort</th></tr></thead>
+            <tbody>
+            {% for z in vergleich_schnittpunkte %}
+                <tr>
+                    <td>{{ z.name }}</td>
+                    {% if z.schnittpunkt %}
+                    <td class="text-end">{{ z.schnittpunkt.loss|floatformat:0|intcomma }} €</td>
+                    <td class="text-end">{% widthratio z.schnittpunkt.tolerance 1 100 %} %</td>
+                    {% else %}
+                    <td class="text-end text-body-secondary" colspan="2">kein Schnittpunkt im Bereich</td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+    {% endif %}
 
     {% if lauf.vergleich %}
     <form method="post" action="{% url 'berechnung:vergleich_starten' lauf.vergleich.pk %}" class="d-inline">
@@ -106,6 +130,10 @@
     var szen = JSON.parse(document.getElementById('szenarien-data').textContent) || [];
     var p90 = JSON.parse(document.getElementById('gesamt-p90').textContent);
     var farben = ['#7dd3fc', '#86efac', '#fbbf24', '#f87171', '#c084fc', '#34d399', '#f472b6', '#60a5fa'];
+    var ovEl = document.getElementById('referenz-overlay');
+    var ov = ovEl ? JSON.parse(ovEl.textContent || 'null') : null;
+    var spEl = document.getElementById('schnittpunkte-data');
+    var schnittpunkte = spEl ? (JSON.parse(spEl.textContent || '[]') || []) : [];
 
     var xs = gesamt.map(function (p) { return p.verlust; });
     szen.forEach(function (s) { (s.stats.lec || []).forEach(function (p) { xs.push(p.verlust); }); });
@@ -113,16 +141,51 @@
     var xmin = xs.length ? Math.min.apply(null, xs) : 1;
     var xType = 'linear', xRange;
     if (xmin > 0 && p90 > xmin) { var a = Math.log10(xmin); xType = 'log'; xRange = [a, a + (Math.log10(p90) - a) / 0.75]; }
+    var vx = function (v) { return xType === 'log' ? Math.log10(v) : v; };
 
     function linie(lec, name, farbe) {
         return { x: lec.map(function (p) { return p.verlust; }),
                  y: lec.map(function (p) { return p.ueberschreitung; }),
                  mode: 'lines', name: name, line: { color: farbe, width: 2 } };
     }
-    function compareTraces() {
-        return szen.map(function (s, i) { return linie(s.stats.lec || [], s.name, farben[i % farben.length]); });
+    // Referenz-Risikotoleranz (rot durchgezogen) als Trace bzw. vline-Shape.
+    function toleranzTrace() {
+        if (ov && ov.kind === 'curve') {
+            return { x: ov.x, y: ov.y, mode: 'lines', name: 'Risikotoleranz',
+                     line: { color: '#ef4444', width: 2.5 } };
+        }
+        return null;
     }
-    function addTraces() { return [linie(gesamt, 'Gesamtrisiko (Summe)', '#7dd3fc')]; }
+    function toleranzShapes() {
+        if (ov && ov.kind === 'vline' && ov.value > 0) {
+            return [{ type: 'line', x0: vx(ov.value), x1: vx(ov.value), y0: 0, y1: 1, yref: 'paper',
+                      line: { color: '#ef4444', width: 2.5 } }];
+        }
+        return [];
+    }
+    function schnittTrace() {
+        var px = [], py = [], txt = [];
+        schnittpunkte.forEach(function (z) {
+            if (z.schnittpunkt && z.schnittpunkt.loss != null) {
+                px.push(z.schnittpunkt.loss); py.push(z.schnittpunkt.tolerance); txt.push(z.name);
+            }
+        });
+        if (!px.length) return null;
+        return { x: px, y: py, text: txt, mode: 'markers', name: 'Schnittpunkte',
+                 marker: { color: '#fbbf24', size: 11, line: { color: '#fff', width: 1.5 } } };
+    }
+
+    function compareTraces() {
+        var t = szen.map(function (s, i) { return linie(s.stats.lec || [], s.name, farben[i % farben.length]); });
+        var tol = toleranzTrace(); if (tol) t.push(tol);
+        var sp = schnittTrace(); if (sp) t.push(sp);
+        return t;
+    }
+    function addTraces() {
+        var t = [linie(gesamt, 'Gesamtrisiko (Summe)', '#7dd3fc')];
+        var tol = toleranzTrace(); if (tol) t.push(tol);
+        return t;
+    }
 
     var layout = {
         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
@@ -130,20 +193,21 @@
         margin: { l: 70, r: 20, t: 10, b: 50 },
         xaxis: { title: 'Jahresschaden (€)', gridcolor: '#1e293b', type: xType, range: xRange },
         yaxis: { title: 'P(Schaden ≥ x)', gridcolor: '#1e293b', range: [0, 1], tickformat: '.0%' },
-        legend: { orientation: 'h', y: 1.12 }
+        legend: { orientation: 'h', y: 1.12 }, shapes: toleranzShapes()
     };
     function zeichne(traces) { Plotly.react('meta-lec-chart', traces, layout, { responsive: true, displayModeBar: false }); }
 
     var bC = document.getElementById('btn-compare'), bA = document.getElementById('btn-add');
     var hint = document.getElementById('lec-modus-hinweis');
+    var tolHinweis = ov ? ' <span class="text-danger">Rot: Risikotoleranz.</span>' : '';
     function setCompare() {
         bC.classList.add('active'); bA.classList.remove('active');
-        hint.innerHTML = '<strong>Compare:</strong> jede Szenario-LEC einzeln übereinander.';
+        hint.innerHTML = '<strong>Compare:</strong> jede Szenario-LEC einzeln übereinander.' + tolHinweis;
         zeichne(compareTraces());
     }
     function setAdd() {
         bA.classList.add('active'); bC.classList.remove('active');
-        hint.innerHTML = '<strong>Add:</strong> Gesamtrisiko als Summe der Szenarien.';
+        hint.innerHTML = '<strong>Add:</strong> Gesamtrisiko als Summe der Szenarien.' + tolHinweis;
         zeichne(addTraces());
     }
     bC.addEventListener('click', setCompare);
