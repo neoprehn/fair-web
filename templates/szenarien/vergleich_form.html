@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Vergleich bearbeiten{% else %}Neuer Vergleich{% endif %} &middot; fair-web{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">{% if object %}Vergleich bearbeiten{% else %}Neuer Szenariovergleich{% endif %}</h1>
+<p class="text-body-secondary">Mehrere bestehende Szenarien gruppieren und gemeinsam berechnen
+   (Überlagern der LECs = <em>Compare</em>, Summe = <em>Add</em>).</p>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card card-meta mb-3"><div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    {{ form.name }}{{ form.name.errors }}
+                </div>
+                <label class="form-label">Beschreibung</label>
+                {{ form.beschreibung }}{{ form.beschreibung.errors }}
+            </div></div>
+
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label class="form-label">Anzahl Simulationen</label>
+                    {{ form.n_simulations }}{{ form.n_simulations.errors }}
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label">Zufalls-Seed</label>
+                    {{ form.random_seed }}{{ form.random_seed.errors }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card" style="border:1px solid var(--accent);"><div class="card-body">
+                <label class="form-label text-info">Szenarien im Vergleich</label>
+                {% if form.szenarien.field.queryset %}
+                <div class="d-flex flex-column gap-1">
+                    {% for cb in form.szenarien %}
+                    <div class="form-check">{{ cb.tag }}
+                        <label class="form-check-label" for="{{ cb.id_for_label }}">{{ cb.choice_label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-body-secondary small mb-0">Keine rechenbaren Szenarien vorhanden – erst Szenarien mit gültigem Schnitt anlegen.</p>
+                {% endif %}
+                {{ form.szenarien.errors }}
+            </div></div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Speichern</button>
+        <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Abbrechen</a>
+    </div>
+</form>
+{% endblock %}

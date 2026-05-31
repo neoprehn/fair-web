@@ -11,7 +11,7 @@ from django import forms
 
 from . import fair_tree
 from .fair_confidence import UNSICHERHEIT_MAX, UNSICHERHEIT_MIN
-from .models import FaktorEingabe, Szenario
+from .models import FaktorEingabe, Szenario, Vergleich
 
 
 class RangeInput(forms.NumberInput):
@@ -31,6 +31,34 @@ class SzenarioForm(forms.ModelForm):
             "n_simulations": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
             "random_seed": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
         }
+
+
+class VergleichForm(forms.ModelForm):
+    """Anlegen/Bearbeiten eines Szenario-Vergleichs (Gruppe bestehender Szenarien)."""
+
+    class Meta:
+        model = Vergleich
+        fields = ("name", "beschreibung", "szenarien", "n_simulations", "random_seed")
+        localized_fields = ("n_simulations", "random_seed")
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "beschreibung": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "szenarien": forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
+            "n_simulations": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+            "random_seed": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Nur rechenbare Szenarien (gültiger Schnitt) zur Auswahl anbieten.
+        waehlbar = [s.pk for s in Szenario.objects.all() if s.schnitt_ist_gueltig()]
+        self.fields["szenarien"].queryset = Szenario.objects.filter(pk__in=waehlbar)
+
+    def clean_szenarien(self):
+        szenarien = self.cleaned_data["szenarien"]
+        if szenarien.count() < 2:
+            raise forms.ValidationError("Bitte mindestens zwei Szenarien auswählen.")
+        return szenarien
 
 
 # Sprechende Labels je Verteilungs-Parameter, abhängig vom Faktortyp.

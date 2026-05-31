@@ -25,8 +25,8 @@ from .fair_confidence import (
     UNSICHERHEIT_LABELS,
     UNSICHERHEIT_TO_CONFIDENCE,
 )
-from .forms import FaktorEingabeForm, SzenarioForm
-from .models import Angreifertyp, FaktorEingabe, Szenario
+from .forms import FaktorEingabeForm, SzenarioForm, VergleichForm
+from .models import Angreifertyp, FaktorEingabe, Szenario, Vergleich
 
 
 def risikotoleranz_aus_post(post):
@@ -87,6 +87,11 @@ class SzenarioListView(ListView):
     model = Szenario
     template_name = "szenarien/dashboard.html"
     context_object_name = "szenarien"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["vergleiche"] = Vergleich.objects.prefetch_related("szenarien", "laeufe")
+        return context
 
 
 class SzenarioDetailView(DetailView):
@@ -211,6 +216,30 @@ class SzenarioDeleteView(DeleteView):
     model = Szenario
     template_name = "szenarien/confirm_delete.html"
     context_object_name = "szenario"
+    success_url = reverse_lazy("szenarien:dashboard")
+
+
+class _VergleichFormMixin:
+    model = Vergleich
+    form_class = VergleichForm
+    template_name = "szenarien/vergleich_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy("szenarien:dashboard")
+
+
+class VergleichCreateView(_VergleichFormMixin, CreateView):
+    pass
+
+
+class VergleichUpdateView(_VergleichFormMixin, UpdateView):
+    pass
+
+
+class VergleichDeleteView(DeleteView):
+    model = Vergleich
+    template_name = "szenarien/vergleich_confirm_delete.html"
+    context_object_name = "vergleich"
     success_url = reverse_lazy("szenarien:dashboard")
 
 

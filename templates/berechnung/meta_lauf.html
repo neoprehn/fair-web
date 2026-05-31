@@ -1,17 +1,18 @@
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block title %}Gesamt-Simulation &middot; fair-web{% endblock %}
+{% block title %}{% if lauf.vergleich %}{{ lauf.vergleich.name }}{% else %}Gesamt-Simulation{% endif %} &middot; fair-web{% endblock %}
+{% block extra_head %}{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'szenarien:dashboard' %}">Szenarien</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Gesamt-Simulation #{{ lauf.pk }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{% if lauf.vergleich %}{{ lauf.vergleich.name }}{% else %}Gesamt-Simulation{% endif %} #{{ lauf.pk }}</li>
     </ol>
 </nav>
 
-<h1 class="h3 mb-3">Gesamtrisiko mehrerer Szenarien</h1>
+<h1 class="h3 mb-3">{% if lauf.vergleich %}Vergleich: {{ lauf.vergleich.name }}{% else %}Gesamtrisiko mehrerer Szenarien{% endif %}</h1>
 
 {% if lauf.status == "fehler" %}
     <div class="alert alert-danger"><strong>Fehler:</strong> {{ lauf.fehler_text }}</div>
@@ -59,6 +60,32 @@
         {% endfor %}
         </tbody>
     </table>
+
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+        <h2 class="h5 mb-0">Loss Exceedance Curves</h2>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Modus">
+            <button type="button" class="btn btn-outline-info active" id="btn-compare">Compare (überlagern)</button>
+            <button type="button" class="btn btn-outline-info" id="btn-add">Add (Summe)</button>
+        </div>
+    </div>
+    <p class="text-body-secondary small mb-2" id="lec-modus-hinweis">
+        <strong>Compare:</strong> jede Szenario-LEC einzeln übereinander.
+    </p>
+    <div class="card mb-3"><div class="card-body">
+        <div id="meta-lec-chart" style="height:440px;"></div>
+    </div></div>
+
+    {{ lauf.ergebnis.gesamt.lec|json_script:"gesamt-lec" }}
+    {{ lauf.ergebnis.szenarien|json_script:"szenarien-data" }}
+    {{ lauf.ergebnis.gesamt.p90|json_script:"gesamt-p90" }}
+
+    {% if lauf.vergleich %}
+    <form method="post" action="{% url 'berechnung:vergleich_starten' lauf.vergleich.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Neu berechnen</button>
+    </form>
+    <a class="btn btn-outline-secondary" href="{% url 'szenarien:vergleich_update' lauf.vergleich.pk %}">Vergleich bearbeiten</a>
+    {% endif %}
     <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Zurück zur Übersicht</a>
 
 {% else %}
@@ -71,6 +98,60 @@
 {% endblock %}
 
 {% block extra_js %}
+{% if lauf.status == "fertig" %}
+<script>
+(function () {
+    if (typeof Plotly === 'undefined') return;
+    var gesamt = JSON.parse(document.getElementById('gesamt-lec').textContent) || [];
+    var szen = JSON.parse(document.getElementById('szenarien-data').textContent) || [];
+    var p90 = JSON.parse(document.getElementById('gesamt-p90').textContent);
+    var farben = ['#7dd3fc', '#86efac', '#fbbf24', '#f87171', '#c084fc', '#34d399', '#f472b6', '#60a5fa'];
+
+    var xs = gesamt.map(function (p) { return p.verlust; });
+    szen.forEach(function (s) { (s.stats.lec || []).forEach(function (p) { xs.push(p.verlust); }); });
+    xs = xs.filter(function (v) { return v > 0; });
+    var xmin = xs.length ? Math.min.apply(null, xs) : 1;
+    var xType = 'linear', xRange;
+    if (xmin > 0 && p90 > xmin) { var a = Math.log10(xmin); xType = 'log'; xRange = [a, a + (Math.log10(p90) - a) / 0.75]; }
+
+    function linie(lec, name, farbe) {
+        return { x: lec.map(function (p) { return p.verlust; }),
+                 y: lec.map(function (p) { return p.ueberschreitung; }),
+                 mode: 'lines', name: name, line: { color: farbe, width: 2 } };
+    }
+    function compareTraces() {
+        return szen.map(function (s, i) { return linie(s.stats.lec || [], s.name, farben[i % farben.length]); });
+    }
+    function addTraces() { return [linie(gesamt, 'Gesamtrisiko (Summe)', '#7dd3fc')]; }
+
+    var layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#cbd5e1', family: 'Bahnschrift, sans-serif' },
+        margin: { l: 70, r: 20, t: 10, b: 50 },
+        xaxis: { title: 'Jahresschaden (€)', gridcolor: '#1e293b', type: xType, range: xRange },
+        yaxis: { title: 'P(Schaden ≥ x)', gridcolor: '#1e293b', range: [0, 1], tickformat: '.0%' },
+        legend: { orientation: 'h', y: 1.12 }
+    };
+    function zeichne(traces) { Plotly.react('meta-lec-chart', traces, layout, { responsive: true, displayModeBar: false }); }
+
+    var bC = document.getElementById('btn-compare'), bA = document.getElementById('btn-add');
+    var hint = document.getElementById('lec-modus-hinweis');
+    function setCompare() {
+        bC.classList.add('active'); bA.classList.remove('active');
+        hint.innerHTML = '<strong>Compare:</strong> jede Szenario-LEC einzeln übereinander.';
+        zeichne(compareTraces());
+    }
+    function setAdd() {
+        bA.classList.add('active'); bC.classList.remove('active');
+        hint.innerHTML = '<strong>Add:</strong> Gesamtrisiko als Summe der Szenarien.';
+        zeichne(addTraces());
+    }
+    bC.addEventListener('click', setCompare);
+    bA.addEventListener('click', setAdd);
+    setCompare();
+})();
+</script>
+{% endif %}
 {% if lauf.status == "angelegt" or lauf.status == "laeuft" %}
 <script>
 (function () {

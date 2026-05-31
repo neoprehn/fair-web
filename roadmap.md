@@ -67,7 +67,7 @@
 - [x] Commit & Push → Branch `feature-ergebnis-grafik` mergen in `main`
 - [x] Weitere Grafiken: **Verteilung** des Jahresschadens + **Häufigkeit** der Schadenereignisse (Histogramme); Ergebnis-SVG schmaler; VaR + Risikotoleranz horizontal angeordnet
 - [x] Schieber bewegen → Kurve aktualisiert sich live _(Live-LEC-Vorschau auf der Eingabeseite: debounced Mini-Simulation via AJAX `lec-vorschau`, inkl. Toleranz-Overlay + Schnittpunkt)_
-- [ ] Mehrere Szenarien in einem Chart vergleichen
+- [x] Mehrere Szenarien in einem Chart vergleichen _(neue **Vergleich**-Entität gruppiert bestehende Szenarien; Dashboard-Liste + „Neuer Vergleich"; Ergebnis mit **Compare**-Überlagerung der LECs ↔ **Add**-Summe umschaltbar)_
 
 ---
 

@@ -57,6 +57,14 @@ class MetaLauf(models.Model):
     szenarien = models.ManyToManyField(
         "szenarien.Szenario", related_name="meta_laeufe", verbose_name="Szenarien"
     )
+    vergleich = models.ForeignKey(
+        "szenarien.Vergleich",
+        related_name="laeufe",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Vergleich",
+    )
     status = models.CharField(
         "Status",
         max_length=20,

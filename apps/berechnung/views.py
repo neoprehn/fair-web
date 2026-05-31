@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DetailView
 
 from apps.szenarien import fair_tree
-from apps.szenarien.models import Szenario
+from apps.szenarien.models import Szenario, Vergleich
 
 from .models import MetaLauf, Simulationslauf
 from .services import starte_meta_async, starte_simulation_async
@@ -193,6 +193,24 @@ def meta_starten(request):
     lauf = MetaLauf.objects.create(
         n_simulations=max(sz.n_simulations for sz in szenarien),
         random_seed=42,
+    )
+    lauf.szenarien.set(szenarien)
+    starte_meta_async(lauf.pk)
+    return redirect("berechnung:meta_lauf", pk=lauf.pk)
+
+
+@require_POST
+def vergleich_starten(request, pk):
+    """Startet einen Meta-Lauf für die Szenarien eines gespeicherten Vergleichs."""
+    vergleich = get_object_or_404(Vergleich, pk=pk)
+    szenarien = list(vergleich.szenarien.all())
+    if len(szenarien) < 2:
+        return redirect("szenarien:dashboard")
+
+    lauf = MetaLauf.objects.create(
+        vergleich=vergleich,
+        n_simulations=vergleich.n_simulations,
+        random_seed=vergleich.random_seed,
     )
     lauf.szenarien.set(szenarien)
     starte_meta_async(lauf.pk)
