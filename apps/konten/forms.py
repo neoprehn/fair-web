@@ -1,5 +1,17 @@
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.forms import PasswordInput, TextInput
+
+
+class RegistrierForm(UserCreationForm):
+    """Selbstregistrierung (Benutzername + Passwort), Bootstrap-Styling."""
+
+    class Meta(UserCreationForm.Meta):
+        fields = ("username",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for feld in self.fields.values():
+            feld.widget.attrs["class"] = "form-control"
 
 
 class BootstrapAuthenticationForm(AuthenticationForm):

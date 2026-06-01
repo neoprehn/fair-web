@@ -24,6 +24,26 @@ def test_eingeloggt_erreicht_dashboard(client):
     assert client.get(reverse("szenarien:dashboard")).status_code == 200
 
 
+def test_registrierung_ohne_login_erreichbar():
+    c = Client()
+    assert c.get(reverse("konten:registrieren")).status_code == 200
+
+
+@pytest.mark.django_db
+def test_registrierung_legt_betrachter_an_und_meldet_an(django_user_model):
+    c = Client()
+    resp = c.post(reverse("konten:registrieren"), {
+        "username": "neuling",
+        "password1": "ein-gutes-pw-123",
+        "password2": "ein-gutes-pw-123",
+    })
+    assert resp.status_code == 302 and resp.url == "/"
+    user = django_user_model.objects.get(username="neuling")
+    assert user.groups.filter(name="Betrachter").exists()
+    # Direkt angemeldet -> Dashboard erreichbar ohne erneuten Login.
+    assert c.get(reverse("szenarien:dashboard")).status_code == 200
+
+
 @pytest.mark.django_db
 def test_login_und_logout(django_user_model):
     django_user_model.objects.create_user(username="alice", password="pw-test-12345")

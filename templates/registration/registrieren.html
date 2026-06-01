@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Registrieren &middot; fair-web{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <h1 class="h3 mb-3">Konto erstellen</h1>
+        <p class="text-body-secondary small">Neue Konten starten in der Rolle <strong>Betrachter</strong> (nur Lesen). Ein Administrator kann die Rolle später anheben.</p>
+        <form method="post">
+            {% csrf_token %}
+            {% for feld in form %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ feld.id_for_label }}">{{ feld.label }}</label>
+                {{ feld }}
+                {% if feld.help_text %}<div class="form-text">{{ feld.help_text|safe }}</div>{% endif %}
+                {% for err in feld.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+            </div>
+            {% endfor %}
+            <button class="btn btn-primary w-100" type="submit">Registrieren</button>
+        </form>
+        <p class="text-body-secondary small mt-3 mb-0">
+            Schon ein Konto? <a href="{% url 'login' %}">Anmelden</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
