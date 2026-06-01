@@ -1,5 +1,6 @@
 """Views für das Starten und Verfolgen von Simulationsläufen."""
 
+from django.contrib.auth.decorators import permission_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
@@ -13,6 +14,7 @@ from .services import starte_meta_async, starte_simulation_async
 
 
 @require_POST
+@permission_required("berechnung.add_simulationslauf", raise_exception=True)
 def simulation_starten(request, szenario_pk):
     """Legt einen Lauf an, startet die Berechnung im Hintergrund und leitet weiter."""
     szenario = get_object_or_404(Szenario, pk=szenario_pk)
@@ -201,6 +203,7 @@ def lauf_status(request, pk):
 
 
 @require_POST
+@permission_required("berechnung.add_metalauf", raise_exception=True)
 def meta_starten(request):
     """Startet einen gemeinsamen Lauf über mehrere ausgewählte Szenarien."""
     ids = request.POST.getlist("szenarien")
@@ -218,6 +221,7 @@ def meta_starten(request):
 
 
 @require_POST
+@permission_required("berechnung.add_metalauf", raise_exception=True)
 def vergleich_starten(request, pk):
     """Startet einen Meta-Lauf für die Szenarien eines gespeicherten Vergleichs."""
     vergleich = get_object_or_404(Vergleich, pk=pk)

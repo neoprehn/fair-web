@@ -18,11 +18,12 @@ import pytest
 
 @pytest.fixture
 def client(client, django_user_model):
-    """Eingeloggter Test-Client – die App hat App-weite Login-Pflicht.
-
-    Überschreibt den pytest-django-``client``; Tests für unangemeldeten
-    Zugriff erzeugen sich einen eigenen ``django.test.Client``.
+    """Eingeloggter Test-Client – die App hat App-weite Login-Pflicht und
+    rollenbasierte Rechte. Der Standard-Client ist Superuser (umgeht
+    Permission-Checks); Rollen-Tests erzeugen sich eigene Nutzer/Clients.
     """
-    user = django_user_model.objects.create_user(username="testuser", password="pw-test-12345")
+    user = django_user_model.objects.create_superuser(
+        username="testadmin", password="pw-test-12345", email="t@t.de"
+    )
     client.force_login(user)
     return client
