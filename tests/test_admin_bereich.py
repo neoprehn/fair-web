@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from apps.admin_bereich.models import AppKonfiguration
 from apps.szenarien.forms import SzenarioForm
-from apps.szenarien.models import Szenario
+from apps.szenarien.models import FaktorEingabe, Szenario
 
 
 def _post(**override):
@@ -159,6 +159,32 @@ def test_waehrung_eur_de_format(client):
     s = Szenario.objects.create(name="W", n_simulations=10000)
     html = client.get(reverse("szenarien:detail", kwargs={"pk": s.pk})).content.decode()
     assert "10.000" in html  # deutsche Tausendertrennung (Default)
+
+
+@pytest.mark.django_db
+def test_konfidenz_override_wirkt_auf_berechnung():
+    k = AppKonfiguration.load()
+    k.konfidenz_defaults = {"moderate": {"pert": {"gamma": 99}}}
+    k.save()
+    f = FaktorEingabe(verteilung="pert", params={"low": 1, "mode": 2, "high": 3})
+    f.unsicherheit = 2  # moderate
+    kw = f.to_fair_kwargs()
+    assert "confidence" not in kw
+    assert kw["params"]["gamma"] == 99  # editierter Wert fließt in die Rechnung
+
+
+@pytest.mark.django_db
+def test_admin_konfidenz_editor_speichert(admin_client):
+    AppKonfiguration.load()
+    url = reverse("admin:admin_bereich_appkonfiguration_change", args=[1])
+    resp = admin_client.post(url, {
+        "waehrung": "EUR", "standard_seed": 42, "standard_n_simulations": 10000,
+        "kd_moderate_pert": "7", "kd_high_lognormal": "1.1",
+    })
+    assert resp.status_code == 302
+    k = AppKonfiguration.objects.get()
+    assert k.konfidenz_defaults["moderate"]["pert"] == {"gamma": 7.0}
+    assert k.konfidenz_defaults["high"]["lognormal"] == {"sigma": 1.1}
 
 
 @pytest.mark.django_db

@@ -12,13 +12,13 @@ from django.db import models
 
 from . import fair_tree
 from .fair_confidence import (
-    CONFIDENCE_DEFAULTS,
     CONFIDENCE_DISTRIBUTIONS,
     UNSICHERHEIT_DEFAULT,
     UNSICHERHEIT_MAX,
     UNSICHERHEIT_MIN,
     UNSICHERHEIT_TO_CONFIDENCE,
     UNSICHERHEIT_LABELS,
+    aktuelle_konfidenz_defaults,
 )
 
 
@@ -224,7 +224,7 @@ class FaktorEingabe(models.Model):
         """Aufgelöster pyfair-Formparameter (z. B. {'gamma': 4}) oder None."""
         if self.verteilung not in CONFIDENCE_DISTRIBUTIONS:
             return None
-        return CONFIDENCE_DEFAULTS[self.confidence_level].get(self.verteilung)
+        return aktuelle_konfidenz_defaults().get(self.confidence_level, {}).get(self.verteilung)
 
     def to_fair_kwargs(self):
         """kwargs für die strukturierte pyfair-API ``input_data``.
@@ -241,7 +241,11 @@ class FaktorEingabe(models.Model):
             return {"distribution": "beta", "params": params}  # Mittelwert + k
         kwargs = {"distribution": self.verteilung, "params": params}
         if self.verteilung in CONFIDENCE_DISTRIBUTIONS:
-            kwargs["confidence"] = self.confidence_level
+            # Expliziter Formparameter aus der (editierbaren) Konfidenztabelle –
+            # pyfair nutzt ihn direkt (kein "confidence" mehr nötig).
+            shape = aktuelle_konfidenz_defaults().get(self.confidence_level, {}).get(self.verteilung)
+            if shape:
+                params.update(shape)
         return kwargs
 
     def clean(self):
