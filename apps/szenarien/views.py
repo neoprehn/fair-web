@@ -20,10 +20,10 @@ from django.views.generic import (
 
 from . import fair_tree
 from .fair_confidence import (
-    CONFIDENCE_DEFAULTS,
     CONFIDENCE_DISTRIBUTIONS,
     UNSICHERHEIT_LABELS,
     UNSICHERHEIT_TO_CONFIDENCE,
+    aktuelle_konfidenz_defaults,
 )
 from .forms import FaktorEingabeForm, SzenarioForm, VergleichForm
 from .models import Angreifertyp, FaktorEingabe, Szenario, Vergleich
@@ -74,13 +74,15 @@ def risikotoleranz_aus_post(post):
 
 
 # Konfiguration für das Slider-JS (Single Source: fair_confidence).
-# Wird im Template via {{ ...|json_script }} ausgegeben.
-_CONFIDENCE_CONFIG = {
-    "defaults": CONFIDENCE_DEFAULTS,
-    "distributions": list(CONFIDENCE_DISTRIBUTIONS),
-    "unsicherheitToConfidence": UNSICHERHEIT_TO_CONFIDENCE,
-    "labels": UNSICHERHEIT_LABELS,
-}
+# Wird im Template via {{ ...|json_script }} ausgegeben. Dynamisch, damit
+# im Admin editierte Konfidenz-Vorschlagswerte sofort greifen.
+def _confidence_config():
+    return {
+        "defaults": aktuelle_konfidenz_defaults(),
+        "distributions": list(CONFIDENCE_DISTRIBUTIONS),
+        "unsicherheitToConfidence": UNSICHERHEIT_TO_CONFIDENCE,
+        "labels": UNSICHERHEIT_LABELS,
+    }
 
 
 class SzenarioListView(ListView):
@@ -155,7 +157,7 @@ class _SzenarioFormMixin:
         from apps.admin_bereich.models import AppKonfiguration
 
         context = super().get_context_data(**kwargs)
-        context["confidence_config"] = _CONFIDENCE_CONFIG
+        context["confidence_config"] = _confidence_config()
         context["angreifertypen"] = Angreifertyp.objects.all()
         context["konfig"] = AppKonfiguration.load()
         context["risikotoleranz"] = self.object.risikotoleranz if self.object else None

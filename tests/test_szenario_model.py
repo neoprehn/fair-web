@@ -26,8 +26,8 @@ def test_to_fair_kwargs_strukturierte_api():
     )
     assert faktor.to_fair_kwargs() == {
         "distribution": "pert",
-        "params": {"low": 1000, "mode": 5000, "high": 20000},
-        "confidence": "moderate",  # Default-Unsicherheit (Stufe 2)
+        # Default-Unsicherheit (Stufe 2 = moderate) -> gamma 4 explizit in params.
+        "params": {"low": 1000, "mode": 5000, "high": 20000, "gamma": 4},
     }
 
 
@@ -92,8 +92,8 @@ def test_fair_inputs_sammelt_alle_faktoren():
     assert inputs == {
         "Loss Event Frequency": {
             "distribution": "pert",
-            "params": {"low": 1, "mode": 3, "high": 6},
-            "confidence": "moderate",  # PERT bekommt Konfidenz
+            # PERT moderate -> gamma 4 explizit in params (kein "confidence" mehr).
+            "params": {"low": 1, "mode": 3, "high": 6, "gamma": 4},
         },
         "Loss Magnitude": {
             "distribution": "constant",

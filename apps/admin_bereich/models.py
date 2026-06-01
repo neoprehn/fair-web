@@ -39,6 +39,11 @@ class AppKonfiguration(models.Model):
         "Währung", max_length=3, choices=Waehrung.choices, default=Waehrung.EUR,
         help_text="Bestimmt Währungssymbol und Zahlenformat (€ → 1.234,56 · $ → 1,234.56).",
     )
+    # Editierbare Konfidenztabelle {stufe: {verteilung: {param: wert}}}; None = Vorgabe.
+    konfidenz_defaults = models.JSONField(
+        "Konfidenz-Vorschlagswerte", null=True, blank=True,
+        help_text="Überschreibt die Standard-Konfidenztabelle (gamma/sigma/range/k). Leer = Vorgabe.",
+    )
     geaendert_am = models.DateTimeField("Geändert am", auto_now=True)
 
     class Meta:

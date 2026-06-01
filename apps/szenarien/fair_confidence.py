@@ -25,3 +25,22 @@ UNSICHERHEIT_LABELS = ["sehr niedrig", "niedrig", "mittel", "hoch", "sehr hoch"]
 UNSICHERHEIT_DEFAULT = 2  # entspricht "moderate"
 UNSICHERHEIT_MIN = 0
 UNSICHERHEIT_MAX = 4
+
+# pyfair-Formparameter je Verteilung (für den editierbaren Editor + Berechnung).
+CONFIDENCE_PARAM = {"pert": "gamma", "lognormal": "sigma", "poisson": "range", "beta": "k"}
+
+
+def aktuelle_konfidenz_defaults():
+    """Liefert die aktive Konfidenztabelle: Admin-Override oder die Vorgabe.
+
+    Wird sowohl für die Anzeige (Slider-Readout) als auch für die Berechnung
+    genutzt (``to_fair_kwargs`` übergibt den expliziten Formparameter).
+    """
+    try:
+        from apps.admin_bereich.models import AppKonfiguration
+        werte = AppKonfiguration.load().konfidenz_defaults
+        if werte:
+            return werte
+    except Exception:  # noqa: BLE001 – vor Migration / ohne DB: Vorgabe
+        pass
+    return CONFIDENCE_DEFAULTS

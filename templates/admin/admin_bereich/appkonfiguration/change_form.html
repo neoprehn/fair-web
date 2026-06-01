@@ -4,6 +4,24 @@
 {{ block.super }}
 
 <fieldset class="module aligned" style="padding:12px 16px;">
+    <h2>Konfidenz-Vorschlagswerte</h2>
+    <p class="help" style="margin-left:0;">Formparameter je Konfidenzstufe und Verteilung. Diese Werte steuern sowohl die Anzeige (Slider) als auch die Berechnung. Leer = Standardwert.</p>
+    <table style="width:auto;">
+        <thead>
+            <tr><th>Stufe</th>{% for h in kd_header %}<th style="padding:2px 8px;">{{ h }}</th>{% endfor %}</tr>
+        </thead>
+        <tbody>
+        {% for row in kd_rows %}
+            <tr>
+                <th style="text-align:left; padding:2px 8px;">{{ row.label }}</th>
+                {% for c in row.cells %}<td style="padding:2px 8px;"><input type="text" name="{{ c.name }}" value="{{ c.value }}" size="7"></td>{% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</fieldset>
+
+<fieldset class="module aligned" style="padding:12px 16px;">
     <h2>Unternehmens-Risikotoleranz – Editor</h2>
     <p class="help" style="margin-left:0;">Gleiche Logik wie in der Szenarioeingabe. Wird nur angewandt, wenn oben „Risikotoleranz global erzwingen" aktiv ist.</p>
 

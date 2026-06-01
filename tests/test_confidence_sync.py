@@ -22,7 +22,10 @@ def test_unsicherheit_mappt_invertiert_auf_confidence():
 
 def test_to_fair_kwargs_nur_confidence_distributionen():
     pert = FaktorEingabe(verteilung="pert", params={"low": 1, "mode": 2, "high": 3})
-    assert pert.to_fair_kwargs()["confidence"] == "moderate"
+    kw = pert.to_fair_kwargs()
+    # moderate -> gamma 4 wird explizit in params übergeben (kein "confidence" mehr).
+    assert "confidence" not in kw
+    assert kw["params"]["gamma"] == 4
 
     konstant = FaktorEingabe(verteilung="constant", params={"constant": 5})
     assert "confidence" not in konstant.to_fair_kwargs()

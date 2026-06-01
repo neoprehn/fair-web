@@ -108,7 +108,7 @@
 - [x] Standard-Seed konfigurierbar (globale Variable in der App-Konfiguration; wenn global → in der Szenarioeingabe „nur lesend")
 - [x] Standard-Simulationsanzahl konfigurierbar (globale Variable; wenn global → „nur lesend")
 - [ ] Benutzer & Zugriffsrechte einrichten
-- [ ] Vorschlagswerte für Konfidenzen editierbar machen (wahrscheinlich mit Eingriff in pyfair)
+- [x] Vorschlagswerte für Konfidenzen editierbar (App-Konfiguration, strukturierter 5×4-Editor): steuert Anzeige UND Berechnung – `to_fair_kwargs` übergibt den expliziten Formparameter (gamma/sigma/range/k) an pyfair statt der Konfidenzstufe (kein pyfair-Patch)
 - [x] Hell/Dunkel-Design Schalter _(Navbar-Umschalter, Bootstrap data-bs-theme, Light-/Dark-Palette via CSS-Variablen, in localStorage gemerkt; Plotly-Charts theme-abhängig)_
 - [x] Euro/Dollar-Schalter (global in App-Konfiguration): tauscht Währungssymbol und Separatoren app-weit (€ → 1.234,56 · $ → 1,234.56) via Locale-Middleware + Context-Processor; Charts/JS folgen der Locale
 - [x] „Unternehmens-Risikotoleranz" als global konfigurierbar (App-Konfiguration; wenn vorgegeben → Eingabe „nur lesend", gilt für alle Szenarien)
