@@ -1,0 +1,11 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} | fair-web Verwaltung{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">fair-web &ndash; Verwaltung</a></div>
+{% endblock %}
+
+{% block nav-global %}
+<a href="/" style="margin-left:20px; font-weight:600;">&larr; Zur Startseite</a>
+{% endblock %}

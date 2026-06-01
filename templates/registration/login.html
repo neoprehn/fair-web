@@ -22,6 +22,9 @@
             <input type="hidden" name="next" value="{{ next }}">
             <button class="btn btn-primary w-100" type="submit">Anmelden</button>
         </form>
+        <p class="text-body-secondary small mt-3 mb-0">
+            Noch kein Konto? <a href="{% url 'konten:registrieren' %}">Registrieren</a>
+        </p>
     </div>
 </div>
 {% endblock %}
