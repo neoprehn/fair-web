@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Kein Zugriff &middot; fair-web{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="h3 mb-2">Kein Zugriff</h1>
+    <p class="text-body-secondary">Für diese Aktion fehlt deiner Rolle die Berechtigung.</p>
+    <p class="text-body-secondary small mb-4">Wende dich an einen Administrator, wenn du erweiterte Rechte benötigst.</p>
+    <a class="btn btn-primary" href="{% url 'szenarien:dashboard' %}">Zur Startseite</a>
+</div>
+{% endblock %}

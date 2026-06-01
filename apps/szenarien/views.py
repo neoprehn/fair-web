@@ -6,6 +6,8 @@ Inline-Formset angelegt und bearbeitet.
 
 import json
 
+from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse_lazy
@@ -218,15 +220,19 @@ class _SzenarioFormMixin:
         return reverse_lazy("szenarien:detail", kwargs={"pk": self.object.pk})
 
 
-class SzenarioCreateView(_SzenarioFormMixin, CreateView):
-    pass
+class SzenarioCreateView(PermissionRequiredMixin, _SzenarioFormMixin, CreateView):
+    permission_required = "szenarien.add_szenario"
+    raise_exception = True
 
 
-class SzenarioUpdateView(_SzenarioFormMixin, UpdateView):
-    pass
+class SzenarioUpdateView(PermissionRequiredMixin, _SzenarioFormMixin, UpdateView):
+    permission_required = "szenarien.change_szenario"
+    raise_exception = True
 
 
-class SzenarioDeleteView(DeleteView):
+class SzenarioDeleteView(PermissionRequiredMixin, DeleteView):
+    permission_required = "szenarien.delete_szenario"
+    raise_exception = True
     model = Szenario
     template_name = "szenarien/confirm_delete.html"
     context_object_name = "szenario"
@@ -242,15 +248,19 @@ class _VergleichFormMixin:
         return reverse_lazy("szenarien:dashboard")
 
 
-class VergleichCreateView(_VergleichFormMixin, CreateView):
-    pass
+class VergleichCreateView(PermissionRequiredMixin, _VergleichFormMixin, CreateView):
+    permission_required = "szenarien.add_vergleich"
+    raise_exception = True
 
 
-class VergleichUpdateView(_VergleichFormMixin, UpdateView):
-    pass
+class VergleichUpdateView(PermissionRequiredMixin, _VergleichFormMixin, UpdateView):
+    permission_required = "szenarien.change_vergleich"
+    raise_exception = True
 
 
-class VergleichDeleteView(DeleteView):
+class VergleichDeleteView(PermissionRequiredMixin, DeleteView):
+    permission_required = "szenarien.delete_vergleich"
+    raise_exception = True
     model = Vergleich
     template_name = "szenarien/vergleich_confirm_delete.html"
     context_object_name = "vergleich"
@@ -277,6 +287,7 @@ def _inputs_aus_post(post):
 
 
 @require_POST
+@permission_required("szenarien.add_szenario", raise_exception=True)
 def lec_vorschau(request):
     """Live-Vorschau: schnelle Mini-Simulation + LEC/Toleranz aus dem aktuellen
     (ungespeicherten) Formularzustand. Antwortet als JSON."""
