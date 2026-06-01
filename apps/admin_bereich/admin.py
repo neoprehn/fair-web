@@ -16,6 +16,7 @@ class AppKonfigurationAdmin(admin.ModelAdmin):
     form = AppKonfigurationForm
     change_form_template = "admin/admin_bereich/appkonfiguration/change_form.html"
     fieldsets = (
+        ("Währung & Format", {"fields": ("waehrung",)}),
         ("Standard-Seed", {"fields": ("standard_seed", "seed_global")}),
         ("Simulationsanzahl", {"fields": ("standard_n_simulations", "n_simulations_global")}),
         ("Unternehmens-Risikotoleranz", {

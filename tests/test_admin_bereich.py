@@ -73,8 +73,10 @@ def test_create_erzwingt_globale_risikotoleranz(client):
 
 @pytest.mark.django_db
 def test_admin_editor_speichert_risikotoleranz(admin_client):
-    url = reverse("admin:admin_bereich_appkonfiguration_add")
+    AppKonfiguration.load()  # Singleton (pk=1) sicherstellen
+    url = reverse("admin:admin_bereich_appkonfiguration_change", args=[1])
     resp = admin_client.post(url, {
+        "waehrung": "EUR",
         "standard_seed": 42, "standard_n_simulations": 10000,
         "rt_type": "constant", "rt_value": "150000",
     })
@@ -86,8 +88,10 @@ def test_admin_editor_speichert_risikotoleranz(admin_client):
 @pytest.mark.django_db
 def test_admin_editor_kurve(admin_client):
     import json
-    url = reverse("admin:admin_bereich_appkonfiguration_add")
+    AppKonfiguration.load()
+    url = reverse("admin:admin_bereich_appkonfiguration_change", args=[1])
     resp = admin_client.post(url, {
+        "waehrung": "EUR",
         "standard_seed": 42, "standard_n_simulations": 10000,
         "rt_type": "curve",
         "rt_curve": json.dumps([{"loss": "1000", "level": "0.9"}, {"loss": "50000", "level": "0.1"}]),
@@ -126,6 +130,35 @@ def test_update_erzwingt_globale_werte(client):
     assert s.random_seed == 777
     assert s.n_simulations == 5000
     assert s.risikotoleranz == {"type": "constant", "value": 99000}
+
+
+@pytest.mark.django_db
+def test_waehrung_symbol_und_locale():
+    from apps.admin_bereich.context_processors import waehrung as ctx_waehrung
+    k = AppKonfiguration.load()
+    assert k.symbol == "€" and k.locale_code == "de" and k.js_locale == "de-DE"
+    k.waehrung = "USD"
+    k.save()
+    assert k.symbol == "$" and k.locale_code == "en" and k.js_locale == "en-US"
+    ctx = ctx_waehrung(None)
+    assert ctx["waehrung_symbol"] == "$" and ctx["waehrung_locale"] == "en-US"
+
+
+@pytest.mark.django_db
+def test_waehrung_usd_us_format(client):
+    k = AppKonfiguration.load()
+    k.waehrung = "USD"
+    k.save()
+    s = Szenario.objects.create(name="W", n_simulations=10000)
+    html = client.get(reverse("szenarien:detail", kwargs={"pk": s.pk})).content.decode()
+    assert "10,000" in html  # US-Tausendertrennung
+
+
+@pytest.mark.django_db
+def test_waehrung_eur_de_format(client):
+    s = Szenario.objects.create(name="W", n_simulations=10000)
+    html = client.get(reverse("szenarien:detail", kwargs={"pk": s.pk})).content.decode()
+    assert "10.000" in html  # deutsche Tausendertrennung (Default)
 
 
 @pytest.mark.django_db

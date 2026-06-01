@@ -11,6 +11,7 @@ class AppKonfigurationForm(forms.ModelForm):
     class Meta:
         model = AppKonfiguration
         fields = (
+            "waehrung",
             "standard_seed", "seed_global",
             "standard_n_simulations", "n_simulations_global",
             "risikotoleranz_global",

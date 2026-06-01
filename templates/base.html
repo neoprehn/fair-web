@@ -205,6 +205,9 @@
     // Chart-Farben (Text/Gitter) aus dem aktiven Theme – für Plotly im Hell/Dunkel-Modus.
     window.fairChartTxt = function () { return (getComputedStyle(document.documentElement).getPropertyValue('--txt-muted') || '#cbd5e1').trim(); };
     window.fairChartGrid = function () { return (getComputedStyle(document.documentElement).getPropertyValue('--border') || '#1e293b').trim(); };
+    // Währung/Locale (global konfiguriert) fürs Frontend.
+    window.fairLocale = '{{ waehrung_locale }}';
+    window.fairWaehrung = '{{ waehrung_symbol }}';
 </script>
 {% block extra_js %}{% endblock %}
 </body>
