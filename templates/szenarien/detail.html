@@ -66,13 +66,13 @@
 {% with rt=szenario.risikotoleranz %}
 {% if rt %}
     {% if rt.type == "constant" %}
-    <p class="mb-3">Konstante Schwelle: <strong>{{ rt.value|floatformat:0|intcomma }} €</strong></p>
+    <p class="mb-3">Konstante Schwelle: <strong>{{ rt.value|floatformat:0|intcomma }} {{ waehrung_symbol }}</strong></p>
     {% elif rt.type == "curve" %}
     <table class="table table-sm w-auto">
-        <thead><tr><th>Schaden (€)</th><th>akzeptierte Wahrscheinlichkeit</th></tr></thead>
+        <thead><tr><th>Schaden ({{ waehrung_symbol }})</th><th>akzeptierte Wahrscheinlichkeit</th></tr></thead>
         <tbody>
         {% for p in rt.points %}
-            <tr><td>{{ p.loss|floatformat:0|intcomma }} €</td><td>{% widthratio p.level 1 100 %} %</td></tr>
+            <tr><td>{{ p.loss|floatformat:0|intcomma }} {{ waehrung_symbol }}</td><td>{% widthratio p.level 1 100 %} %</td></tr>
         {% endfor %}
         </tbody>
     </table>
@@ -107,7 +107,7 @@
         <tr>
             <td><a href="{% url 'berechnung:lauf' lauf.pk %}">#{{ lauf.pk }}</a></td>
             <td>{{ lauf.get_status_display }}</td>
-            <td>{% if lauf.ist_fertig %}{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} €{% else %}–{% endif %}</td>
+            <td>{% if lauf.ist_fertig %}{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}{% else %}–{% endif %}</td>
             <td class="text-body-secondary small">{{ lauf.erstellt_am|date:"d.m.Y H:i" }}</td>
         </tr>
     {% endfor %}

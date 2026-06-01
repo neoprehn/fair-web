@@ -44,7 +44,7 @@
                         <p class="text-info small mb-2">Unternehmensweit vorgegeben (nur lesend).</p>
                         {% with rt=konfig.unternehmens_risikotoleranz %}
                         {% if rt %}
-                            {% if rt.type == "constant" %}<p class="mb-0">Konstante Schwelle: <strong>{{ rt.value }} €</strong></p>
+                            {% if rt.type == "constant" %}<p class="mb-0">Konstante Schwelle: <strong>{{ rt.value }} {{ waehrung_symbol }}</strong></p>
                             {% elif rt.type == "curve" %}<p class="mb-0">Kurve mit {{ rt.points|length }} Punkt(en)</p>
                             {% elif rt.type == "distribution" %}<p class="mb-0">Verteilung: <strong>{{ rt.distribution }}</strong></p>{% endif %}
                         {% else %}<p class="text-body-secondary mb-0">Keine definiert.</p>{% endif %}
@@ -106,7 +106,7 @@
 // Zahl ins deutsche Format (Komma-Dezimal, Punkt-Tausender) – fürs Vorbefüllen.
 function formatDE(n) {
     if (n === null || n === undefined || n === '' || isNaN(n)) return '';
-    return new Intl.NumberFormat('de-DE', { maximumFractionDigits: 12, useGrouping: true }).format(n);
+    return new Intl.NumberFormat(window.fairLocale || 'de-DE', { maximumFractionDigits: 12, useGrouping: true }).format(n);
 }
 </script>
 {{ confidence_config|json_script:"confidence-config" }}
@@ -353,7 +353,7 @@ function formatDE(n) {
             paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
             font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif', size: 11 },
             margin: { l: 55, r: 10, t: 6, b: 38 }, showlegend: false, shapes: shapes,
-            xaxis: { title: 'Schaden (€)', gridcolor: window.fairChartGrid(), type: xType, range: xRange },
+            xaxis: { title: 'Schaden ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid(), type: xType, range: xRange },
             yaxis: { title: 'P(≥x)', gridcolor: window.fairChartGrid(), range: [0, 1], tickformat: '.0%' }
         }, { responsive: true, displayModeBar: false });
     }
@@ -368,7 +368,7 @@ function formatDE(n) {
             .then(function (d) {
                 if (d.ok) {
                     zeichne(d);
-                    info.textContent = 'VaR 90 %: ' + Math.round(d.perzentile['90']).toLocaleString('de-DE') + ' €';
+                    info.textContent = 'VaR 90 %: ' + Math.round(d.perzentile['90']).toLocaleString(window.fairLocale || 'de-DE') + ' {{ waehrung_symbol }}';
                 } else {
                     info.textContent = d.fehler || 'Vorschau nicht möglich.';
                 }

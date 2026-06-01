@@ -30,19 +30,19 @@
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
                 <div class="text-body-secondary small">Erwarteter Jahresschaden (Mittelwert)</div>
-                <div class="h4 mb-0 text-info">{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} €</div>
+                <div class="h4 mb-0 text-info">{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div></div>
         </div>
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
                 <div class="text-body-secondary small">Median</div>
-                <div class="h4 mb-0">{{ lauf.ergebnis.median|floatformat:0|intcomma }} €</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.median|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div></div>
         </div>
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
                 <div class="text-body-secondary small">Maximum (Worst Case P95)</div>
-                <div class="h4 mb-0">{{ lauf.ergebnis.p95|floatformat:0|intcomma }} €</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.p95|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div></div>
         </div>
     </div>
@@ -53,7 +53,7 @@
         {% for stufe, wert in lauf.ergebnis.perzentile.items %}
             <div class="text-center px-3 py-1">
                 <div class="text-body-secondary small">VaR {{ stufe }} %</div>
-                <div class="fw-semibold text-nowrap">{{ wert|floatformat:0|intcomma }} €</div>
+                <div class="fw-semibold text-nowrap">{{ wert|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div>
         {% endfor %}
         </div>
@@ -65,7 +65,7 @@
         <div class="d-flex flex-wrap gap-4 align-items-end">
             <div class="text-center px-3 py-1">
                 <div class="text-body-secondary small">Schnittpunkt (Loss)</div>
-                <div class="fw-semibold text-nowrap">{{ schnittpunkt.loss|floatformat:0|intcomma }} €</div>
+                <div class="fw-semibold text-nowrap">{{ schnittpunkt.loss|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div>
             <div class="text-center px-3 py-1">
                 <div class="text-body-secondary small">Toleranz dort</div>
@@ -213,7 +213,7 @@
         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
         margin: { l: 70, r: 20, t: 10, b: 50 },
-        xaxis: { title: 'Jahresschaden (€)', gridcolor: window.fairChartGrid(), zerolinecolor: window.fairChartGrid(),
+        xaxis: { title: 'Jahresschaden ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid(), zerolinecolor: window.fairChartGrid(),
                  type: xType, range: xRange },
         yaxis: { title: 'P(Schaden ≥ x)', gridcolor: window.fairChartGrid(), range: [0, 1], tickformat: '.0%' },
         legend: { orientation: 'h', y: 1.1 }, shapes: shapes
@@ -255,7 +255,7 @@
             yaxis: { title: 'Häufigkeit', gridcolor: window.fairChartGrid() }
         }, { responsive: true, displayModeBar: false });
     }
-    balken('vert-chart', 'vert-data', '#7dd3fc', 'Jahresschaden (€)');
+    balken('vert-chart', 'vert-data', '#7dd3fc', 'Jahresschaden ({{ waehrung_symbol }})');
     balken('haeuf-chart', 'haeuf-data', '#86efac', 'Schadenereignisse pro Jahr');
 })();
 </script>

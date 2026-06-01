@@ -27,19 +27,19 @@
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
                 <div class="text-body-secondary small">Erwartetes Gesamtrisiko (Mittelwert)</div>
-                <div class="h4 mb-0 text-info">{{ lauf.ergebnis.gesamt.mittelwert|floatformat:0|intcomma }} €</div>
+                <div class="h4 mb-0 text-info">{{ lauf.ergebnis.gesamt.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div></div>
         </div>
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
                 <div class="text-body-secondary small">Median</div>
-                <div class="h4 mb-0">{{ lauf.ergebnis.gesamt.median|floatformat:0|intcomma }} €</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.gesamt.median|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div></div>
         </div>
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
                 <div class="text-body-secondary small">P95 (Gesamt)</div>
-                <div class="h4 mb-0">{{ lauf.ergebnis.gesamt.p95|floatformat:0|intcomma }} €</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.gesamt.p95|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div></div>
         </div>
     </div>
@@ -53,9 +53,9 @@
         {% for s in lauf.ergebnis.szenarien %}
             <tr>
                 <td><a href="{% url 'szenarien:detail' s.pk %}">{{ s.name }}</a></td>
-                <td class="text-end">{{ s.stats.mittelwert|floatformat:0|intcomma }} €</td>
-                <td class="text-end">{{ s.stats.p95|floatformat:0|intcomma }} €</td>
-                <td class="text-end">{{ s.stats.max|floatformat:0|intcomma }} €</td>
+                <td class="text-end">{{ s.stats.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
+                <td class="text-end">{{ s.stats.p95|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
+                <td class="text-end">{{ s.stats.max|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
             </tr>
         {% endfor %}
         </tbody>
@@ -91,7 +91,7 @@
                 <tr>
                     <td>{{ z.name }}</td>
                     {% if z.schnittpunkt %}
-                    <td class="text-end">{{ z.schnittpunkt.loss|floatformat:0|intcomma }} €</td>
+                    <td class="text-end">{{ z.schnittpunkt.loss|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
                     <td class="text-end">{% widthratio z.schnittpunkt.tolerance 1 100 %} %</td>
                     {% else %}
                     <td class="text-end text-body-secondary" colspan="2">kein Schnittpunkt im Bereich</td>
@@ -191,7 +191,7 @@
         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
         margin: { l: 70, r: 20, t: 10, b: 50 },
-        xaxis: { title: 'Jahresschaden (€)', gridcolor: window.fairChartGrid(), type: xType, range: xRange },
+        xaxis: { title: 'Jahresschaden ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid(), type: xType, range: xRange },
         yaxis: { title: 'P(Schaden ≥ x)', gridcolor: window.fairChartGrid(), range: [0, 1], tickformat: '.0%' },
         legend: { orientation: 'h', y: 1.12 }, shapes: toleranzShapes()
     };

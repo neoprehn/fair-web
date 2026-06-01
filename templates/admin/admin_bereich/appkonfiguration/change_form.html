@@ -18,13 +18,13 @@
     </div>
 
     <div class="rt-block form-row" data-rt="constant">
-        <label style="display:inline-block; width:8em;">Schwellenwert (€):</label>
+        <label style="display:inline-block; width:8em;">Schwellenwert ({{ waehrung_symbol }}):</label>
         <input type="text" name="rt_value" size="18">
     </div>
 
     <div class="rt-block form-row" data-rt="curve">
         <table style="width:auto;">
-            <thead><tr><th>Verlust (€)</th><th>Level (0–1)</th><th></th></tr></thead>
+            <thead><tr><th>Verlust ({{ waehrung_symbol }})</th><th>Level (0–1)</th><th></th></tr></thead>
             <tbody id="rt-curve-body"></tbody>
         </table>
         <button type="button" id="rt-add-row" class="button" style="margin-top:6px;">+ Zeile</button>

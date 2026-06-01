@@ -110,7 +110,7 @@
 - [ ] Benutzer & Zugriffsrechte einrichten
 - [ ] Vorschlagswerte für Konfidenzen editierbar machen (wahrscheinlich mit Eingriff in pyfair)
 - [x] Hell/Dunkel-Design Schalter _(Navbar-Umschalter, Bootstrap data-bs-theme, Light-/Dark-Palette via CSS-Variablen, in localStorage gemerkt; Plotly-Charts theme-abhängig)_
-- [ ] Euro/ Dollar Schalter und damit verbunden "." und "," für die Separatoren tauschen
+- [x] Euro/Dollar-Schalter (global in App-Konfiguration): tauscht Währungssymbol und Separatoren app-weit (€ → 1.234,56 · $ → 1,234.56) via Locale-Middleware + Context-Processor; Charts/JS folgen der Locale
 - [x] „Unternehmens-Risikotoleranz" als global konfigurierbar (App-Konfiguration; wenn vorgegeben → Eingabe „nur lesend", gilt für alle Szenarien)
 - [ ] Lokaler Test
 - [ ] Commit & Push → Branch `feature-admin` mergen in `main`
