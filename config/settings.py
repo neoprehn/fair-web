@@ -31,9 +31,11 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
-# --- HTTPS-Härtung: automatisch in Produktion (nicht DEBUG), lokal (http) aus.
-# Per SECURE_HTTPS in der .env explizit überschreibbar. ---
-SECURE_HTTPS = env.bool("SECURE_HTTPS", default=not DEBUG)
+# --- HTTPS-Härtung: standardmäßig AUS, nur per SECURE_HTTPS=True in der .env
+# aktivieren – UND ERST, wenn der Proxy X-Forwarded-Proto korrekt weitergibt
+# (request.is_secure() == True). Sonst Redirect-Schleife (SSL_REDIRECT) bzw.
+# nicht gesetzte Secure-Cookies. ---
+SECURE_HTTPS = env.bool("SECURE_HTTPS", default=False)
 if SECURE_HTTPS:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
