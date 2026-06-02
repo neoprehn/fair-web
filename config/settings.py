@@ -26,6 +26,22 @@ CSRF_TRUSTED_ORIGINS = env.list(
     default=[f"https://{h}" for h in ALLOWED_HOSTS if h not in ("localhost", "127.0.0.1", "*")],
 )
 
+# --- Sicherheits-Header (immer aktiv; reine Antwort-Header, brechen lokal nichts) ---
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
+# --- HTTPS-Härtung: automatisch in Produktion (nicht DEBUG), lokal (http) aus.
+# Per SECURE_HTTPS in der .env explizit überschreibbar. ---
+SECURE_HTTPS = env.bool("SECURE_HTTPS", default=not DEBUG)
+if SECURE_HTTPS:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 Jahr
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # SECURE_HSTS_PRELOAD bewusst aus (Preload ist eine langfristige Festlegung).
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",

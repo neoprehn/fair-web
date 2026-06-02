@@ -12,6 +12,9 @@ import os
 os.environ.setdefault("DATABASE_URL", "sqlite://:memory:")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-nicht-fuer-produktion")
 os.environ.setdefault("DEBUG", "False")
+# Tests laufen über den http-Test-Client: HTTPS-Härtung (SSL-Redirect/Secure-
+# Cookies) hier aus, sonst 301-Redirects + nicht gesetzte Session-Cookies.
+os.environ.setdefault("SECURE_HTTPS", "False")
 
 import pytest
 

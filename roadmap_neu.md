@@ -115,7 +115,9 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 ## 3. Offene Arbeit
 
 ### Als Nächstes → Phase 9 – Sicherheit + Ideen (@neoprehn)
-- [ ] Deploy auf Sicherheits-Design-Fehler prüfen
+- [~] Deploy auf Sicherheits-Design-Fehler prüfen _(App-Härtung umgesetzt:
+      Security-Header + HTTPS-Härtung in Prod; Server-/Policy-Checkliste in
+      `SICHERHEIT.md` – offen: Registrierungs-Policy, Brute-Force-Schutz, CSP)_
 - [ ] Home-Bildschirm verbessern (Modell-Erklärung; interaktives Durchklicken
       ohne Simulation)
 - [ ] Dokumentation/Bedienhilfe zur Webseite aufbauen
