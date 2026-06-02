@@ -104,11 +104,13 @@
     {% endif %}
 
     {% if lauf.vergleich %}
+    {% if perms.berechnung.add_metalauf %}
     <form method="post" action="{% url 'berechnung:vergleich_starten' lauf.vergleich.pk %}" class="d-inline">
         {% csrf_token %}
         <button type="submit" class="btn btn-primary">Neu berechnen</button>
     </form>
-    <a class="btn btn-outline-secondary" href="{% url 'szenarien:vergleich_update' lauf.vergleich.pk %}">Vergleich bearbeiten</a>
+    {% endif %}
+    {% if perms.szenarien.change_vergleich %}<a class="btn btn-outline-secondary" href="{% url 'szenarien:vergleich_update' lauf.vergleich.pk %}">Vergleich bearbeiten</a>{% endif %}
     {% endif %}
     <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Zurück zur Übersicht</a>
 

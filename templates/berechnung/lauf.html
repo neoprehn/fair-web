@@ -159,7 +159,7 @@
     </div></div>
     {% endif %}
 
-    <a class="btn btn-primary" href="{% url 'szenarien:update' lauf.szenario.pk %}">Szenario bearbeiten</a>
+    {% if perms.szenarien.change_szenario %}<a class="btn btn-primary" href="{% url 'szenarien:update' lauf.szenario.pk %}">Szenario bearbeiten</a>{% endif %}
     <a class="btn btn-link" href="{% url 'szenarien:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
 
 {% else %}

@@ -157,6 +157,7 @@
                 </svg>
                 <span class="theme-label"></span>
             </button>
+            {% if user.is_authenticated %}
             <div class="dropdown">
                 <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2"
                         type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -168,9 +169,16 @@
                     Menü
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><span class="dropdown-item-text text-body-secondary small">Verwaltung &amp; Einstellungen folgen (ab Phase 7)</span></li>
+                    {% if user.is_staff %}
+                        {% if perms.admin_bereich.change_appkonfiguration %}<li><a class="dropdown-item" href="{% url 'admin:admin_bereich_appkonfiguration_changelist' %}">App-Konfiguration</a></li>{% endif %}
+                        {% if perms.szenarien.change_angreifertyp %}<li><a class="dropdown-item" href="{% url 'admin:szenarien_angreifertyp_changelist' %}">Angreifertypen</a></li>{% endif %}
+                        <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin-Bereich</a></li>
+                    {% else %}
+                        <li><span class="dropdown-item-text text-body-secondary small">Keine Verwaltungsrechte</span></li>
+                    {% endif %}
                 </ul>
             </div>
+            {% endif %}
             {% if user.is_authenticated %}
             <div class="dropdown ms-2">
                 <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
