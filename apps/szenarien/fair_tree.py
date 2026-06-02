@@ -30,34 +30,46 @@ FAIR_NODES = {
 CODE_FUER_NAME = {name: code for code, (name, _a, _p, _t) in FAIR_NODES.items()}
 
 # Kurz-Erklärungen je Knoten (für den interaktiven FAIR-Baum auf der Startseite).
+# Definitionen angelehnt an die Open-FAIR-Risikotaxonomie (The Open Group, O-RT).
 ERKLAERUNG = {
-    "Risk": "Das **Gesamtrisiko** als erwarteter Jahresschaden. In FAIR gilt: "
-            "Risk = Häufigkeit der Schadensereignisse (LEF) × Schadenshöhe (LM). "
-            "Das Ergebnis ist keine einzelne Zahl, sondern eine Verteilung.",
-    "LEF":  "**Loss Event Frequency** – wie oft pro Jahr ein Schadensereignis "
-            "eintritt. Ergibt sich aus Bedrohungshäufigkeit (TEF) × Verwundbarkeit (VULN).",
-    "LM":   "**Loss Magnitude** – wie hoch der Schaden je Ereignis ausfällt (in €). "
-            "Summe aus Primär- (PL) und Sekundärschaden (SL).",
-    "TEF":  "**Threat Event Frequency** – wie oft pro Jahr ein Akteur in schädigender "
-            "Absicht auf das Asset einwirkt. = Kontakthäufigkeit (CF) × Handlungswahrsch. (PoA).",
-    "VULN": "**Vulnerability** – Wahrscheinlichkeit, dass ein Bedrohungsereignis "
-            "tatsächlich zum Schaden führt. Ergibt sich aus Angreiferfähigkeit (TC) "
-            "gegen Kontrollstärke (CS).",
-    "CF":   "**Contact Frequency** – wie häufig der Akteur überhaupt mit dem Asset "
-            "in Kontakt kommt (pro Jahr).",
-    "POA":  "**Probability of Action** – Wahrscheinlichkeit, dass der Akteur bei "
-            "Kontakt tatsächlich angreift (0–1).",
-    "TC":   "**Threat Capability** – Fähigkeitsniveau des Angreifers (0–1), oft als "
-            "Perzentil der Angreiferpopulation.",
-    "CS":   "**Control Strength / Resistance** – wie gut die Kontrollen einem "
-            "durchschnittlichen Angriff widerstehen (0–1).",
-    "PL":   "**Primary Loss** – direkter Schaden des Ereignisses (z. B. Ausfall, "
-            "Wiederherstellung, Ersatz).",
-    "SL":   "**Secondary Loss** – Folgeschaden durch Reaktionen Dritter "
-            "(Bußgelder, Reputations-/Kundenverluste). = SLEF × SLEM.",
-    "SLEF": "**Secondary Loss Event Frequency** – Anteil der Primärereignisse, die "
-            "einen Sekundärschaden nach sich ziehen.",
-    "SLEM": "**Secondary Loss Event Magnitude** – Höhe des Sekundärschadens je Ereignis (€).",
+    "Risk": "**Risiko (Risk)** – die wahrscheinliche Häufigkeit *und* die "
+            "wahrscheinliche Höhe künftiger Verluste. Kein Einzelwert, sondern eine "
+            "Verteilung. Im FAIR-Baum: Risk = Schadenshäufigkeit (LEF) × Schadenshöhe (LM).",
+    "LEF":  "**Loss Event Frequency** – die wahrscheinliche Häufigkeit (in einem "
+            "Zeitraum), mit der ein Bedrohungsakteur einem Asset tatsächlich Schaden "
+            "zufügt. LEF = Threat Event Frequency (TEF) × Vulnerability (VULN).",
+    "LM":   "**Loss Magnitude** – die wahrscheinliche Höhe des Verlusts je "
+            "Schadensereignis. Setzt sich zusammen aus Primärverlust (PL) + "
+            "Sekundärverlust (SL).",
+    "TEF":  "**Threat Event Frequency** – die wahrscheinliche Häufigkeit (in einem "
+            "Zeitraum), mit der ein Bedrohungsakteur gegen ein Asset agiert. "
+            "TEF = Contact Frequency (CF) × Probability of Action (PoA).",
+    "VULN": "**Vulnerability** – die Wahrscheinlichkeit, dass ein Bedrohungsereignis "
+            "zu einem Schadensereignis wird, d. h. dass die Aktion des Akteurs den "
+            "Widerstand überwindet. Ergibt sich aus Threat Capability (TC) gegen "
+            "Resistance Strength (CS).",
+    "CF":   "**Contact Frequency** – die wahrscheinliche Häufigkeit (in einem "
+            "Zeitraum), mit der ein Bedrohungsakteur überhaupt mit dem Asset in "
+            "Kontakt kommt.",
+    "POA":  "**Probability of Action** – die Wahrscheinlichkeit (0–1), dass ein "
+            "Bedrohungsakteur nach dem Kontakt tatsächlich gegen das Asset agiert.",
+    "TC":   "**Threat Capability** – das wahrscheinliche Kraft-/Fähigkeitsniveau "
+            "(0–1), das ein Bedrohungsakteur aufbringen kann; oft als Perzentil der "
+            "Akteurspopulation.",
+    "CS":   "**Resistance Strength** (in pyfair: Control Strength) – die Stärke der "
+            "Schutzmaßnahmen, gemessen an einem Kraftmaßstab: wie schwer der Akteur "
+            "sie überwinden muss (0–1).",
+    "PL":   "**Primary Loss** – Verlust, der unmittelbar aus dem Ereignis entsteht "
+            "und den primären Beteiligten (Asset-Eigner) trifft – z. B. Ausfall, "
+            "Wiederherstellung, Ersatz.",
+    "SL":   "**Secondary Loss** – Verlust aus den Reaktionen *sekundärer* Beteiligter "
+            "auf das Primärereignis (Behörden, Kunden, Öffentlichkeit). "
+            "Sekundärrisiko = SLEF × SLEM.",
+    "SLEF": "**Secondary Loss Event Frequency** – der Anteil der Primärereignisse, "
+            "bei denen sekundäre Beteiligte reagieren und ein Folgeschaden entsteht.",
+    "SLEM": "**Secondary Loss Event Magnitude** – die wahrscheinliche Höhe des "
+            "Sekundärverlusts je Ereignis (z. B. Bußgelder, Reputations-, "
+            "Kundenverluste).",
 }
 
 
