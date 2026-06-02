@@ -6,10 +6,23 @@ Begleitet das Roadmap-Thema „Deploy auf Sicherheits-Design-Fehler prüfen" (Ph
 
 - **Antwort-Header immer aktiv:** `X-Content-Type-Options: nosniff`,
   `Referrer-Policy: same-origin`, `X-Frame-Options: DENY`.
-- **HTTPS-Härtung in Produktion** (aktiv, sobald `DEBUG=False`; per
-  `SECURE_HTTPS` in der `.env` übersteuerbar): `SECURE_SSL_REDIRECT`,
-  `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, **HSTS** (1 Jahr,
-  inkl. Subdomains). HSTS-**Preload** bewusst aus.
+- **HTTPS-Härtung – standardmäßig AUS** (`SECURE_HTTPS`, Default `False`).
+  Aktiviert `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`,
+  `CSRF_COOKIE_SECURE`, **HSTS** (1 Jahr, inkl. Subdomains).
+  > ⚠️ **Erst aktivieren, wenn der Proxy `X-Forwarded-Proto` korrekt
+  > weitergibt** (`request.is_secure()` == True). Sonst Redirect-Schleife
+  > (`SSL_REDIRECT`) bzw. nie gesetzte Secure-Cookies. Genau das ist beim
+  > ersten Versuch passiert → Hotfix: Default jetzt `False`.
+
+### HTTPS-Härtung sicher einschalten (wenn der Proxy passt)
+1. Auf dem Server prüfen, ob Django HTTPS erkennt – z. B. temporär im
+   Django-Shell/Logging `request.is_secure()` bzw. den ankommenden Header
+   `X-Forwarded-Proto` kontrollieren (Plesk/nginx→gunicorn). Ggf. nginx so
+   konfigurieren, dass `proxy_set_header X-Forwarded-Proto $scheme;` gesetzt
+   und bis gunicorn durchgereicht wird.
+2. Erst dann `SECURE_HTTPS=True` in die `.env` setzen und neu deployen.
+3. Verifizieren: `curl -I https://fair.neoprehn.de/` zeigt
+   `Strict-Transport-Security`, Login funktioniert, **keine** Redirect-Schleife.
 - Bereits vorhanden: TLS-Proxy-Header (`SECURE_PROXY_SSL_HEADER`),
   `CSRF_TRUSTED_ORIGINS`, App-weite **Login-Pflicht**, CSRF-/Clickjacking-
   Middleware, rollenbasierte Rechte (403) + UI-Gating.
