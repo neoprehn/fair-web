@@ -126,7 +126,8 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 - [ ] Gemeinsame Berechnung: compare **oder** add als Ergebnis wählbar **und
       speicherbar** (eigener Reiter „Szenariovergleiche") – teils schon via
       `Vergleich` vorhanden, hier Persistenz/UX ausbauen
-- [ ] Eingabe von **Annahmen je Faktor**, im Szenarioergebnis mitgespeichert
+- [x] Eingabe von **Annahmen je Faktor** _(bereits umgesetzt: `FaktorEingabe.annahmen`,
+      im Formular eingebbar, in der Szenario-Detailansicht je Faktor angezeigt)_
 - [ ] Ausbaustufe: KI-Agent, der bei der Szenario-Formulierung hilft
 - [ ] Lokaler Test · Commit & Push → `feature-…` mergen in `main`
 
