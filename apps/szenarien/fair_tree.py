@@ -29,6 +29,41 @@ FAIR_NODES = {
 # pyfair-Knotenname -> unser Code (Umkehrung für Ergebnis-Auswertung).
 CODE_FUER_NAME = {name: code for code, (name, _a, _p, _t) in FAIR_NODES.items()}
 
+# Kurz-Erklärungen je Knoten (für den interaktiven FAIR-Baum auf der Startseite).
+ERKLAERUNG = {
+    "Risk": "Das **Gesamtrisiko** als erwarteter Jahresschaden. In FAIR gilt: "
+            "Risk = Häufigkeit der Schadensereignisse (LEF) × Schadenshöhe (LM). "
+            "Das Ergebnis ist keine einzelne Zahl, sondern eine Verteilung.",
+    "LEF":  "**Loss Event Frequency** – wie oft pro Jahr ein Schadensereignis "
+            "eintritt. Ergibt sich aus Bedrohungshäufigkeit (TEF) × Verwundbarkeit (VULN).",
+    "LM":   "**Loss Magnitude** – wie hoch der Schaden je Ereignis ausfällt (in €). "
+            "Summe aus Primär- (PL) und Sekundärschaden (SL).",
+    "TEF":  "**Threat Event Frequency** – wie oft pro Jahr ein Akteur in schädigender "
+            "Absicht auf das Asset einwirkt. = Kontakthäufigkeit (CF) × Handlungswahrsch. (PoA).",
+    "VULN": "**Vulnerability** – Wahrscheinlichkeit, dass ein Bedrohungsereignis "
+            "tatsächlich zum Schaden führt. Ergibt sich aus Angreiferfähigkeit (TC) "
+            "gegen Kontrollstärke (CS).",
+    "CF":   "**Contact Frequency** – wie häufig der Akteur überhaupt mit dem Asset "
+            "in Kontakt kommt (pro Jahr).",
+    "POA":  "**Probability of Action** – Wahrscheinlichkeit, dass der Akteur bei "
+            "Kontakt tatsächlich angreift (0–1).",
+    "TC":   "**Threat Capability** – Fähigkeitsniveau des Angreifers (0–1), oft als "
+            "Perzentil der Angreiferpopulation.",
+    "CS":   "**Control Strength / Resistance** – wie gut die Kontrollen einem "
+            "durchschnittlichen Angriff widerstehen (0–1).",
+    "PL":   "**Primary Loss** – direkter Schaden des Ereignisses (z. B. Ausfall, "
+            "Wiederherstellung, Ersatz).",
+    "SL":   "**Secondary Loss** – Folgeschaden durch Reaktionen Dritter "
+            "(Bußgelder, Reputations-/Kundenverluste). = SLEF × SLEM.",
+    "SLEF": "**Secondary Loss Event Frequency** – Anteil der Primärereignisse, die "
+            "einen Sekundärschaden nach sich ziehen.",
+    "SLEM": "**Secondary Loss Event Magnitude** – Höhe des Sekundärschadens je Ereignis (€).",
+}
+
+
+def erklaerung(code):
+    return ERKLAERUNG.get(code, "")
+
 # Die zwei Top-Äste, die zusammen Risk ergeben (Risk = LEF × LM).
 ROOT_CHILDREN = ["LEF", "LM"]
 

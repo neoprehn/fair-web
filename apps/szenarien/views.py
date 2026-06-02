@@ -17,6 +17,7 @@ from django.views.generic import (
     DeleteView,
     DetailView,
     ListView,
+    TemplateView,
     UpdateView,
 )
 
@@ -85,6 +86,28 @@ def _confidence_config():
         "unsicherheitToConfidence": UNSICHERHEIT_TO_CONFIDENCE,
         "labels": UNSICHERHEIT_LABELS,
     }
+
+
+class StartseiteView(TemplateView):
+    """Startseite: FAIR-Modell erklärt + interaktiver, klickbarer FAIR-Baum."""
+
+    template_name = "start.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        nodes, edges = fair_tree.svg_layout()
+        context["svg_nodes"] = nodes
+        context["svg_edges"] = edges
+        infos = {}
+        for n in nodes:
+            code = n["code"]
+            infos[code] = {
+                "name": "Risk" if code == "Risk" else fair_tree.target(code),
+                "typ": "" if code == "Risk" else fair_tree.typ(code),
+                "text": fair_tree.erklaerung(code),
+            }
+        context["knoten_infos"] = infos
+        return context
 
 
 class SzenarioListView(ListView):

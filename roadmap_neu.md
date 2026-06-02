@@ -118,8 +118,9 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 - [~] Deploy auf Sicherheits-Design-Fehler prüfen _(App-Härtung umgesetzt:
       Security-Header + HTTPS-Härtung in Prod; Server-/Policy-Checkliste in
       `SICHERHEIT.md` – offen: Registrierungs-Policy, Brute-Force-Schutz, CSP)_
-- [ ] Home-Bildschirm verbessern (Modell-Erklärung; interaktives Durchklicken
-      ohne Simulation)
+- [x] Home-Bildschirm: Startseite unter `/` mit FAIR-Erklärung + interaktivem,
+      klickbarem FAIR-Baum (Knoten-Erklärung ohne Simulation); Szenario-Dashboard
+      nach `/szenarien/` verschoben (URL-Namen unverändert)
 - [ ] Dokumentation/Bedienhilfe zur Webseite aufbauen
 - [ ] Szenariocluster (Szenarien gruppieren)
 - [ ] Gemeinsame Berechnung: compare **oder** add als Ergebnis wählbar **und
