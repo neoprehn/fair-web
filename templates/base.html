@@ -182,10 +182,10 @@
             {% if user.is_authenticated %}
             <div class="dropdown ms-2">
                 <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{ user.get_username }}
+                    {{ user.first_name|default:user.get_username }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><span class="dropdown-item-text small text-body-secondary">Angemeldet als <strong>{{ user.get_username }}</strong></span></li>
+                    <li><span class="dropdown-item-text small text-body-secondary">Angemeldet als <strong>{{ user.get_full_name|default:user.get_username }}</strong></span></li>
                     {% if user.is_staff %}<li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin-Bereich</a></li>{% endif %}
                     <li><hr class="dropdown-divider"></li>
                     <li>
