@@ -17,8 +17,8 @@
         {% if szenario.beschreibung %}<p class="text-body-secondary mb-0">{{ szenario.beschreibung }}</p>{% endif %}
     </div>
     <div>
-        <a class="btn btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>
-        <a class="btn btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>
+        {% if perms.szenarien.change_szenario %}<a class="btn btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>{% endif %}
+        {% if perms.szenarien.delete_szenario %}<a class="btn btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>{% endif %}
     </div>
 </div>
 
@@ -89,7 +89,7 @@
 
 <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
     <h2 class="h5 mb-0">Simulation</h2>
-    {% if szenario.faktoren.all %}
+    {% if szenario.faktoren.all and perms.berechnung.add_simulationslauf %}
     <form method="post" action="{% url 'berechnung:starten' szenario.pk %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-primary">▶ Berechnen</button>

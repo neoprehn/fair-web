@@ -79,6 +79,36 @@ def test_analyst_darf_anlegen(django_user_model):
 
 
 @pytest.mark.django_db
+def test_dashboard_ui_betrachter_ohne_aktionen(django_user_model):
+    _szenario_mit_faktoren()
+    c = _client_in_gruppe(django_user_model, "Betrachter")
+    html = c.get(reverse("szenarien:dashboard")).content.decode()
+    assert "Neues Szenario" not in html
+    assert "gemeinsam berechnen" not in html
+    assert "Bearbeiten" not in html
+
+
+@pytest.mark.django_db
+def test_dashboard_ui_analyst_mit_aktionen(django_user_model):
+    _szenario_mit_faktoren()
+    c = _client_in_gruppe(django_user_model, "Analyst")
+    html = c.get(reverse("szenarien:dashboard")).content.decode()
+    assert "Neues Szenario" in html
+    assert "Bearbeiten" in html
+
+
+@pytest.mark.django_db
+def test_detail_ui_betrachter_ohne_berechnen(django_user_model):
+    s = _szenario_mit_faktoren()
+    c = _client_in_gruppe(django_user_model, "Betrachter")
+    html = c.get(reverse("szenarien:detail", kwargs={"pk": s.pk})).content.decode()
+    # Kein Berechnen-/Bearbeiten-/Loeschen-Knopf (Aktions-URLs fehlen).
+    assert reverse("berechnung:starten", kwargs={"szenario_pk": s.pk}) not in html
+    assert reverse("szenarien:update", kwargs={"pk": s.pk}) not in html
+    assert reverse("szenarien:delete", kwargs={"pk": s.pk}) not in html
+
+
+@pytest.mark.django_db
 def test_analyst_darf_simulieren(django_user_model, monkeypatch):
     s = _szenario_mit_faktoren()
     monkeypatch.setattr(berechnung_views, "starte_simulation_async", lambda pk: None)
