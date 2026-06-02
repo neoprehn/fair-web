@@ -3,6 +3,7 @@ from django.contrib.auth.views import LoginView
 from django.urls import include, path
 
 from apps.konten.forms import BootstrapAuthenticationForm
+from apps.szenarien.views import StartseiteView
 
 # Admin-Branding + „Website anzeigen"-Ziel (Rücklink zur App).
 admin.site.site_header = "fair-web – Verwaltung"
@@ -19,5 +20,6 @@ urlpatterns = [
     path("accounts/", include("apps.konten.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("berechnung/", include("apps.berechnung.urls")),
-    path("", include("apps.szenarien.urls")),
+    path("szenarien/", include("apps.szenarien.urls")),
+    path("", StartseiteView.as_view(), name="start"),
 ]
