@@ -7,7 +7,7 @@
 {% block content %}
 <h1 class="h3 mb-3">{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %}</h1>
 
-<form method="post" novalidate>
+<form method="post" novalidate id="szenario-form">
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
     {% if schnitt_fehler %}<div class="alert alert-warning">{{ schnitt_fehler }}</div>{% endif %}
@@ -113,7 +113,7 @@ function formatDE(n) {
 <script>
 (function () {
     var CONF = JSON.parse(document.getElementById('confidence-config').textContent);
-    var form = document.querySelector('form');
+    var form = document.getElementById('szenario-form');
 
     function child(el, sel) { return el.querySelector(':scope > ' + sel); }
 
@@ -240,7 +240,7 @@ function formatDE(n) {
     var dps = document.querySelectorAll('.rt-dp');
     var curveBody = document.getElementById('rt-curve-body');
     var curveJson = document.getElementById('rt-curve-json');
-    var form = document.querySelector('form');
+    var form = document.getElementById('szenario-form');
 
     function showType() {
         blocks.forEach(function (b) { b.style.display = (b.dataset.rt === typeSel.value) ? '' : 'none'; });
@@ -306,7 +306,7 @@ function formatDE(n) {
 (function () {
     if (typeof Plotly === 'undefined') return;
     var url = "{% url 'szenarien:lec_vorschau' %}";
-    var form = document.querySelector('form');
+    var form = document.getElementById('szenario-form');
     var ziel = document.getElementById('lec-vorschau');
     var info = document.getElementById('lec-vorschau-info');
     if (!form || !ziel) return;
