@@ -94,8 +94,12 @@
         </div>
     </div>
 
-    <div class="mt-4">
+    <div class="mt-4 d-flex flex-wrap gap-2 align-items-center">
         <button type="submit" class="btn btn-primary">Speichern</button>
+        {% if object and perms.szenarien.add_szenario %}
+        <button type="submit" name="speichern_als_neu" value="1" class="btn btn-outline-info"
+                title="Den aktuellen Stand als neues Szenario (neue ID) anlegen">Als neues Szenario speichern</button>
+        {% endif %}
         <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Abbrechen</a>
     </div>
 </form>

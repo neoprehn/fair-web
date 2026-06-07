@@ -148,6 +148,33 @@ def test_create_deutsche_zahlen(client):
 
 
 @pytest.mark.django_db
+def test_klonen_erzeugt_kopie(client):
+    client.post(reverse("szenarien:create"), data=_post_lef_lm(name="Orig"))
+    orig = Szenario.objects.get(name="Orig")
+    resp = client.post(reverse("szenarien:clone", kwargs={"pk": orig.pk}))
+    assert resp.status_code == 302
+    klon = Szenario.objects.get(name="Orig (Kopie)")
+    assert klon.pk != orig.pk
+    assert klon.faktoren.count() == orig.faktoren.count() == 2
+    assert resp.url == reverse("szenarien:update", kwargs={"pk": klon.pk})
+
+
+@pytest.mark.django_db
+def test_speichern_als_neu_legt_neues_an_original_bleibt(client):
+    client.post(reverse("szenarien:create"), data=_post_lef_lm(name="Basis"))
+    orig = Szenario.objects.get(name="Basis")
+    n_vorher = Szenario.objects.count()
+    resp = client.post(reverse("szenarien:update", kwargs={"pk": orig.pk}),
+                       data=_post_lef_lm(name="Variante", speichern_als_neu="1"))
+    assert resp.status_code == 302
+    assert Szenario.objects.count() == n_vorher + 1
+    neu = Szenario.objects.get(name="Variante")
+    assert neu.pk != orig.pk
+    orig.refresh_from_db()
+    assert orig.name == "Basis"
+
+
+@pytest.mark.django_db
 def test_delete_entfernt_szenario(client):
     s = Szenario.objects.create(name="Weg")
     resp = client.post(reverse("szenarien:delete", kwargs={"pk": s.pk}))

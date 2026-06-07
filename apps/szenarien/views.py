@@ -9,6 +9,7 @@ import json
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
 from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import (
@@ -126,6 +127,33 @@ class SzenarioDetailView(DetailView):
     context_object_name = "szenario"
 
 
+def _szenario_kopieren(orig, name):
+    """Legt eine Kopie eines Szenarios (neue ID) inkl. Faktoren an."""
+    klon = Szenario.objects.create(
+        name=name,
+        beschreibung=orig.beschreibung,
+        n_simulations=orig.n_simulations,
+        random_seed=orig.random_seed,
+        risikotoleranz=orig.risikotoleranz,
+    )
+    for f in orig.faktoren.all():
+        FaktorEingabe.objects.create(
+            szenario=klon, faktor=f.faktor, verteilung=f.verteilung, params=f.params,
+            unsicherheit=f.unsicherheit, angreifertyp=f.angreifertyp, annahmen=f.annahmen,
+        )
+    return klon
+
+
+@require_POST
+def szenario_klonen(request, pk):
+    """Dupliziert ein bestehendes Szenario unter neuer ID (Übersicht → Klonen)."""
+    if not request.user.has_perm("szenarien.add_szenario"):
+        return redirect("szenarien:dashboard")
+    orig = get_object_or_404(Szenario, pk=pk)
+    klon = _szenario_kopieren(orig, f"{orig.name} (Kopie)")
+    return redirect("szenarien:update", pk=klon.pk)
+
+
 class _SzenarioFormMixin:
     """Anlegen/Bearbeiten mit freiem FAIR-Baum-Schnitt.
 
@@ -219,6 +247,12 @@ class _SzenarioFormMixin:
 
         from apps.admin_bereich.models import AppKonfiguration
         konfig = AppKonfiguration.load()
+        # "Als neues Szenario speichern": aktuellen Formularstand als Kopie (neue ID)
+        # anlegen statt das bestehende zu überschreiben.
+        if (self.request.POST.get("speichern_als_neu")
+                and self.request.user.has_perm("szenarien.add_szenario")):
+            form.instance.pk = None
+            form.instance._state.adding = True
         with transaction.atomic():
             self.object = form.save()
             if konfig.seed_global:
