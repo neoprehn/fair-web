@@ -10,6 +10,7 @@ from .views import (
     VergleichDeleteView,
     VergleichUpdateView,
     lec_vorschau,
+    szenario_klonen,
 )
 
 app_name = "szenarien"
@@ -23,5 +24,6 @@ urlpatterns = [
     path("vergleich/<int:pk>/loeschen/", VergleichDeleteView.as_view(), name="vergleich_delete"),
     path("<int:pk>/", SzenarioDetailView.as_view(), name="detail"),
     path("<int:pk>/bearbeiten/", SzenarioUpdateView.as_view(), name="update"),
+    path("<int:pk>/klonen/", szenario_klonen, name="clone"),
     path("<int:pk>/loeschen/", SzenarioDeleteView.as_view(), name="delete"),
 ]
