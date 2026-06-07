@@ -124,7 +124,7 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 - [x] Bedienhilfe (In-App): Hilfeseite unter `/hilfe/` im Menü, mit
       Inhaltsverzeichnis + Abschnitten (Szenario/Faktoren/Verteilungen/
       Toleranz/Simulation/Vergleich/Klonen/Rollen/Einstellungen)
-  - [ ] optional später: ausführliche Doku-Site (MkDocs/Sphinx im `docs/`-Ordner, ReadTheDocs-Stil)
+      _(ausführliche Doku-Site → siehe „Ganz zuletzt")_
 - [ ] Szenariocluster (Szenarien gruppieren)
 - [ ] Gemeinsame Berechnung: compare **oder** add als Ergebnis wählbar **und
       speicherbar** (eigener Reiter „Szenariovergleiche") – teils schon via
@@ -145,7 +145,23 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 - [ ] Punkte-Streudiagramm primäre/sekundäre Verluste (rot/blau, wie Laptop_neu)
 - [ ] Lokaler Test · Commit & Push → `feature-…` mergen in `main`
 
-### Ganz zuletzt → Phase Export
+### Ganz zuletzt
+
+#### Eigene ReadTheDocs-Dokumentationssite
+- [ ] Vollwertige Doku-Site (Sphinx oder MkDocs → ReadTheDocs / GitHub Pages),
+      eigener Build/Workflow (z. B. `docs/`-Ordner im Repo, kein neues Repo nötig)
+- [ ] **Inhaltliche Basis:** die bestehende `pyfair`-ReadTheDocs übernehmen/anpassen
+      (https://pyfair.readthedocs.io/en/latest/) – **wichtig:** unser `pyfair`-Fork
+      (`neoprehn/pyfair`) ist gegenüber dem Original **stark erweitert** (z. B.
+      strukturierte Eingabe-API, Konfidenz-Mapping, Beta-Konfidenzintervall,
+      zusätzliche Verteilungen/Parameter) → Doku muss den erweiterten Funktionsumfang
+      abbilden, nicht nur das Original
+- [ ] **Zweisprachig DE + EN** (i18n der Doku, Sprachumschalter)
+- [ ] Abschnitte: FAIR-Taxonomie (Open-FAIR/O-RT), pyfair-API (Fork), fair-web-Bedienung
+      (aus der In-App-Hilfe abgeleitet), Beispiele
+- [ ] Verlinkung aus der App (Menü/Hilfe) auf die Doku-Site
+
+#### Export
 - [ ] Excel-Export (openpyxl)
 - [ ] PPT-Bericht (python-pptx)
 - [ ] PDF-Bericht
