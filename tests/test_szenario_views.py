@@ -147,6 +147,20 @@ def test_create_deutsche_zahlen(client):
     assert s.faktoren.get(faktor="LEF").params["mode"] == 3.5
 
 
+def test_risikotoleranz_distribution_samples_lokalisiert():
+    # "20.000" (mit Tausenderpunkt, wie beim Bearbeiten vorbefüllt) darf die
+    # Verteilungs-Toleranz NICHT zerstören (int("20.000") wuerde scheitern).
+    from apps.szenarien.views import risikotoleranz_aus_post
+    rt = risikotoleranz_aus_post({
+        "rt_type": "distribution", "rt_dist": "lognormal",
+        "rt_ln_mean": "1.600.000", "rt_ln_sigma": "0,5", "rt_samples": "20.000",
+    })
+    assert rt is not None
+    assert rt["distribution"] == "lognormal"
+    assert rt["params"] == {"mean": 1600000.0, "sigma": 0.5}
+    assert rt["samples"] == 20000
+
+
 @pytest.mark.django_db
 def test_klonen_erzeugt_kopie(client):
     client.post(reverse("szenarien:create"), data=_post_lef_lm(name="Orig"))

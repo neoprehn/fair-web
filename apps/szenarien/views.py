@@ -61,9 +61,11 @@ def risikotoleranz_aus_post(post):
             params = {k: zahl(feld) for k, feld in felder if zahl(feld) is not None}
             if not params:
                 return None
-            samples = post.get("rt_samples")
+            # Samples lokalisiert parsen (z. B. "20.000" beim Bearbeiten) – sonst
+            # würde int("20.000") scheitern und die ganze Toleranz None ergeben.
+            s = zahl("rt_samples")
             return {"type": "distribution", "distribution": dist, "params": params,
-                    "samples": int(samples) if samples else 20000}
+                    "samples": int(s) if s else 20000}
         if typ == "curve":
             punkte = json.loads(post.get("rt_curve") or "[]")
             punkte = [{"loss": float(sanitize_separators(str(p["loss"]))),
