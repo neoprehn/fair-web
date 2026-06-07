@@ -170,8 +170,10 @@ def test_speichern_als_neu_legt_neues_an_original_bleibt(client):
     assert Szenario.objects.count() == n_vorher + 1
     neu = Szenario.objects.get(name="Variante")
     assert neu.pk != orig.pk
+    assert neu.faktoren.count() == 2
     orig.refresh_from_db()
     assert orig.name == "Basis"
+    assert orig.faktoren.count() == 2  # Original behält seine Faktoren
 
 
 @pytest.mark.django_db

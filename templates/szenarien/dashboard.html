@@ -52,9 +52,9 @@
                     {% if perms.szenarien.change_szenario or perms.szenarien.delete_szenario or perms.szenarien.add_szenario %}
                     <td class="text-end">
                         {% if perms.szenarien.add_szenario %}
-                        <form method="post" action="{% url 'szenarien:clone' szenario.pk %}" class="d-inline">
-                            {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-info" title="Als neues Szenario duplizieren">Klonen</button>
-                        </form>
+                        {# Kein verschachteltes <form> (liegt im Meta-Formular) -> formaction am Submit-Button. #}
+                        <button type="submit" formaction="{% url 'szenarien:clone' szenario.pk %}" formmethod="post"
+                                class="btn btn-sm btn-outline-info" title="Als neues Szenario duplizieren">Klonen</button>
                         {% endif %}
                         {% if perms.szenarien.change_szenario %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>{% endif %}
                         {% if perms.szenarien.delete_szenario %}<a class="btn btn-sm btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>{% endif %}
