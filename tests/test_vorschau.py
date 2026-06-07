@@ -62,3 +62,14 @@ def test_vorschau_endpoint_unvollstaendig(client):
 
 def test_vorschau_get_nicht_erlaubt(client):
     assert client.get(reverse("szenarien:lec_vorschau")).status_code == 405
+
+
+@pytest.mark.django_db
+def test_formular_js_adressiert_szenario_formular(client):
+    """Regression: das Formular-JS darf NICHT document.querySelector('form')
+    nutzen (greift sonst das Navbar-Logout-Formular) – es muss die ID
+    'szenario-form' adressieren."""
+    html = client.get(reverse("szenarien:create")).content.decode()
+    assert 'id="szenario-form"' in html
+    assert "querySelector('form')" not in html
+    assert "getElementById('szenario-form')" in html
