@@ -6,7 +6,6 @@ Inline-Formset angelegt und bearbeitet.
 
 import json
 
-from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
 from django.http import HttpResponseRedirect, JsonResponse
@@ -310,10 +309,15 @@ def _inputs_aus_post(post):
 
 
 @require_POST
-@permission_required("szenarien.add_szenario", raise_exception=True)
 def lec_vorschau(request):
     """Live-Vorschau: schnelle Mini-Simulation + LEC/Toleranz aus dem aktuellen
-    (ungespeicherten) Formularzustand. Antwortet als JSON."""
+    (ungespeicherten) Formularzustand. Antwortet als JSON.
+
+    Erlaubt für alle, die Szenarien anlegen ODER bearbeiten dürfen (die
+    Vorschau wird in beiden Formularen genutzt)."""
+    if not (request.user.has_perm("szenarien.add_szenario")
+            or request.user.has_perm("szenarien.change_szenario")):
+        return JsonResponse({"ok": False, "fehler": "Keine Berechtigung für die Vorschau."}, status=403)
     from apps.berechnung.services import simuliere_vorschau
     from apps.berechnung.views import schnittpunkt, toleranz_overlay
 
