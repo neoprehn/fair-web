@@ -148,6 +148,9 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 ### Ganz zuletzt
 
 #### Eigene ReadTheDocs-Dokumentationssite
+- [x] ReadTheDocs bereits mit GitHub verbunden — Dashboard:
+      https://app.readthedocs.org/dashboard/ (Build erfolgt aus dem Repo,
+      z. B. `docs/` + `.readthedocs.yaml`)
 - [ ] Vollwertige Doku-Site (Sphinx oder MkDocs → ReadTheDocs / GitHub Pages),
       eigener Build/Workflow (z. B. `docs/`-Ordner im Repo, kein neues Repo nötig)
 - [ ] **Inhaltliche Basis:** die bestehende `pyfair`-ReadTheDocs übernehmen/anpassen
