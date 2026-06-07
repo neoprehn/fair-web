@@ -267,6 +267,11 @@ class _SzenarioFormMixin:
             self.object.faktoren.all().delete()
             for code, f in frontier_forms.items():
                 eingabe = f.save(commit=False)
+                # Immer als frische Zeile anlegen (Faktoren wurden eben gelöscht).
+                # Wichtig für "Als neues Szenario speichern": sonst würden die
+                # Faktor-Objekte des Originals auf die Kopie umgehängt.
+                eingabe.pk = None
+                eingabe._state.adding = True
                 eingabe.szenario = self.object
                 eingabe.faktor = code
                 eingabe.save()
