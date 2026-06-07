@@ -121,7 +121,10 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 - [x] Home-Bildschirm: Startseite unter `/` mit FAIR-Erklärung + interaktivem,
       klickbarem FAIR-Baum (Knoten-Erklärung ohne Simulation); Szenario-Dashboard
       nach `/szenarien/` verschoben (URL-Namen unverändert)
-- [ ] Dokumentation/Bedienhilfe zur Webseite aufbauen
+- [x] Bedienhilfe (In-App): Hilfeseite unter `/hilfe/` im Menü, mit
+      Inhaltsverzeichnis + Abschnitten (Szenario/Faktoren/Verteilungen/
+      Toleranz/Simulation/Vergleich/Klonen/Rollen/Einstellungen)
+  - [ ] optional später: ausführliche Doku-Site (MkDocs/Sphinx im `docs/`-Ordner, ReadTheDocs-Stil)
 - [ ] Szenariocluster (Szenarien gruppieren)
 - [ ] Gemeinsame Berechnung: compare **oder** add als Ergebnis wählbar **und
       speicherbar** (eigener Reiter „Szenariovergleiche") – teils schon via
