@@ -1,0 +1,38 @@
+site_name: fair-web Dokumentation
+site_description: FAIR-Risikomodellierung mit fair-web und pyfair (neoprehn-Fork)
+docs_dir: docs
+
+theme:
+  name: material
+  language: de
+  palette:
+    - scheme: slate
+      primary: blue grey
+      accent: light blue
+      toggle:
+        icon: material/weather-night
+        name: Heller Modus
+    - scheme: default
+      primary: blue grey
+      accent: light blue
+      toggle:
+        icon: material/weather-sunny
+        name: Dunkler Modus
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+
+nav:
+  - Start: index.md
+  - Bedienung (fair-web): bedienung.md
+  - FAIR-Taxonomie: fair-taxonomie.md
+  - pyfair (neoprehn-Fork): pyfair-fork.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
