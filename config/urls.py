@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.views import LoginView
 from django.urls import include, path
+from django.views.generic import TemplateView
 
 from apps.konten.forms import BootstrapAuthenticationForm
 from apps.szenarien.views import StartseiteView
@@ -21,5 +22,6 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("berechnung/", include("apps.berechnung.urls")),
     path("szenarien/", include("apps.szenarien.urls")),
+    path("hilfe/", TemplateView.as_view(template_name="hilfe.html"), name="hilfe"),
     path("", StartseiteView.as_view(), name="start"),
 ]

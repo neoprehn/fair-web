@@ -170,12 +170,12 @@
                     Menü
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'hilfe' %}">Hilfe &amp; Bedienung</a></li>
                     {% if user.is_staff %}
+                        <li><hr class="dropdown-divider"></li>
                         {% if perms.admin_bereich.change_appkonfiguration %}<li><a class="dropdown-item" href="{% url 'admin:admin_bereich_appkonfiguration_changelist' %}">App-Konfiguration</a></li>{% endif %}
                         {% if perms.szenarien.change_angreifertyp %}<li><a class="dropdown-item" href="{% url 'admin:szenarien_angreifertyp_changelist' %}">Angreifertypen</a></li>{% endif %}
                         <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin-Bereich</a></li>
-                    {% else %}
-                        <li><span class="dropdown-item-text text-body-secondary small">Keine Verwaltungsrechte</span></li>
                     {% endif %}
                 </ul>
             </div>

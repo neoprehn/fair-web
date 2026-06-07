@@ -27,3 +27,14 @@ def test_start_zeigt_fair_baum(client):
 def test_szenarien_dashboard_unter_szenarien_prefix(client):
     assert reverse("szenarien:dashboard") == "/szenarien/"
     assert client.get(reverse("szenarien:dashboard")).status_code == 200
+
+
+def test_hilfe_login_pflicht():
+    assert Client().get(reverse("hilfe")).status_code == 302
+
+
+@pytest.mark.django_db
+def test_hilfe_seite(client):
+    html = client.get(reverse("hilfe")).content.decode()
+    assert "Hilfe" in html
+    assert 'id="faktoren"' in html  # Inhaltsabschnitte vorhanden

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Hilfe &middot; fair-web{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Hilfe &amp; Bedienung</h1>
+
+<div class="row g-4">
+    <!-- Inhaltsverzeichnis -->
+    <div class="col-lg-3 order-lg-2">
+        <div class="card position-lg-sticky" style="top:1rem;"><div class="card-body py-2">
+            <div class="text-body-secondary small mb-1">Inhalt</div>
+            <nav class="nav flex-column small">
+                <a class="nav-link px-0 py-1" href="#ueberblick">Überblick</a>
+                <a class="nav-link px-0 py-1" href="#szenario">Szenario anlegen</a>
+                <a class="nav-link px-0 py-1" href="#faktoren">FAIR-Faktoren &amp; Baum</a>
+                <a class="nav-link px-0 py-1" href="#verteilungen">Verteilungen &amp; Unsicherheit</a>
+                <a class="nav-link px-0 py-1" href="#toleranz">Risikotoleranz</a>
+                <a class="nav-link px-0 py-1" href="#simulation">Simulation &amp; Ergebnis</a>
+                <a class="nav-link px-0 py-1" href="#vergleich">Szenarien vergleichen</a>
+                <a class="nav-link px-0 py-1" href="#klonen">Klonen &amp; Kopien</a>
+                <a class="nav-link px-0 py-1" href="#rollen">Rollen &amp; Rechte</a>
+                <a class="nav-link px-0 py-1" href="#einstellungen">Anzeige &amp; Einstellungen</a>
+            </nav>
+        </div></div>
+    </div>
+
+    <!-- Inhalt -->
+    <div class="col-lg-9 order-lg-1" style="max-width:80ch;">
+        <section id="ueberblick" class="mb-4">
+            <h2 class="h5">Überblick</h2>
+            <p>fair-web schätzt Informationsrisiken nach dem <strong>FAIR</strong>-Modell
+               (Factor Analysis of Information Risk) als <strong>erwarteten Jahresschaden</strong>
+               – per Monte-Carlo-Simulation (Engine: <code>pyfair</code>). Risiko = wie <em>oft</em>
+               etwas schiefgeht × wie <em>teuer</em> es wird.</p>
+            <p>Die <a href="{% url 'start' %}">Startseite</a> erklärt jeden Faktor interaktiv:
+               im FAIR-Baum auf einen Knoten klicken zeigt dessen Bedeutung – ganz ohne Simulation.</p>
+        </section>
+
+        <section id="szenario" class="mb-4">
+            <h2 class="h5">Szenario anlegen</h2>
+            <p>Über <a href="{% url 'szenarien:dashboard' %}">Szenarien</a> → <em>+ Neues Szenario</em>.
+               Felder:</p>
+            <ul>
+                <li><strong>Name / Beschreibung</strong> – frei.</li>
+                <li><strong>Anzahl Simulationen</strong> – Monte-Carlo-Iterationen (mehr = genauer, langsamer; 10.000 ist üblich).</li>
+                <li><strong>Zufalls-Seed</strong> – gleicher Seed → reproduzierbares Ergebnis.</li>
+            </ul>
+            <p class="text-body-secondary small">Sind diese Werte vom Administrator <em>global</em>
+               vorgegeben, werden sie nur lesend angezeigt.</p>
+        </section>
+
+        <section id="faktoren" class="mb-4">
+            <h2 class="h5">FAIR-Faktoren &amp; der Baum</h2>
+            <p>Risk = <strong>Häufigkeit (LEF)</strong> × <strong>Schaden (LM)</strong>. Du gibst einen
+               „Schnitt" durch den Baum ein: jeden Ast so weit herunterbrechen, bis du den Faktor
+               schätzen kannst.</p>
+            <ul>
+                <li><strong>Klick auf einen Faktor</strong> faltet ihn in seine Teilfaktoren auf
+                    (z. B. LEF → TEF × Vulnerability); erneuter Klick faltet zurück.</li>
+                <li>Du musst nur die <strong>Blätter deines Schnitts</strong> ausfüllen – pyfair
+                    rechnet daraus nach oben bis Risk.</li>
+                <li>Das <strong>SVG oben</strong> zeigt den Baum; beim Klick in ein Feld leuchtet der
+                    zugehörige Knoten auf.</li>
+                <li><strong>Annahmen je Faktor</strong>: optionales Freitextfeld – wird gespeichert und
+                    im Szenario angezeigt.</li>
+            </ul>
+        </section>
+
+        <section id="verteilungen" class="mb-4">
+            <h2 class="h5">Verteilungen &amp; Unsicherheit</h2>
+            <p>Pro Faktor wählst du eine <strong>Verteilung</strong> (je nach Faktortyp eingeschränkt):</p>
+            <ul>
+                <li><strong>PERT</strong> – min / wahrscheinlich / max (gut für Schätzungen).</li>
+                <li><strong>Lognormal</strong> – Mittelwert (+ Streuung über die Unsicherheit) – typisch für Schadenshöhen.</li>
+                <li><strong>Beta</strong> – für Wahrscheinlichkeiten (0–1), Mittelwert + k oder Konfidenzintervall.</li>
+                <li><strong>Poisson</strong> – für Zähl-Häufigkeiten (z. B. Contact Frequency).</li>
+                <li><strong>Normal / Konstant</strong> – Mittelwert+Streuung bzw. fester Wert.</li>
+            </ul>
+            <p>Der <strong>Unsicherheits-Schieber</strong> (5 Stufen) steuert, wie breit gestreut wird
+               (mehr Unsicherheit = breitere Verteilung). Die konkreten Formparameter
+               (gamma/sigma/range/k) je Stufe sind im Admin konfigurierbar.</p>
+        </section>
+
+        <section id="toleranz" class="mb-4">
+            <h2 class="h5">Risikotoleranz</h2>
+            <p>Optional. Legt fest, welches Risiko noch akzeptabel ist – wird im Ergebnis als
+               <span class="text-danger">rote Kurve</span> über die LEC gelegt, samt Schnittpunkt:</p>
+            <ul>
+                <li><strong>Konstant</strong> – eine feste Schwelle in €.</li>
+                <li><strong>Kurve</strong> – Punkte (Schaden → akzeptierte Wahrscheinlichkeit).</li>
+                <li><strong>Verteilung</strong> – z. B. Lognormal (Mittelwert, sigma, Samples).</li>
+            </ul>
+            <p class="text-body-secondary small">Ist eine <em>Unternehmens-Risikotoleranz</em> global
+               vorgegeben, wird sie nur lesend angezeigt und für alle Szenarien verwendet.</p>
+        </section>
+
+        <section id="simulation" class="mb-4">
+            <h2 class="h5">Simulation &amp; Ergebnis</h2>
+            <p>Während der Eingabe zeigt die <strong>Live-Vorschau (LEC)</strong> rechts schon eine
+               schnelle Schätzung. Zum vollen Lauf: <em>Berechnen</em> (auf der Detailseite). Das
+               Ergebnis enthält:</p>
+            <ul>
+                <li><strong>Mittelwert / Median / Worst Case (P95)</strong>.</li>
+                <li><strong>VaR</strong> (Value at Risk) für 10/20/50/80/90/95/99 %.</li>
+                <li><strong>LEC</strong> (Loss Exceedance Curve): Wahrscheinlichkeit, einen Schaden zu überschreiten – log-Achse, animiert.</li>
+                <li><strong>Schnittpunkt</strong> mit der Risikotoleranz (Loss €, Toleranz %).</li>
+                <li><strong>Verteilung &amp; Häufigkeit</strong> als Histogramme; <strong>Knoten-Detailtabelle</strong> je Faktor.</li>
+            </ul>
+        </section>
+
+        <section id="vergleich" class="mb-4">
+            <h2 class="h5">Szenarien vergleichen</h2>
+            <p>Über <em>+ Neuer Vergleich</em> mehrere Szenarien gruppieren und gemeinsam berechnen.
+               Im Ergebnis umschaltbar:</p>
+            <ul>
+                <li><strong>Compare</strong> – die LECs der Szenarien überlagert.</li>
+                <li><strong>Add</strong> – das aufsummierte Gesamtrisiko.</li>
+            </ul>
+            <p>Optional ein <strong>Referenz-Szenario</strong> wählen – dessen Risikotoleranz wird im
+               Compare-Chart rot gezeichnet, mit Schnittpunkten je Szenario-LEC.</p>
+        </section>
+
+        <section id="klonen" class="mb-4">
+            <h2 class="h5">Klonen &amp; Kopien</h2>
+            <ul>
+                <li><strong>Klonen</strong> (Übersicht) – dupliziert ein Szenario unter neuer ID als
+                    „… (Kopie)" und öffnet die Kopie zum Bearbeiten.</li>
+                <li><strong>Als neues Szenario speichern</strong> (im Bearbeiten-Formular) – legt den
+                    aktuellen Stand als neue Kopie an; das Original bleibt unverändert.</li>
+                <li>Jedes Szenario hat eine sichtbare <strong>ID</strong> (Übersicht + Detailseite).</li>
+            </ul>
+        </section>
+
+        <section id="rollen" class="mb-4">
+            <h2 class="h5">Rollen &amp; Rechte</h2>
+            <ul>
+                <li><strong>Betrachter</strong> – nur ansehen.</li>
+                <li><strong>Analyst</strong> – Szenarien/Vergleiche anlegen, bearbeiten, löschen, simulieren.</li>
+                <li><strong>Konfigurator</strong> – zusätzlich die App-Konfiguration &amp; Angreifertypen.</li>
+                <li><strong>Administrator</strong> – alles inkl. Benutzerverwaltung.</li>
+            </ul>
+            <p class="text-body-secondary small">Neue Konten starten als Betrachter; ein Administrator
+               hebt die Rolle bei Bedarf an.</p>
+        </section>
+
+        <section id="einstellungen" class="mb-4">
+            <h2 class="h5">Anzeige &amp; Einstellungen</h2>
+            <ul>
+                <li><strong>Hell/Dunkel</strong> – Umschalter oben rechts (wird im Browser gemerkt).</li>
+                <li><strong>Währung €/$</strong> – global im Admin; tauscht Symbol und Zahlenformat.</li>
+                <li>Globale Vorgaben (Seed, Simulationsanzahl, Unternehmens-Risikotoleranz,
+                    Konfidenz-Vorschlagswerte) verwaltet der Konfigurator/Administrator.</li>
+            </ul>
+            <p class="text-body-secondary small">Technische Details zur Engine:
+               <a href="https://pyfair.readthedocs.io/en/latest/" target="_blank" rel="noopener">pyfair-Dokumentation</a>.</p>
+        </section>
+    </div>
+</div>
+{% endblock %}
