@@ -148,11 +148,12 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 ### Ganz zuletzt
 
 #### Eigene ReadTheDocs-Dokumentationssite
-- [x] ReadTheDocs bereits mit GitHub verbunden — Dashboard:
-      https://app.readthedocs.org/dashboard/ (Build erfolgt aus dem Repo,
-      z. B. `docs/` + `.readthedocs.yaml`)
-- [ ] Vollwertige Doku-Site (Sphinx oder MkDocs → ReadTheDocs / GitHub Pages),
-      eigener Build/Workflow (z. B. `docs/`-Ordner im Repo, kein neues Repo nötig)
+- [x] **Live:** https://fair-web.readthedocs.io/de/latest/ — ReadTheDocs mit
+      GitHub verbunden, baut grün bei jedem Push auf `main`
+      (Dashboard: https://app.readthedocs.org/dashboard/)
+- [x] Gerüst im fair-web-Repo: `.readthedocs.yaml`, `mkdocs.yml` (Material),
+      `docs/` (Start, Bedienung, FAIR-Taxonomie, pyfair-Fork) + `docs/requirements.txt`
+- [ ] Vollausbau der Inhalte (über das Gerüst hinaus)
 - [ ] **Inhaltliche Basis:** die bestehende `pyfair`-ReadTheDocs übernehmen/anpassen
       (https://pyfair.readthedocs.io/en/latest/) – **wichtig:** unser `pyfair`-Fork
       (`neoprehn/pyfair`) ist gegenüber dem Original **stark erweitert** (z. B.
