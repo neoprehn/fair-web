@@ -154,6 +154,11 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 - [x] Gerüst im fair-web-Repo: `.readthedocs.yaml`, `mkdocs.yml` (Material),
       `docs/` (Start, Bedienung, FAIR-Taxonomie, pyfair-Fork) + `docs/requirements.txt`
 - [ ] Vollausbau der Inhalte (über das Gerüst hinaus)
+  - [x] deutsche pyfair-Seite (aus README, an den neoprehn-Fork angepasst)
+  - [ ] **vollständige deutsche Übersetzung der Original-pyfair-RTD**
+        (Unterseiten/API-Referenz; per Web-Abruf holen + übersetzen, an den
+        Fork angepasst)
+  - [ ] Zweisprachigkeit DE/EN (i18n) + Sprachumschalter
 - [ ] **Inhaltliche Basis:** die bestehende `pyfair`-ReadTheDocs übernehmen/anpassen
       (https://pyfair.readthedocs.io/en/latest/) – **wichtig:** unser `pyfair`-Fork
       (`neoprehn/pyfair`) ist gegenüber dem Original **stark erweitert** (z. B.
