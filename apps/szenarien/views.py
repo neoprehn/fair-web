@@ -28,8 +28,8 @@ from .fair_confidence import (
     UNSICHERHEIT_TO_CONFIDENCE,
     aktuelle_konfidenz_defaults,
 )
-from .forms import FaktorEingabeForm, SzenarioForm, VergleichForm
-from .models import Angreifertyp, FaktorEingabe, Szenario, Vergleich
+from .forms import ClusterForm, FaktorEingabeForm, SzenarioForm, VergleichForm
+from .models import Angreifertyp, Cluster, FaktorEingabe, Szenario, Vergleich
 
 
 def risikotoleranz_aus_post(post):
@@ -117,9 +117,19 @@ class SzenarioListView(ListView):
     template_name = "szenarien/dashboard.html"
     context_object_name = "szenarien"
 
+    def get_queryset(self):
+        qs = super().get_queryset().prefetch_related("cluster")
+        cluster_pk = self.request.GET.get("cluster")
+        if cluster_pk:
+            qs = qs.filter(cluster__pk=cluster_pk)
+        return qs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["vergleiche"] = Vergleich.objects.prefetch_related("szenarien", "laeufe")
+        context["cluster_liste"] = Cluster.objects.prefetch_related("szenarien")
+        aktiv = self.request.GET.get("cluster")
+        context["aktiver_cluster"] = Cluster.objects.filter(pk=aktiv).first() if aktiv else None
         return context
 
 
@@ -327,6 +337,34 @@ class VergleichDeleteView(PermissionRequiredMixin, DeleteView):
     model = Vergleich
     template_name = "szenarien/vergleich_confirm_delete.html"
     context_object_name = "vergleich"
+    success_url = reverse_lazy("szenarien:dashboard")
+
+
+class _ClusterFormMixin:
+    model = Cluster
+    form_class = ClusterForm
+    template_name = "szenarien/cluster_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy("szenarien:dashboard")
+
+
+class ClusterCreateView(PermissionRequiredMixin, _ClusterFormMixin, CreateView):
+    permission_required = "szenarien.add_cluster"
+    raise_exception = True
+
+
+class ClusterUpdateView(PermissionRequiredMixin, _ClusterFormMixin, UpdateView):
+    permission_required = "szenarien.change_cluster"
+    raise_exception = True
+
+
+class ClusterDeleteView(PermissionRequiredMixin, DeleteView):
+    permission_required = "szenarien.delete_cluster"
+    raise_exception = True
+    model = Cluster
+    template_name = "szenarien/cluster_confirm_delete.html"
+    context_object_name = "cluster"
     success_url = reverse_lazy("szenarien:dashboard")
 
 

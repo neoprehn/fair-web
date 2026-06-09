@@ -26,6 +26,7 @@
     <dt class="col-sm-3">ID</dt><dd class="col-sm-9">{{ szenario.pk }}</dd>
     <dt class="col-sm-3">Anzahl Simulationen</dt><dd class="col-sm-9">{{ szenario.n_simulations }}</dd>
     <dt class="col-sm-3">Zufalls-Seed</dt><dd class="col-sm-9">{{ szenario.random_seed }}</dd>
+    <dt class="col-sm-3">Cluster</dt><dd class="col-sm-9">{% for c in szenario.cluster.all %}<span class="badge text-bg-light">{{ c.name }}</span> {% empty %}<span class="text-body-secondary">–</span>{% endfor %}</dd>
 </dl>
 
 <h2 class="h5 mt-4">FAIR-Faktoren</h2>

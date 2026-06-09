@@ -11,7 +11,20 @@ from django import forms
 
 from . import fair_tree
 from .fair_confidence import UNSICHERHEIT_MAX, UNSICHERHEIT_MIN
-from .models import FaktorEingabe, Szenario, Vergleich
+from .models import Cluster, FaktorEingabe, Szenario, Vergleich
+
+
+class ClusterForm(forms.ModelForm):
+    """Anlegen/Bearbeiten eines Szenario-Clusters (organisatorische Gruppe)."""
+
+    class Meta:
+        model = Cluster
+        fields = ("name", "beschreibung", "szenarien")
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "beschreibung": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "szenarien": forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
+        }
 
 
 class RangeInput(forms.NumberInput):

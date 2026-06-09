@@ -125,7 +125,8 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
       Inhaltsverzeichnis + Abschnitten (Szenario/Faktoren/Verteilungen/
       Toleranz/Simulation/Vergleich/Klonen/Rollen/Einstellungen)
       _(ausführliche Doku-Site → siehe „Ganz zuletzt")_
-- [ ] Szenariocluster (Szenarien gruppieren)
+- [x] Szenariocluster (organisatorische Gruppen): `Cluster`-Modell (M2M Szenarien),
+      CRUD, Dashboard-Filterleiste + Cluster-Badges je Szenario, Rechte je Rolle
 - [ ] Gemeinsame Berechnung: compare **oder** add als Ergebnis wählbar **und
       speicherbar** (eigener Reiter „Szenariovergleiche") – teils schon via
       `Vergleich` vorhanden, hier Persistenz/UX ausbauen

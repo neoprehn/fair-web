@@ -127,6 +127,30 @@ class Vergleich(models.Model):
         return self.laeufe.order_by("-erstellt_am").first()
 
 
+class Cluster(models.Model):
+    """Organisatorische Gruppe (Ordner/Kategorie) für Szenarien.
+
+    Rein zur Übersicht/Strukturierung – keine eigene Berechnung. Ein Szenario
+    kann zu mehreren Clustern gehören.
+    """
+
+    name = models.CharField("Name", max_length=200)
+    beschreibung = models.TextField("Beschreibung", blank=True)
+    szenarien = models.ManyToManyField(
+        "Szenario", related_name="cluster", blank=True, verbose_name="Szenarien"
+    )
+    erstellt_am = models.DateTimeField("Erstellt am", auto_now_add=True)
+    geaendert_am = models.DateTimeField("Geändert am", auto_now=True)
+
+    class Meta:
+        verbose_name = "Cluster"
+        verbose_name_plural = "Cluster"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class FaktorEingabe(models.Model):
     """Eine Verteilungs-Eingabe für genau einen FAIR-Faktor eines Szenarios."""
 
