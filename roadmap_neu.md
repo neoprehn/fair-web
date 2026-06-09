@@ -162,17 +162,19 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
       (sum/compare), Berichte, Serialisierung & Datenbank, Fork-Erweiterungen;
       Nav in Sektionen, `mkdocs build --strict` grün
   - [x] deutsche pyfair-Seite (aus README, an den neoprehn-Fork angepasst)
-  - [ ] englische Fassung (DE/EN-i18n) + Sprachumschalter
-- [ ] **Inhaltliche Basis:** die bestehende `pyfair`-ReadTheDocs übernehmen/anpassen
-      (https://pyfair.readthedocs.io/en/latest/) – **wichtig:** unser `pyfair`-Fork
-      (`neoprehn/pyfair`) ist gegenüber dem Original **stark erweitert** (z. B.
-      strukturierte Eingabe-API, Konfidenz-Mapping, Beta-Konfidenzintervall,
-      zusätzliche Verteilungen/Parameter) → Doku muss den erweiterten Funktionsumfang
-      abbilden, nicht nur das Original
-- [ ] **Zweisprachig DE + EN** (i18n der Doku, Sprachumschalter)
-- [ ] Abschnitte: FAIR-Taxonomie (Open-FAIR/O-RT), pyfair-API (Fork), fair-web-Bedienung
-      (aus der In-App-Hilfe abgeleitet), Beispiele
-- [ ] Verlinkung aus der App (Menü/Hilfe) auf die Doku-Site
+- [x] **Inhaltliche Basis** umgesetzt: Doku bildet den **erweiterten** Fork ab
+      (`neoprehn/pyfair`), nicht nur das Original (strukturierte Eingabe-API,
+      Konfidenz-Mapping, Beta-Konfidenzintervall, zusätzliche Verteilungen)
+- [x] Abschnitte vorhanden: FAIR-Taxonomie (Open-FAIR/O-RT), pyfair-API (Fork),
+      fair-web-Bedienung (aus der In-App-Hilfe abgeleitet)
+- [x] Verlinkung aus der App auf die Doku-Site (Footer + Hilfeseite)
+- [ ] Beispiele/Tutorials ausbauen (optional, laufend)
+
+> **Sprachen-Policy:** Die **deutsche** Doku wird **laufend als DoD** mitgeführt
+> (jeder bedienungs-/engine-relevante Slice aktualisiert `docs/` + In-App-Hilfe
+> im selben Commit). Die **englische Fassung** wird **bewusst aufgeschoben** und
+> erst **ganz am Ende als einmaliger „Big Bang"** erstellt – siehe letzter Punkt
+> der Roadmap.
 
 #### Export
 - [ ] Excel-Export (openpyxl)
@@ -181,3 +183,14 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 - [ ] Grafiken in den Export einbetten
 - [ ] Download-Button in der Oberfläche
 - [ ] Lokaler Test · Commit & Push → `feature-export` mergen in `main`
+
+---
+
+### Allerletzter Schritt — Englische Doku (Big Bang)
+
+Wird **erst ganz zum Schluss** angegangen, wenn keine weiteren Feature-Ideen
+mehr offen sind. Bis dahin bleibt die Doku **deutsch** (laufend als DoD gepflegt).
+
+- [ ] **Englische Fassung der gesamten RTD-Doku** in einem Rutsch: alle
+      `docs/`-Seiten übersetzen, DE/EN-i18n in `mkdocs.yml` (z. B.
+      `mkdocs-static-i18n`), Sprachumschalter, beide Sprachbäume auf RTD bauen.
