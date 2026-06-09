@@ -8,6 +8,8 @@ _ANALYST = [
     ("szenarien", "delete_faktoreingabe"), ("szenarien", "view_faktoreingabe"),
     ("szenarien", "add_vergleich"), ("szenarien", "change_vergleich"),
     ("szenarien", "delete_vergleich"), ("szenarien", "view_vergleich"),
+    ("szenarien", "add_cluster"), ("szenarien", "change_cluster"),
+    ("szenarien", "delete_cluster"), ("szenarien", "view_cluster"),
     ("berechnung", "add_simulationslauf"), ("berechnung", "view_simulationslauf"),
     ("berechnung", "add_metalauf"), ("berechnung", "view_metalauf"),
 ]
@@ -22,7 +24,7 @@ _KONFIGURATOR = _ANALYST + [
 # Betrachter: nur Lesen.
 _BETRACHTER = [
     ("szenarien", "view_szenario"), ("szenarien", "view_faktoreingabe"),
-    ("szenarien", "view_vergleich"),
+    ("szenarien", "view_vergleich"), ("szenarien", "view_cluster"),
     ("berechnung", "view_simulationslauf"), ("berechnung", "view_metalauf"),
 ]
 

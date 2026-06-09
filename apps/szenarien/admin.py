@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import Angreifertyp, FaktorEingabe, Szenario, Vergleich
+from .models import Angreifertyp, Cluster, FaktorEingabe, Szenario, Vergleich
+
+
+@admin.register(Cluster)
+class ClusterAdmin(admin.ModelAdmin):
+    list_display = ("name", "geaendert_am")
+    filter_horizontal = ("szenarien",)
+    search_fields = ("name",)
 
 
 @admin.register(Angreifertyp)

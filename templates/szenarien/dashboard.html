@@ -6,10 +6,25 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Szenarien</h1>
     <div class="d-flex gap-2">
+        {% if perms.szenarien.add_cluster %}<a class="btn btn-outline-secondary" href="{% url 'szenarien:cluster_create' %}">+ Neuer Cluster</a>{% endif %}
         {% if perms.szenarien.add_vergleich %}<a class="btn btn-outline-info" href="{% url 'szenarien:vergleich_create' %}">+ Neuer Vergleich</a>{% endif %}
         {% if perms.szenarien.add_szenario %}<a class="btn btn-primary" href="{% url 'szenarien:create' %}">+ Neues Szenario</a>{% endif %}
     </div>
 </div>
+
+{% if cluster_liste %}
+<div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+    <span class="text-body-secondary small">Cluster:</span>
+    <a class="btn btn-sm {% if not aktiver_cluster %}btn-info{% else %}btn-outline-secondary{% endif %}" href="{% url 'szenarien:dashboard' %}">Alle</a>
+    {% for c in cluster_liste %}
+    <a class="btn btn-sm {% if aktiver_cluster.pk == c.pk %}btn-info{% else %}btn-outline-secondary{% endif %}" href="?cluster={{ c.pk }}">{{ c.name }} <span class="opacity-75">({{ c.szenarien.count }})</span></a>
+    {% endfor %}
+    {% if aktiver_cluster %}
+        {% if perms.szenarien.change_cluster %}<a class="btn btn-sm btn-link" href="{% url 'szenarien:cluster_update' aktiver_cluster.pk %}">Cluster bearbeiten</a>{% endif %}
+        {% if perms.szenarien.delete_cluster %}<a class="btn btn-sm btn-link text-danger" href="{% url 'szenarien:cluster_delete' aktiver_cluster.pk %}">löschen</a>{% endif %}
+    {% endif %}
+</div>
+{% endif %}
 
 {% if szenarien %}
 <form method="post" action="{% url 'berechnung:meta_starten' %}">
@@ -45,7 +60,10 @@
                     </td>
                     {% endif %}
                     <td class="text-end text-body-secondary">{{ szenario.pk }}</td>
-                    <td><a href="{% url 'szenarien:detail' szenario.pk %}">{{ szenario.name }}</a></td>
+                    <td>
+                        <a href="{% url 'szenarien:detail' szenario.pk %}">{{ szenario.name }}</a>
+                        {% for c in szenario.cluster.all %}<a href="?cluster={{ c.pk }}" class="badge text-bg-light text-decoration-none ms-1" title="Cluster">{{ c.name }}</a>{% endfor %}
+                    </td>
                     <td class="text-end">{{ szenario.n_simulations }}</td>
                     <td>{{ szenario.faktoren.count }} / 2</td>
                     <td class="text-body-secondary small">{{ szenario.geaendert_am|date:"d.m.Y H:i" }}</td>
