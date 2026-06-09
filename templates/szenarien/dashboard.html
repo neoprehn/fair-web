@@ -7,7 +7,6 @@
     <h1 class="h3 mb-0">Szenarien</h1>
     <div class="d-flex gap-2">
         {% if perms.szenarien.add_cluster %}<a class="btn btn-outline-secondary" href="{% url 'szenarien:cluster_create' %}">+ Neuer Cluster</a>{% endif %}
-        {% if perms.szenarien.add_vergleich %}<a class="btn btn-outline-info" href="{% url 'szenarien:vergleich_create' %}">+ Neuer Vergleich</a>{% endif %}
         {% if perms.szenarien.add_szenario %}<a class="btn btn-primary" href="{% url 'szenarien:create' %}">+ Neues Szenario</a>{% endif %}
     </div>
 </div>
@@ -91,46 +90,6 @@
 </div>
 {% endif %}
 
-{% if vergleiche %}
-<h2 class="h4 mt-5 mb-3 text-info">Szenariovergleiche</h2>
-<div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Szenarien</th>
-                <th>Letzter Lauf</th>
-                {% if perms.berechnung.add_metalauf or perms.szenarien.change_vergleich or perms.szenarien.delete_vergleich %}<th class="text-end">Aktionen</th>{% endif %}
-            </tr>
-        </thead>
-        <tbody>
-        {% for v in vergleiche %}
-            <tr>
-                <td>{{ v.name }}</td>
-                <td class="small text-body-secondary">{{ v.szenarien.count }} – {% for s in v.szenarien.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
-                <td class="small">
-                    {% with lauf=v.letzter_lauf %}
-                    {% if lauf %}<a href="{% url 'berechnung:meta_lauf' lauf.pk %}">{{ lauf.get_status_display }} · {{ lauf.erstellt_am|date:"d.m.Y H:i" }}</a>{% else %}<span class="text-body-secondary">noch nicht berechnet</span>{% endif %}
-                    {% endwith %}
-                </td>
-                {% if perms.berechnung.add_metalauf or perms.szenarien.change_vergleich or perms.szenarien.delete_vergleich %}
-                <td class="text-end">
-                    {% if perms.berechnung.add_metalauf %}
-                    <form method="post" action="{% url 'berechnung:vergleich_starten' v.pk %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-primary">▶ Berechnen</button>
-                    </form>
-                    {% endif %}
-                    {% if perms.szenarien.change_vergleich %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'szenarien:vergleich_update' v.pk %}">Bearbeiten</a>{% endif %}
-                    {% if perms.szenarien.delete_vergleich %}<a class="btn btn-sm btn-outline-danger" href="{% url 'szenarien:vergleich_delete' v.pk %}">Löschen</a>{% endif %}
-                </td>
-                {% endif %}
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
 {% endblock %}
 
 {% block extra_js %}
