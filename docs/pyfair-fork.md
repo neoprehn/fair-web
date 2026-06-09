@@ -63,6 +63,26 @@ Gegenüber dem Original-pyfair zusätzlich enthalten:
   Formparameter direkt zu übergeben (nutzt fair-web für die editierbaren
   Konfidenz-Vorschlagswerte).
 
+### Original vs. erweiterter Fork im Überblick
+
+| Funktion | Original pyfair | Erweiterter Fork (`neoprehn/pyfair`) |
+|---|---|---|
+| **Eingabe-API** | nur Kurzform-Schlüsselwörter (`constant`; `mean`/`stdev`; `low`/`mode`/`high`/`gamma`) | zusätzlich **strukturiert**: `distribution` / `params` / `confidence` / `input_mode` (abwärtskompatibel) |
+| **Verteilungen** | Constant, Normal, PERT | + **Lognormal**, **Poisson** (unsicheres λ), **Beta** |
+| **Qualitative Konfidenz** | – | **Konfidenz-Stufen** `very_low … very_high` → automatische Formparameter (`k`/`sigma`/`range`/`gamma`), zentral & konfigurierbar |
+| **Beta-Eingabe** | – | `alpha`/`beta` **oder** `mean`/`k` **oder** **Konfidenzintervall** (`input_mode='confidence_interval'`) |
+| **Meta-Modell-Modus** | nur Summe | **`sum`** (Gesamtrisiko) **und** **`compare`** (Delta gegen Baseline-Modell) |
+| **Risikotoleranz** | – | Risikotoleranz als **Konstante / Kurve / Verteilung** mit **Schnittpunkt** auf der LEC |
+| **CSV-Export** | – | `export_results_csv(...)` mit deutschen Trennzeichen (`;` / `,`) |
+| **JSON-Roundtrip** | speichert aufgelöste Parameter | bewahrt die **ursprüngliche Eingabe** (sauberer Roundtrip, `confidence` bleibt erhalten) |
+| **Validierung** | grundlegend | strengere Prüfungen: 0–1-Grenzen je FAIR-Faktor, geordnete PERT-Tripel, Nicht-Negativität, Output-Clipping |
+
+!!! info "Fazit"
+    Der Fork bleibt **API-kompatibel** zum Original – bestehende Skripte laufen
+    unverändert –, ergänzt aber die für praxisnahe Schätzungen wichtigen
+    Bausteine: qualitative Unsicherheit, mehr Verteilungen, Vergleichsmodus und
+    Risikotoleranz.
+
 ## Serialisiertes Modell
 
 Ein Modell lässt sich als JSON speichern/laden:
