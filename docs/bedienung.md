@@ -40,12 +40,31 @@ volle Lauf liefert: Mittelwert/Median/Worst-Case (P95), **VaR** (10–99 %), die
 **LEC** (log-Achse), den **Schnittpunkt** mit der Risikotoleranz, Histogramme
 (Verteilung & Häufigkeit) und eine **Knoten-Detailtabelle**.
 
+## Cluster (Szenarien gruppieren)
+
+Cluster sind **organisatorische Gruppen** (Ordner/Kategorien) – rein zur
+Übersicht, **ohne eigene Berechnung**. Ein Szenario kann in mehreren Clustern
+liegen.
+
+- **+ Neuer Cluster** (Übersicht) – Name, Beschreibung und zugeordnete Szenarien
+  wählen.
+- Über der Szenario-Tabelle erscheint eine **Filterleiste**: ein Klick auf einen
+  Cluster zeigt nur dessen Szenarien (**Alle** hebt den Filter auf).
+- Zugeordnete Cluster stehen als **Badge** am Szenario (klickbar → filtert) und
+  auf der Detailseite.
+
 ## Szenarien vergleichen
 
-Über **+ Neuer Vergleich** mehrere Szenarien gruppieren. Im Ergebnis umschaltbar
-zwischen **Compare** (LECs überlagert) und **Add** (Gesamtrisiko-Summe).
-Optional ein **Referenz-Szenario**, dessen Risikotoleranz im Compare-Chart rot
-gezeichnet wird (mit Schnittpunkten je Szenario-LEC).
+Eigener Reiter **„Vergleiche"** in der Navbar: listet alle Vergleiche mit dem
+gespeicherten **Gesamtrisiko (Ø)** des letzten Laufs und Link zum Lauf.
+
+- **+ Neuer Vergleich** – mehrere Szenarien gruppieren und gemeinsam berechnen.
+- Im Ergebnis umschaltbar zwischen **Compare** (LECs überlagert) und **Add**
+  (Gesamtrisiko-Summe).
+- Optional ein **Referenz-Szenario**, dessen Risikotoleranz im Compare-Chart rot
+  gezeichnet wird (mit Schnittpunkten je Szenario-LEC).
+
+Technisch entspricht ein Vergleich einem pyfair-[Meta-Modell](metamodelle.md).
 
 ## Klonen & Kopien
 
