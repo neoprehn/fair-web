@@ -19,7 +19,7 @@ theme:
         icon: material/weather-sunny
         name: Dunkler Modus
   features:
-    - navigation.sections
+    - navigation.expand
     - navigation.top
     - content.code.copy
 
