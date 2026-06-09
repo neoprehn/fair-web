@@ -33,6 +33,31 @@ def test_vergleich_letzter_lauf():
 
 
 @pytest.mark.django_db
+def test_vergleich_list_zeigt_vergleiche(client):
+    a, b = _szenario("A"), _szenario("B")
+    v = Vergleich.objects.create(name="Mein Reiter-Vergleich")
+    v.szenarien.set([a, b])
+    html = client.get(reverse("szenarien:vergleich_list")).content.decode()
+    assert "Mein Reiter-Vergleich" in html
+    assert "noch nicht berechnet" in html
+
+
+@pytest.mark.django_db
+def test_vergleich_list_zeigt_gespeichertes_ergebnis(client):
+    a, b = _szenario("A"), _szenario("B", 2000)
+    v = Vergleich.objects.create(name="V")
+    v.szenarien.set([a, b])
+    lauf = MetaLauf.objects.create(
+        vergleich=v, n_simulations=300, random_seed=42, status="fertig",
+        ergebnis={"gesamt": {"mittelwert": 12345.0}},
+    )
+    lauf.szenarien.set([a, b])
+    html = client.get(reverse("szenarien:vergleich_list")).content.decode()
+    assert ("12.345" in html) or ("12,345" in html)
+    assert "Fertig" in html
+
+
+@pytest.mark.django_db
 def test_vergleich_form_braucht_zwei():
     a, b = _szenario("A"), _szenario("B")
     f1 = VergleichForm(data={"name": "V", "n_simulations": "1000", "random_seed": "42",

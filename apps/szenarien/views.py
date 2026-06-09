@@ -340,6 +340,17 @@ class VergleichDeleteView(PermissionRequiredMixin, DeleteView):
     success_url = reverse_lazy("szenarien:dashboard")
 
 
+class VergleichListView(ListView):
+    """Eigener Reiter: alle Szenariovergleiche + ihr gespeichertes Ergebnis."""
+
+    model = Vergleich
+    template_name = "szenarien/vergleich_list.html"
+    context_object_name = "vergleiche"
+
+    def get_queryset(self):
+        return Vergleich.objects.prefetch_related("szenarien", "laeufe")
+
+
 class _ClusterFormMixin:
     model = Cluster
     form_class = ClusterForm

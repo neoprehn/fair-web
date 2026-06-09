@@ -127,9 +127,10 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
       _(ausführliche Doku-Site → siehe „Ganz zuletzt")_
 - [x] Szenariocluster (organisatorische Gruppen): `Cluster`-Modell (M2M Szenarien),
       CRUD, Dashboard-Filterleiste + Cluster-Badges je Szenario, Rechte je Rolle
-- [ ] Gemeinsame Berechnung: compare **oder** add als Ergebnis wählbar **und
-      speicherbar** (eigener Reiter „Szenariovergleiche") – teils schon via
-      `Vergleich` vorhanden, hier Persistenz/UX ausbauen
+- [x] Szenariovergleiche als eigener Reiter „Vergleiche" in der Navbar:
+      `/szenarien/vergleiche/` listet alle Vergleiche mit gespeichertem
+      Gesamtrisiko (Ø) + Link zum letzten Lauf; Berechnen/Bearbeiten/Löschen.
+      Compare↔Add-Umschalter + Persistenz via `Vergleich`/`MetaLauf` bestand bereits
 - [x] Eingabe von **Annahmen je Faktor** _(bereits umgesetzt: `FaktorEingabe.annahmen`,
       im Formular eingebbar, in der Szenario-Detailansicht je Faktor angezeigt)_
 - [ ] Ausbaustufe: KI-Agent, der bei der Szenario-Formulierung hilft
