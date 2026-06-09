@@ -25,9 +25,19 @@ theme:
 
 nav:
   - Start: index.md
-  - Bedienung (fair-web): bedienung.md
-  - FAIR-Taxonomie: fair-taxonomie.md
-  - pyfair (neoprehn-Fork): pyfair-fork.md
+  - FAIR-Grundlagen:
+      - FAIR-Taxonomie: fair-taxonomie.md
+  - pyfair (Engine):
+      - Installation: installation.md
+      - Schnellstart: schnellstart.md
+      - Modelle erstellen: modelle.md
+      - Eingaben & Verteilungen: eingaben.md
+      - Meta-Modelle (Vergleich & Summe): metamodelle.md
+      - Berichte: berichte.md
+      - Serialisierung & Datenbank: serialisierung.md
+      - Fork-Erweiterungen: pyfair-fork.md
+  - Web-App:
+      - Bedienung (fair-web): bedienung.md
 
 markdown_extensions:
   - admonition

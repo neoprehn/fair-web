@@ -78,9 +78,18 @@ Ein Modell lässt sich als JSON speichern/laden:
 }
 ```
 
-!!! note "Im Aufbau"
-    Diese Seite ist eine an den Fork angepasste deutsche Fassung der
-    pyfair-README. Eine vollständige deutsche Übersetzung der
-    [Original-Dokumentation](https://pyfair.readthedocs.io/en/latest/)
-    (API-Referenz, ausführliche Beispiele) folgt schrittweise. Maßgebliche
-    Referenz bis dahin: der [Quellcode des Forks](https://github.com/neoprehn/pyfair).
+## Ausführliche Engine-Doku
+
+Die API ist in eigenen Kapiteln auf pyfair-Detailgrad beschrieben:
+
+- [Installation](installation.md) · [Schnellstart](schnellstart.md)
+- [Modelle erstellen](modelle.md) – die `FairModel`-API
+- [Eingaben & Verteilungen](eingaben.md) – Legacy + strukturierte API, alle
+  Verteilungen, Konfidenz-Mapping
+- [Meta-Modelle](metamodelle.md) · [Berichte](berichte.md) ·
+  [Serialisierung & Datenbank](serialisierung.md)
+
+!!! note "Stand"
+    Diese Kapitel beschreiben gezielt den **neoprehn-Fork**. Eine vollständige
+    englische Fassung (DE/EN) ist in Arbeit. Maßgebliche Referenz bei
+    Unklarheiten: der [Quellcode des Forks](https://github.com/neoprehn/pyfair).
