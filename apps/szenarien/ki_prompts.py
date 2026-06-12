@@ -22,6 +22,46 @@ _BASIS = (
     "um die Antwort."
 )
 
+# Zusätzliche fachliche Denkanstöße je FAIR-Faktor für die KI (nicht für die
+# Nutzer-Erklärung in fair_tree.ERKLAERUNG gedacht, sondern um die KI gezielt
+# an FAIR-Konzepte zu erinnern, die in den Annahmen auftauchen sollten).
+_ZUSATZ_HINWEISE = {
+    "LM": "Berücksichtige dabei die sechs FAIR-Verlustformen (Productivity, "
+          "Response, Replacement, Fines & Judgments, Competitive Advantage, "
+          "Reputation) – nenne, welche davon hier relevant sind.",
+    "PL": "Berücksichtige dabei die sechs FAIR-Verlustformen (Productivity, "
+          "Response, Replacement, Fines & Judgments, Competitive Advantage, "
+          "Reputation) – nenne, welche davon als Primärverlust unmittelbar "
+          "beim Asset-Eigner anfallen.",
+    "SL": "Berücksichtige dabei die sechs FAIR-Verlustformen (Productivity, "
+          "Response, Replacement, Fines & Judgments, Competitive Advantage, "
+          "Reputation) – beschreibe, welche sekundären Beteiligten (Behörden, "
+          "Kunden, Öffentlichkeit) reagieren könnten und welche davon "
+          "betroffen sind.",
+    "SLEM": "Berücksichtige dabei die sechs FAIR-Verlustformen (Productivity, "
+            "Response, Replacement, Fines & Judgments, Competitive Advantage, "
+            "Reputation), soweit sie für sekundäre Beteiligte anfallen.",
+    "TC": "Ordne die Fähigkeit des Bedrohungsakteurs als Perzentil der "
+          "Akteurspopulation ein (z. B. Gelegenheitstäter vs. organisierte "
+          "Gruppen vs. staatliche Akteure).",
+    "CS": "Ordne die Stärke der Schutzmaßnahmen als Perzentil ein, gemessen "
+          "daran, wie schwer sie für einen durchschnittlichen Akteur zu "
+          "überwinden sind.",
+    "CF": "Stütze die Häufigkeit auf beobachtbare oder branchentypische "
+          "Kontaktraten (z. B. Anzahl Angriffsversuche/Scans pro Zeitraum).",
+    "TEF": "Stütze die Häufigkeit auf Threat-Intelligence- oder "
+           "Branchendaten zu Angriffsversuchen auf vergleichbare Assets.",
+    "POA": "Begründe die Wahrscheinlichkeit, dass der Akteur nach Kontakt "
+           "tatsächlich agiert, z. B. anhand von Attraktivität des Ziels und "
+           "Aufwand/Risiko für den Akteur.",
+    "SLEF": "Begründe, in welchem Anteil der Primärereignisse überhaupt eine "
+            "Reaktion sekundärer Beteiligter zu erwarten ist.",
+}
+
+
+def _hinweis(code):
+    return _ZUSATZ_HINWEISE.get(code, "")
+
 
 def prompt_beschreibung(szenario_name):
     """System-Prompt für die Beschreibung eines Szenarios."""
@@ -55,11 +95,13 @@ def prompt_annahmen(code, szenario_name, szenario_beschreibung, verteilung, para
     if params:
         kontext.append(f"Aktuelle Parameter: {params}")
     kontext_text = "\n".join(f"- {z}" for z in kontext)
+    hinweis = _hinweis(code)
+    hinweis_text = f" {hinweis}" if hinweis else ""
     return (
         f"{_BASIS}\n\n"
         f"Es geht um das Feld \"Annahmen\" für den Faktor {name} ({abbr}) "
         f"des oben genannten Risikoszenarios. Kontext:\n{kontext_text}\n\n"
         "Formuliere bzw. überarbeite die Annahmen/Begründung für die "
         "gewählten Werte dieses Faktors: kurz (1-4 Sätze), nachvollziehbar "
-        "für eine spätere Prüfung."
+        f"für eine spätere Prüfung.{hinweis_text}"
     )
