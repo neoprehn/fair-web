@@ -19,7 +19,7 @@ dem Nachbarverzeichnis.
 
 ```bash
 # innerhalb des fair-web-Projekts
-pip install -e ../fair
+pip install -e ../pyfair
 ```
 
 `-e` (editable) bedeutet: Änderungen am pyfair-Quellcode wirken sofort, ohne

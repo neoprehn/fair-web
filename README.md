@@ -6,8 +6,7 @@ PyFair und fair-web liegen bewusst getrennt:
 
 ```
 Entwicklung/
-├── fair/           ← PyFair (Simulations-Engine, eigenes Repo)
-│   └── fair/         der eigentliche pyfair-Repo
+├── pyfair/         ← PyFair (Simulations-Engine, eigenes Repo)
 └── fair-web/       ← diese Django-Webapp (eigenes Repo)
 ```
 
@@ -31,7 +30,7 @@ Aktueller Stand: Django 5.2 LTS Scaffold mit Bootstrap 5, MariaDB und vorbereite
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
    pip install -r requirements.txt
-   pip install -e ..\fair         # PyFair als lokales Paket (Nachbarordner, setup.py liegt im fair-Root)
+   pip install -e ..\pyfair        # PyFair als lokales Paket (Nachbarordner, setup.py liegt im pyfair-Root)
    ```
 
 3. **.env anlegen**
