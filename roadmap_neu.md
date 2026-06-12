@@ -134,6 +134,14 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 - [x] Eingabe von **Annahmen je Faktor** _(bereits umgesetzt: `FaktorEingabe.annahmen`,
       im Formular eingebbar, in der Szenario-Detailansicht je Faktor angezeigt)_
 - [ ] Ausbaustufe: KI-Agent, der bei der Szenario-Formulierung hilft
+      _(Design-Entscheidung: pro Nutzer eigenes KI-Modell in den Einstellungen
+      konfigurierbar – Provider + API-Key, verschlüsselt gespeichert; einheitliche
+      Anbindung via `litellm`. Eigenes Offcanvas/Modal pro Feld mit feldspezifischem
+      Prompt/Kontext (FAIR-Knoten, aktuelle Szenario-Werte). Start mit Claude/OpenAI/
+      Gemini – Copilot zurückgestellt, da keine offene Chat-API für Drittnutzer
+      verfügbar; ggf. später als Azure OpenAI nachrüstbar. KI-Unterstützung ist
+      rein optional – ohne konfiguriertes Modell funktioniert die Eingabe wie
+      bisher, ganz ohne KI.)_
 - [ ] Lokaler Test · Commit & Push → `feature-…` mergen in `main`
 
 ### Danach → Phase 10 – FAOR + FAIR-CAM (@neoprehn)
