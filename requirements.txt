@@ -8,6 +8,7 @@ python-pptx>=1.0
 gunicorn>=23.0
 cryptography>=41.0
 litellm>=1.0
+django-axes>=7.0
 
 # pyfair wird separat installiert (liegt im Nachbarordner Entwicklung/fair, Package-Name: pyfair):
 #   pip install -e ../fair

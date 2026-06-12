@@ -116,8 +116,10 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
 
 ### Als Nächstes → Phase 9 – Sicherheit + Ideen (@neoprehn)
 - [~] Deploy auf Sicherheits-Design-Fehler prüfen _(App-Härtung umgesetzt:
-      Security-Header + HTTPS-Härtung in Prod; Server-/Policy-Checkliste in
-      `SICHERHEIT.md` – offen: Registrierungs-Policy, Brute-Force-Schutz, CSP)_
+      Security-Header + HTTPS-Härtung in Prod; Registrierungs-Policy
+      (Admin-Freigabe, `is_active=False`), Brute-Force-Schutz (`django-axes`)
+      und Dependency-Audit (`pip-audit`) umgesetzt – siehe `SICHERHEIT.md`.
+      Offen: CSP (bewusst zurückgestellt))_
 - [x] Home-Bildschirm: Startseite unter `/` mit FAIR-Erklärung + interaktivem,
       klickbarem FAIR-Baum (Knoten-Erklärung ohne Simulation); Szenario-Dashboard
       nach `/szenarien/` verschoben (URL-Namen unverändert)
@@ -133,16 +135,17 @@ Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
       Compare↔Add-Umschalter + Persistenz via `Vergleich`/`MetaLauf` bestand bereits
 - [x] Eingabe von **Annahmen je Faktor** _(bereits umgesetzt: `FaktorEingabe.annahmen`,
       im Formular eingebbar, in der Szenario-Detailansicht je Faktor angezeigt)_
-- [ ] Ausbaustufe: KI-Agent, der bei der Szenario-Formulierung hilft
-      _(Design-Entscheidung: pro Nutzer eigenes KI-Modell in den Einstellungen
-      konfigurierbar – Provider + API-Key, verschlüsselt gespeichert; einheitliche
-      Anbindung via `litellm`. Eigenes Offcanvas/Modal pro Feld mit feldspezifischem
-      Prompt/Kontext (FAIR-Knoten, aktuelle Szenario-Werte). Start mit Claude/OpenAI/
-      Gemini – Copilot zurückgestellt, da keine offene Chat-API für Drittnutzer
-      verfügbar; ggf. später als Azure OpenAI nachrüstbar. KI-Unterstützung ist
-      rein optional – ohne konfiguriertes Modell funktioniert die Eingabe wie
-      bisher, ganz ohne KI.)_
-- [ ] Lokaler Test · Commit & Push → `feature-…` mergen in `main`
+- [x] Ausbaustufe: KI-Agent, der bei der Szenario-Formulierung hilft
+      _(umgesetzt: pro Nutzer eigenes KI-Modell in den KI-Einstellungen
+      konfigurierbar – Provider (Anthropic/OpenAI/Gemini) + Modell + API-Key,
+      verschlüsselt gespeichert (`apps/konten/krypto.py`, `KIEinstellung`);
+      Anbindung via `litellm` (`apps/szenarien/ki_service.py`). ✨-Button +
+      gemeinsames Offcanvas für Szenario-Beschreibung und alle 12
+      Annahmen-Felder, feldspezifischer Prompt/Kontext inkl. faktorspezifischer
+      Zusatz-Hinweise (z. B. 6 FAIR-Verlustformen bei LM/PL/SL/SLEM) in
+      `apps/szenarien/ki_prompts.py`. Copilot weiterhin zurückgestellt.
+      KI-Unterstützung bleibt rein optional. Doku: `docs/ki-agent.md`.)_
+- [x] Lokaler Test · Commit & Push → `feature-ki-agent` gemerged in `main`
 
 ### Danach → Phase 10 – FAOR + FAIR-CAM (@neoprehn)
 - [ ] Einbindung der FAOR-Logik in die Webseite

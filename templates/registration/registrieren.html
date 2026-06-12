@@ -6,7 +6,7 @@
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
         <h1 class="h3 mb-3">Konto erstellen</h1>
-        <p class="text-body-secondary small">Neue Konten starten in der Rolle <strong>Betrachter</strong> (nur Lesen). Ein Administrator kann die Rolle später anheben.</p>
+        <p class="text-body-secondary small">Neue Konten starten in der Rolle <strong>Betrachter</strong> (nur Lesen) und müssen von einem Administrator freigeschaltet werden, bevor eine Anmeldung möglich ist.</p>
         <form method="post">
             {% csrf_token %}
             {% for feld in form %}

@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "apps.export",
     "apps.admin_bereich",
     "apps.konten",
+    "axes",
 ]
 
 MIDDLEWARE = [
@@ -71,7 +72,20 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.admin_bereich.middleware.WaehrungLocaleMiddleware",
+    "axes.middleware.AxesMiddleware",
 ]
+
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# --- Brute-Force-Schutz (django-axes): sperrt nach mehreren falschen
+# Login-Versuchen IP+Username-Kombination temporär. ---
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1  # Stunde
+AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]
+AXES_RESET_ON_SUCCESS = True
 
 ROOT_URLCONF = "config.urls"
 

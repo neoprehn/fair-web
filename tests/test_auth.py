@@ -30,26 +30,50 @@ def test_registrierung_ohne_login_erreichbar():
 
 
 @pytest.mark.django_db
-def test_registrierung_legt_betrachter_an_und_meldet_an(django_user_model):
+def test_registrierung_legt_inaktiven_betrachter_an(django_user_model):
     c = Client()
     resp = c.post(reverse("konten:registrieren"), {
         "username": "neuling",
         "password1": "ein-gutes-pw-123",
         "password2": "ein-gutes-pw-123",
     })
-    assert resp.status_code == 302 and resp.url == "/"
+    assert resp.status_code == 302 and resp.url == reverse("login")
     user = django_user_model.objects.get(username="neuling")
     assert user.groups.filter(name="Betrachter").exists()
-    # Direkt angemeldet -> Dashboard erreichbar ohne erneuten Login.
-    assert c.get(reverse("szenarien:dashboard")).status_code == 200
+    assert user.is_active is False
+    # Konto ist inaktiv -> Login schlägt fehl, Dashboard nicht erreichbar.
+    login_resp = c.post(reverse("login"), {
+        "username": "neuling",
+        "password": "ein-gutes-pw-123",
+    })
+    assert login_resp.status_code == 200  # Formular mit Fehler, kein Redirect
+    assert c.get(reverse("szenarien:dashboard")).status_code == 302
+
+
+@pytest.mark.django_db
+def test_brute_force_schutz_sperrt_nach_zu_vielen_fehlversuchen(django_user_model):
+    django_user_model.objects.create_user(username="bob", password="pw-test-12345")
+    c = Client()
+    for _ in range(5):
+        resp = c.post(reverse("login"), {
+            "username": "bob", "password": "falsches-pw",
+        })
+        assert resp.status_code in (200, 429)
+    # Nach AXES_FAILURE_LIMIT=5 ist auch der korrekte Login gesperrt.
+    resp = c.post(reverse("login"), {
+        "username": "bob", "password": "pw-test-12345",
+    })
+    assert resp.status_code == 429
 
 
 @pytest.mark.django_db
 def test_login_und_logout(django_user_model):
     django_user_model.objects.create_user(username="alice", password="pw-test-12345")
     c = Client()
-    ok = c.login(username="alice", password="pw-test-12345")
-    assert ok
+    resp = c.post(reverse("login"), {
+        "username": "alice", "password": "pw-test-12345",
+    })
+    assert resp.status_code == 302
     assert c.get(reverse("szenarien:dashboard")).status_code == 200
     # Logout ist POST-only (Django 5).
     resp = c.post(reverse("logout"))

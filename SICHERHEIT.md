@@ -48,15 +48,38 @@ Begleitet das Roadmap-Thema „Deploy auf Sicherheits-Design-Fehler prüfen" (Ph
 
 ## Empfehlungen / noch offen (eigene Slices)
 
-- [ ] **Registrierungs-Policy** entscheiden: aktuell kann sich jeder ein
-      Betrachter-Konto anlegen und sieht (geteilter Arbeitsbereich) alle
-      Szenarien. Optionen: Self-Registration aus, Admin-Freigabe, oder
-      E-Mail-Domain-Allowlist. (bewusst zurückgestellt)
-- [ ] **Brute-Force-Schutz** für Login/Registrierung/`/admin/`
-      (z. B. `django-axes`) oder Admin per IP am Proxy einschränken.
+- [x] **Registrierungs-Policy** – "Admin-Freigabe": Self-Registration bleibt
+      aktiv, neue Konten starten aber mit `is_active=False` (Gruppe
+      Betrachter wird trotzdem zugewiesen). Ein Administrator muss das Konto
+      im Django-Admin aktivieren, bevor ein Login möglich ist.
+- [x] **Brute-Force-Schutz** (`django-axes`): sperrt nach
+      `AXES_FAILURE_LIMIT=5` Fehlversuchen (Username+IP) für
+      `AXES_COOLOFF_TIME=1` Stunde – greift für `/accounts/login/` und
+      `/admin/login/` gleichermaßen (gleicher Auth-Backend-Stack).
 - [ ] **Content-Security-Policy (CSP):** derzeit viele Inline-Styles/-Skripte
       und CDN-Einbindungen (Bootstrap/Plotly). Eine wirksame CSP braucht
       Nonces/Refactoring – als eigener Slice (sonst nur zahnlos mit
       `unsafe-inline`).
-- [ ] **Dependency-Audit** (`pip-audit` / `pip list --outdated`) und
-      Aktualisierungen einplanen.
+- [x] **Dependency-Audit** (`pip-audit`) – siehe Abschnitt
+      „Dependency-Audit" unten.
+
+## Dependency-Audit (Stand 2026-06-12)
+
+`pip-audit` über die installierten Pakete findet 4 Funde, alle in der
+transitiven Abhängigkeit von `litellm` (optionaler KI-Assistent):
+
+| Paket | Version | CVE | Fix-Version | Relevanz für fair-web |
+|---|---|---|---|---|
+| litellm | 1.83.7 | CVE-2026-40217 | 1.83.10 | Betrifft nur den `litellm`-**Proxy**-Endpoint `/guardrails/test_custom_code` (Sandbox-Escape, braucht Proxy-Admin-Credential). fair-web nutzt `litellm` nur als Library (`litellm.completion(...)`), kein Proxy-Server läuft. **Nicht ausnutzbar.** |
+| aiohttp | 3.13.5 | CVE-2026-34993 | 3.14.0 | Betrifft `CookieJar.load()` mit nicht vertrauenswürdigen Dateien. Wird von fair-web/litellm nicht aufgerufen. **Nicht ausnutzbar.** |
+| aiohttp | 3.13.5 | CVE-2026-47265 | 3.14.0 | Betrifft Requests mit explizitem `cookies`-Parameter bei Cross-Origin-Redirects. fair-web/litellm setzt keine Cookies auf KI-Provider-Requests (Auth per API-Key-Header). **Geringes Risiko.** |
+| python-dotenv | 1.0.1 | CVE-2026-28684 | 1.2.2 | Betrifft `set_key()`/`unset_key()` (Symlink-Angriff beim Schreiben von `.env`). fair-web ruft diese Funktionen nicht auf, nur `load_dotenv()` zum Lesen. **Nicht ausnutzbar.** |
+
+**Maßnahme:** `litellm>=1.83.10` (Fix für CVE-2026-40217 und transitiv
+neueres `aiohttp`) setzt `Python <3.14` voraus – das Projekt läuft
+aktuell auf **Python 3.14**. Ein hartes Pin auf neuere `aiohttp`-/
+`python-dotenv`-Versionen erzeugt einen Konflikt mit `litellm`s exakten
+Pins (`aiohttp==3.13.5`, `python-dotenv==1.0.1`). Da keiner der Funde im
+Nutzungskontext von fair-web ausnutzbar ist, bewusst zurückgestellt bis
+`litellm` Python 3.14 unterstützt bzw. die Pins lockert. Bei jedem
+größeren `litellm`-Update erneut mit `pip-audit` prüfen.
