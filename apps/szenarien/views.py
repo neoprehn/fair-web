@@ -399,6 +399,53 @@ def _inputs_aus_post(post):
 
 
 @require_POST
+def ki_vorschlag(request):
+    """KI-Vorschlag für ein Textfeld (Szenario-Beschreibung oder Annahmen
+    eines Faktors), basierend auf dem aktuellen (ungespeicherten)
+    Formularzustand. Antwortet als JSON.
+
+    Nutzt das vom Nutzer in „KI-Einstellungen" hinterlegte Modell.
+    """
+    if not (request.user.has_perm("szenarien.add_szenario")
+            or request.user.has_perm("szenarien.change_szenario")):
+        return JsonResponse({"ok": False, "fehler": "Keine Berechtigung."}, status=403)
+
+    from . import ki_prompts, ki_service
+
+    if not ki_service.ist_verfuegbar(request.user):
+        return JsonResponse({
+            "ok": False,
+            "fehler": "Kein KI-Modell konfiguriert. Bitte unter „KI-Einstellungen“ "
+                       "Anbieter, Modell und API-Key hinterlegen.",
+        })
+
+    feld = request.POST.get("feld", "")
+    frage = request.POST.get("frage", "")
+    szenario_name = request.POST.get("name", "")
+    szenario_beschreibung = request.POST.get("beschreibung", "")
+
+    if feld == "beschreibung":
+        system_prompt = ki_prompts.prompt_beschreibung(szenario_name)
+    else:
+        code = request.POST.get("code", "")
+        if code not in fair_tree.FAIR_NODES:
+            return JsonResponse({"ok": False, "fehler": "Unbekanntes Feld."})
+        f = FaktorEingabeForm(request.POST, instance=FaktorEingabe(faktor=code),
+                              prefix=code, faktor_code=code)
+        verteilung = request.POST.get(f"{code}-verteilung", "")
+        params = f.instance.params if f.is_valid() else {}
+        system_prompt = ki_prompts.prompt_annahmen(
+            code, szenario_name, szenario_beschreibung, verteilung, params)
+
+    try:
+        antwort = ki_service.frage_ki(request.user, system_prompt, frage)
+    except ki_service.KIFehler as exc:
+        return JsonResponse({"ok": False, "fehler": str(exc)})
+
+    return JsonResponse({"ok": True, "antwort": antwort})
+
+
+@require_POST
 def lec_vorschau(request):
     """Live-Vorschau: schnelle Mini-Simulation + LEC/Toleranz aus dem aktuellen
     (ungespeicherten) Formularzustand. Antwortet als JSON.

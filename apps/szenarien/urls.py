@@ -13,6 +13,7 @@ from .views import (
     VergleichDeleteView,
     VergleichListView,
     VergleichUpdateView,
+    ki_vorschlag,
     lec_vorschau,
     szenario_klonen,
 )
@@ -23,6 +24,7 @@ urlpatterns = [
     path("", SzenarioListView.as_view(), name="dashboard"),
     path("neu/", SzenarioCreateView.as_view(), name="create"),
     path("lec-vorschau/", lec_vorschau, name="lec_vorschau"),
+    path("ki-vorschlag/", ki_vorschlag, name="ki_vorschlag"),
     path("vergleiche/", VergleichListView.as_view(), name="vergleich_list"),
     path("vergleich/neu/", VergleichCreateView.as_view(), name="vergleich_create"),
     path("vergleich/<int:pk>/bearbeiten/", VergleichUpdateView.as_view(), name="vergleich_update"),
