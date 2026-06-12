@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}KI-Einstellungen &middot; fair-web{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+        <h1 class="h3 mb-3">KI-Einstellungen</h1>
+        <p class="text-body-secondary small">
+            Optional: Hinterlege hier dein eigenes KI-Modell (Anbieter + API-Key),
+            um in der Szenario-Eingabe KI-Vorschläge für die Beschreibung und die
+            Annahmen je Faktor zu erhalten. Ohne Konfiguration funktioniert die
+            Eingabe wie gewohnt, ganz ohne KI. Anfragen gehen direkt vom Server an
+            den gewählten Anbieter; der API-Key wird verschlüsselt gespeichert.
+        </p>
+
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+
+        <form method="post">
+            {% csrf_token %}
+            {% for feld in form %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ feld.id_for_label }}">{{ feld.label }}</label>
+                {{ feld }}
+                {% if feld.name == "modell" %}
+                <datalist id="ki-modell-vorschlaege"></datalist>
+                {% endif %}
+                {% if feld.help_text %}<div class="form-text">{{ feld.help_text|safe }}</div>{% endif %}
+                {% for err in feld.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+            </div>
+            {% endfor %}
+            {% if ki_einstellung.hat_api_key %}
+            <p class="text-info small">Es ist bereits ein API-Key gespeichert (wird beibehalten, wenn das Feld leer bleibt).</p>
+            {% endif %}
+            <button class="btn btn-primary" type="submit">Speichern</button>
+            <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Abbrechen</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var VORSCHLAEGE = {
+        anthropic: ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"],
+        openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1"],
+        gemini: ["gemini-2.5-pro", "gemini-2.5-flash"]
+    };
+    var providerSel = document.getElementById('ki-provider');
+    var datalist = document.getElementById('ki-modell-vorschlaege');
+    if (!providerSel || !datalist) return;
+    function aktualisiere() {
+        var werte = VORSCHLAEGE[providerSel.value] || [];
+        datalist.innerHTML = '';
+        werte.forEach(function (w) {
+            var opt = document.createElement('option');
+            opt.value = w;
+            datalist.appendChild(opt);
+        });
+    }
+    providerSel.addEventListener('change', aktualisiere);
+    aktualisiere();
+})();
+</script>
+{% endblock %}

@@ -5,11 +5,14 @@ konkreten Rechte der Gruppe folgen in einem späteren Slice) und direkt
 angemeldet.
 """
 
+from django.contrib import messages
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect, render
 
-from .forms import RegistrierForm
+from .forms import KIEinstellungForm, RegistrierForm
+from .models import KIEinstellung
 
 BETRACHTER_GRUPPE = "Betrachter"
 
@@ -28,3 +31,20 @@ def registrieren(request):
     else:
         form = RegistrierForm()
     return render(request, "registration/registrieren.html", {"form": form})
+
+
+@login_required
+def ki_einstellungen(request):
+    """Pro-Nutzer-Konfiguration des optionalen KI-Assistenten."""
+    instance, _ = KIEinstellung.objects.get_or_create(user=request.user)
+    if request.method == "POST":
+        form = KIEinstellungForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "KI-Einstellungen gespeichert.")
+            return redirect("konten:ki_einstellungen")
+    else:
+        form = KIEinstellungForm(instance=instance)
+    return render(request, "registration/ki_einstellungen.html", {
+        "form": form, "ki_einstellung": instance,
+    })
