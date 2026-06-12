@@ -20,6 +20,12 @@ kannst. Klick auf einen Faktor faltet ihn in seine Teilfaktoren auf. Nur die
 **Blätter deines Schnitts** musst du ausfüllen – pyfair rechnet nach oben bis
 Risk. Pro Faktor gibt es ein optionales **Annahmen**-Freitextfeld.
 
+## KI-Unterstützung (optional)
+
+Neben der Beschreibung und jedem Annahmen-Feld kann ein **✨-Button**
+einen KI-Vorschlag einholen – siehe [KI-Agent](ki-agent.md) für
+Konfiguration (eigenes Modell pro Nutzer) und Bedienung.
+
 ## Verteilungen & Unsicherheit
 
 Pro Faktor eine Verteilung (je Faktortyp eingeschränkt): **PERT**,

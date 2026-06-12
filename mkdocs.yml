@@ -38,6 +38,7 @@ nav:
       - Fork-Erweiterungen: pyfair-fork.md
   - Web-App:
       - Bedienung (fair-web): bedienung.md
+      - KI-Agent: ki-agent.md
 
 markdown_extensions:
   - admonition
