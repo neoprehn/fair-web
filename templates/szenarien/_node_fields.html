@@ -69,6 +69,11 @@
 </div>
 
 <div class="mt-2">
-    <label class="form-label mb-0 small">Annahmen</label>
+    <label class="form-label mb-0 small d-flex justify-content-between align-items-center">
+        <span>Annahmen</span>
+        <button type="button" class="btn btn-sm btn-outline-info ki-btn py-0 px-1"
+                data-ki-feld="{{ form.prefix }}-annahmen" data-ki-typ="annahmen" data-ki-code="{{ code }}"
+                title="KI-Unterstützung">✨</button>
+    </label>
     {{ form.annahmen }}
 </div>

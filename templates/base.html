@@ -188,6 +188,7 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><span class="dropdown-item-text small text-body-secondary">Angemeldet als <strong>{{ user.get_full_name|default:user.get_username }}</strong></span></li>
+                    <li><a class="dropdown-item" href="{% url 'konten:ki_einstellungen' %}">KI-Einstellungen</a></li>
                     {% if user.is_staff %}<li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin-Bereich</a></li>{% endif %}
                     <li><hr class="dropdown-divider"></li>
                     <li>

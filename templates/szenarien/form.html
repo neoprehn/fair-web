@@ -20,7 +20,12 @@
                     <label class="form-label">Name</label>
                     {{ form.name }}{{ form.name.errors }}
                 </div>
-                <label class="form-label">Beschreibung</label>
+                <label class="form-label d-flex justify-content-between align-items-center">
+                    <span>Beschreibung</span>
+                    <button type="button" class="btn btn-sm btn-outline-info ki-btn py-0 px-1"
+                            data-ki-feld="beschreibung" data-ki-typ="beschreibung"
+                            title="KI-Unterstützung">✨</button>
+                </label>
                 {{ form.beschreibung }}
             </div></div>
 
@@ -103,6 +108,23 @@
         <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Abbrechen</a>
     </div>
 </form>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="ki-offcanvas" aria-labelledby="ki-offcanvas-label">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="ki-offcanvas-label">KI-Unterstützung</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Schließen"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+        <p class="small text-body-secondary" id="ki-feld-label"></p>
+        <label class="form-label small">Was soll die KI tun?</label>
+        <textarea class="form-control mb-2" id="ki-frage" rows="3"></textarea>
+        <button type="button" class="btn btn-info mb-2" id="ki-senden">Anfrage senden</button>
+        <div id="ki-status" class="small text-body-secondary mb-2"></div>
+        <label class="form-label small">Antwort</label>
+        <textarea class="form-control mb-2" id="ki-antwort" rows="6" readonly></textarea>
+        <button type="button" class="btn btn-primary" id="ki-uebernehmen" disabled>Übernehmen</button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -385,6 +407,77 @@ function formatDE(n) {
     form.addEventListener('input', anstoss);
     form.addEventListener('change', anstoss);
     aktualisiere();  // initiale Vorschau
+})();
+</script>
+
+<script>
+// KI-Unterstützung: Offcanvas pro Feld (Beschreibung / Annahmen je Faktor).
+(function () {
+    var url = "{% url 'szenarien:ki_vorschlag' %}";
+    var form = document.getElementById('szenario-form');
+    var offcanvasEl = document.getElementById('ki-offcanvas');
+    if (!form || !offcanvasEl || typeof bootstrap === 'undefined') return;
+    var offcanvas = new bootstrap.Offcanvas(offcanvasEl);
+    var feldLabel = document.getElementById('ki-feld-label');
+    var frageEl = document.getElementById('ki-frage');
+    var statusEl = document.getElementById('ki-status');
+    var antwortEl = document.getElementById('ki-antwort');
+    var sendenBtn = document.getElementById('ki-senden');
+    var uebernehmenBtn = document.getElementById('ki-uebernehmen');
+    var token = form.querySelector('[name=csrfmiddlewaretoken]');
+    var aktuellesZiel = null, aktuellesFeld = null, aktuellerCode = null;
+
+    var PLATZHALTER = {
+        beschreibung: 'z. B. „Formuliere eine kurze Beschreibung des Szenarios.“',
+        annahmen: 'z. B. „Formuliere die Annahmen/Begründung für diesen Faktor.“'
+    };
+
+    document.querySelectorAll('.ki-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            aktuellesFeld = btn.dataset.kiFeld;
+            aktuellerCode = btn.dataset.kiCode || '';
+            aktuellesZiel = form.querySelector('[name="' + aktuellesFeld + '"]');
+            var label = btn.closest('label');
+            feldLabel.textContent = 'Feld: ' + (label ? label.textContent.replace('✨', '').trim() : aktuellesFeld);
+            frageEl.value = '';
+            frageEl.placeholder = PLATZHALTER[btn.dataset.kiTyp] || '';
+            antwortEl.value = '';
+            uebernehmenBtn.disabled = true;
+            statusEl.textContent = '';
+            offcanvas.show();
+        });
+    });
+
+    sendenBtn.addEventListener('click', function () {
+        if (!aktuellesFeld) return;
+        statusEl.textContent = 'Anfrage läuft …';
+        sendenBtn.disabled = true;
+        var data = new FormData(form);
+        data.set('feld', aktuellesFeld);
+        if (aktuellerCode) data.set('code', aktuellerCode);
+        data.set('frage', frageEl.value);
+        fetch(url, { method: 'POST', body: data, headers: { 'X-CSRFToken': token ? token.value : '' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.ok) {
+                    antwortEl.value = d.antwort;
+                    uebernehmenBtn.disabled = false;
+                    statusEl.textContent = '';
+                } else {
+                    statusEl.textContent = d.fehler || 'Anfrage fehlgeschlagen.';
+                }
+            })
+            .catch(function () { statusEl.textContent = 'Anfrage fehlgeschlagen.'; })
+            .finally(function () { sendenBtn.disabled = false; });
+    });
+
+    uebernehmenBtn.addEventListener('click', function () {
+        if (!aktuellesZiel) return;
+        if (aktuellesZiel.value.trim() && !confirm('Vorhandenen Text überschreiben?')) return;
+        aktuellesZiel.value = antwortEl.value;
+        aktuellesZiel.dispatchEvent(new Event('input', { bubbles: true }));
+        offcanvas.hide();
+    });
 })();
 </script>
 {% endblock %}
