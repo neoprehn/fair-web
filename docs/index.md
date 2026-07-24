@@ -18,6 +18,8 @@ erweiterten Funktionsumfang des Forks angepasst.
 
 - **[FAIR-Taxonomie](fair-taxonomie.md)** – die Risikofaktoren und ihre
   Ableitung (angelehnt an Open FAIR / O-RT).
+- **[FAIR-CAM-Grundlagen](fair-cam-grundlagen.md)** – Control-Physiologie,
+  funktionale Domänen, Detection/Response-Konzept, Attribution & Lizenz.
 
 ### pyfair (Engine)
 
@@ -34,6 +36,14 @@ erweiterten Funktionsumfang des Forks angepasst.
   speichern/laden, SQLite-Ablage.
 - **[Fork-Erweiterungen](pyfair-fork.md)** – was der Fork gegenüber dem
   Original zusätzlich kann.
+
+### pyfair-cam (Engine)
+
+- **[Übersicht & Detection/Response](pyfair-cam.md)** – eigenständige
+  Bibliothek für FAIR-CAM (Controls Analytics Model): Resistance/Prevention
+  (Frequenz-Seite) und das stage-gated Detection/Response-Modell
+  (Loss-Magnitude-Seite). Noch nicht in fair-web integriert (Web-Anbindung
+  ist eine spätere Ausbaustufe).
 
 ### Web-App
 

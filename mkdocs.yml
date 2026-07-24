@@ -27,6 +27,7 @@ nav:
   - Start: index.md
   - FAIR-Grundlagen:
       - FAIR-Taxonomie: fair-taxonomie.md
+      - FAIR-CAM-Grundlagen: fair-cam-grundlagen.md
   - pyfair (Engine):
       - Installation: installation.md
       - Schnellstart: schnellstart.md
@@ -36,6 +37,8 @@ nav:
       - Berichte: berichte.md
       - Serialisierung & Datenbank: serialisierung.md
       - Fork-Erweiterungen: pyfair-fork.md
+  - pyfair-cam (Engine):
+      - Übersicht & Detection/Response: pyfair-cam.md
   - Web-App:
       - Bedienung (fair-web): bedienung.md
       - KI-Agent: ki-agent.md
