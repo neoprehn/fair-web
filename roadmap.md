@@ -1,187 +1,166 @@
-### Phase 1 – Vorbereitung & Analyse
-- [x] Claude Code Prompt einfügen
-- [x] PyFair Code analysieren lassen (model.py, meta_model.py, simple_report.py)
-- [x] Sample-Dateien analysieren lassen
-- [x] requirements.txt prüfen lassen
-- [x] Branch `feature-webapp` anlegen
+# fair-web – Roadmap
+
+Web-App (Django) rund um den FAIR-Risiko-Monte-Carlo-Simulator **pyfair**.
+Live: **https://fair.neoprehn.de**. Diese Datei zeigt Kompakt-Zusammenfassung +
+Arbeitskontext, unten die **offenen** Punkte. Erledigtes (Phasen 1–9,
+RTD-Doku-Grundausbau) steht in `ROADMAP-ARCHIV.md`. **Export wurde bewusst
+ganz ans Ende gestellt.**
 
 ---
 
-### Phase 2 – Django Grundgerüst
-- [x] Django installieren
-- [x] Django Projekt aufsetzen (`config/`)
-- [x] Apps anlegen (szenarien, berechnung, auswertung, export)
-- [x] MariaDB Datenbank verbinden
-- [x] Bootstrap 5 Grundlayout bauen (`base.html`)
-- [x] Navigation zwischen Seiten einrichten
-- [x] Lokaler Test – läuft die Seite?
-- [x] Commit & Push zu GitHub
+## 1. Zusammenfassung – was steht (Phasen 1–7, alles live)
+
+- **Grundgerüst (Ph. 1–2):** Django-Projekt `config/`, Apps `szenarien`,
+  `berechnung`, `auswertung`, `export`, `admin_bereich`, `konten`. Bootstrap 5,
+  Dark-Theme in `base.html`.
+- **Szenarien & FAIR-Parameter (Ph. 3):** `Szenario` + `FaktorEingabe`.
+  FAIR-Baum mit 12 Knoten (`apps/szenarien/fair_tree.py`), pro Knoten Verteilung
+  wählbar (PERT/Normal/Konstant/Poisson/Beta/Lognormal). Unsicherheits-Slider
+  (5 Konfidenzstufen, `fair_confidence.py`). CRUD + Dashboard.
+- **pyfair-Anbindung (Ph. 4):** `apps/berechnung/services.py` ist die Engine
+  (`simuliere`, `simuliere_meta`, `simuliere_vorschau`). MC-Lauf im
+  Hintergrund-Thread (Variante A) + AJAX-Fortschritt. Ergebnis als JSON auf
+  `Simulationslauf.ergebnis` (Kennzahlen, LEC, Knoten-Stats, Histogramme).
+  Mehr-Szenarien-Lauf via `FairMetaModel` (`MetaLauf`).
+- **FAIR-Baum-UI (Ph. 4b):** klickbarer Eingabe-Baum (auffalten), interaktives
+  SVG, Ergebnis-Baum (Eingabe = Sky-Blau, berechnet = Grün).
+- **Grafiken & Auswertung (Ph. 5 + 5b):** Plotly-LEC (log-Achse, P90 bei ¾,
+  animiert), Risikotoleranz-Overlay (**rot durchgezogen**), Schnittpunkt
+  LEC×Toleranz (Marker + Tabelle), **VaR** 10/20/50/80/90/95/99, SVG-Tooltips,
+  Knoten-Detailtabelle (…/P90/P95/Max), Histogramme (Verteilung + Häufigkeit),
+  **Live-LEC-Vorschau** auf der Eingabeseite (debounced AJAX `lec-vorschau`).
+  **Vergleich**-Entität (gruppiert Szenarien) mit **Compare↔Add**-Umschalter;
+  Referenz-Szenario liefert die Toleranzkurve + Schnittpunkte je Szenario-LEC.
+- **Deployment (Ph. 6, war Ph. 8):** IONOS-VPS, Plesk→gunicorn (systemd
+  `pyfair`), MariaDB, HTTPS. CI/CD via GitHub Actions (`deploy.yml`): bei Push
+  auf `main` → `git reset --hard` + `migrate` + `collectstatic` + Restart.
+- **Admin-Bereich (Ph. 7):**
+  - Django-Admin (Branding „fair-web – Verwaltung", „← Zur Startseite").
+  - **`AppKonfiguration`** (Singleton, `apps/admin_bereich/`): globaler
+    Standard-Seed, Standard-Simulationsanzahl, **Unternehmens-Risikotoleranz**
+    (mit Editor), **Währung €/$**, **Konfidenz-Vorschlagswerte** (5×4-Editor).
+    „Global"-Schalter → Wert in der Szenarioeingabe „nur lesend" + beim
+    Speichern erzwungen. Konfidenz-Edits steuern **Anzeige UND Berechnung**
+    (`to_fair_kwargs` gibt expliziten gamma/sigma/range/k an pyfair).
+  - **Hell/Dunkel-Schalter** (Navbar, `data-bs-theme`, CSS-Variablen,
+    localStorage; Charts theme-abhängig via `window.fairChartTxt/Grid`).
+  - **€/$-Schalter** (global): Locale-Middleware tauscht Separatoren
+    (de 1.234,56 ↔ en 1,234.56), Context-Processor liefert `waehrung_symbol`
+    /`waehrung_locale`; JS nutzt `window.fairLocale/fairWaehrung`.
+  - **Berechtigungskonzept** (App `konten`): App-weite **Login-Pflicht**
+    (`LoginRequiredMiddleware`), **Selbstregistrierung** (neue Nutzer → Gruppe
+    **Betrachter**), Rollen **Betrachter/Analyst/Konfigurator/Administrator**
+    (Gruppen via `post_migrate`, `apps/konten/gruppen.py`), **serverseitige
+    Rechte** (403, `PermissionRequiredMixin`/`@permission_required`) + **UI-
+    Gating** (`{% if perms.… %}`).
+
+**Rollen-Kurzmatrix:** Betrachter = nur lesen · Analyst = Szenario/Vergleich
+CRUD + Simulationen · Konfigurator = + App-Konfiguration/Angreifertypen (braucht
+`is_staff` für den Admin) · Administrator = alles inkl. Benutzerverwaltung.
 
 ---
 
-### Phase 3 – Szenarien & FAIR Parameter
-- [x] Datenbankmodell für Szenarien erstellen _(Szenario + FaktorEingabe, Faktor LEF/LM, Verteilung PERT/Normal/Konstant)_
-- [x] Formular für FAIR Parameter bauen _(Verteilung pro Faktor wählbar, Parameterfelder per JS ein-/ausgeblendet)_
-- [x] Schieber (Slider) für Unsicherheit einbauen _(5 pyfair-Konfidenzstufen, Live-Wertanzeige)_
-- [x] Szenario speichern in MariaDB
-- [x] Szenario laden & bearbeiten
-- [x] Szenario löschen
-- [x] Dashboard mit Szenario-Übersicht
-- [x] Lokaler Test _(pytest + pytest-django, 19 Tests grün)_
-- [x] Commit & Push → Branch `feature-szenarien` mergen in `main`
+## 2. Arbeitskontext für Claude (so arbeiten wir hier)
+
+**Repos (Parent: `…/Entwicklung/`):**
+- `fair-web/` – diese Django-App (GitHub `neoprehn/fair-web`, Branch `main`).
+- `fair/` – `pyfair` (GitHub `neoprehn/pyfair`), als editable im venv der App.
+  → Jedes `git` mit explizitem `-C fair-web` bzw. `-C fair`. Nie vermischen.
+
+**Lokale Umgebung:**
+- venv: `fair-web/.venv`. Tests: `.venv/Scripts/python.exe -m pytest -q`
+  (läuft gegen flüchtige SQLite via `conftest.py`; `client`-Fixture ist
+  eingeloggter Superuser wegen Login-Pflicht).
+- System-Check: `.venv/Scripts/python.exe manage.py check`.
+- **Preview** (lokaler Server, eigene DB):
+  `DATABASE_URL="sqlite:///preview_db.sqlite3" .venv/Scripts/python.exe manage.py runserver 127.0.0.1:8099 --noreload`
+  – vorher ggf. `migrate`. Prüfung token-sparsam per `curl`/DOM-Grep, **nicht**
+  per Screenshot. Admin-geschützte Seiten: per curl einloggen (CSRF-Token aus
+  der Login-Seite ziehen). Preview-DB hat Test-Daten (Szenario, Vergleich,
+  Superuser `prev`/`prev12345`).
+
+**Slice-Workflow (pro Änderung):** lokal bauen → Preview/DOM prüfen → `pytest`
+→ Commit auf `feature-…`-Branch → `git checkout main` → `merge --no-ff` →
+`git push origin main` → Deploy via GitHub-Actions-API verifizieren
+(`/repos/neoprehn/fair-web/actions/runs?branch=main`, auf `conclusion=success`
+des passenden `head_sha`) → Live-Check (HTTP 200). **Migrationen** greifen
+automatisch beim Deploy (`migrate` in `deploy.yml`).
+
+**Konventionen:** Commits/Antworten **deutsch**, knapp; jede Tool-Aktion vorab
+1–2 Sätze erklären. Commit-Message endet mit
+`Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. PRs/Merges `--no-ff`.
+Token-effizient (Screenshots sparsam, Dateien nicht doppelt lesen).
+
+**Wichtige Dateien:**
+- `apps/szenarien/`: `models.py` (Szenario, FaktorEingabe, Vergleich,
+  Angreifertyp; `to_fair_kwargs`, `risikotoleranz`), `fair_tree.py`,
+  `fair_confidence.py` (`aktuelle_konfidenz_defaults`), `views.py`, `forms.py`.
+- `apps/berechnung/`: `services.py` (Engine), `views.py` (LaufDetailView,
+  MetaLaufDetailView, Start-Views; `toleranz_overlay`, `schnittpunkt`,
+  `_knoten_tabelle`).
+- `apps/admin_bereich/`: `models.py` (`AppKonfiguration`), `admin.py` +
+  `change_form.html` (Risikotoleranz- & Konfidenz-Editor), `forms.py`,
+  `middleware.py` (Währung-Locale), `context_processors.py`.
+- `apps/konten/`: `middleware.py` (Login-Pflicht), `gruppen.py` (Rollen via
+  post_migrate), `views.py`/`forms.py` (Registrierung), `urls.py`.
+- Templates: `base.html` (Navbar/Theme/Währung-Globals), `templates/szenarien/`,
+  `templates/berechnung/`, `templates/registration/`,
+  `templates/admin/…/appkonfiguration/change_form.html`.
+
+**Datenmodell-Stichworte:** `Szenario.risikotoleranz` JSON
+(`{"type":"constant|curve|distribution",…}`); `AppKonfiguration` Singleton
+(pk=1, `load()`); `MetaLauf.vergleich` FK; Roles als `auth.Group`.
 
 ---
 
-### Phase 4 – PyFair Anbindung & Berechnung
-- [x] PyFair als Engine einbinden _(editable im venv installiert; `services.simuliere`)_
-- [x] Monte Carlo Simulation starten _(Button → Hintergrund-Thread, Variante A)_
-- [x] Live-Fortschrittsanzeige während Simulation _(chunked + AJAX-Polling)_
-- [x] Ergebnisse in MariaDB als JSON speichern _(`Simulationslauf.ergebnis` inkl. LEC-Daten)_
-- [x] Mehrere Szenarien gleichzeitig berechnen _(`FairMetaModel`, Summenrisiko + Beitrag je Szenario)_
-- [x] Lokaler Test _(35 Tests grün)_
-- [x] Commit & Push → Branch `feature-berechnung` mergen in `main`
+## 3. Offene Arbeit
 
----
+### Als Nächstes → Phase 9 – Sicherheit (Rest) (@neoprehn)
+Phase 9 ist bis auf einen Punkt komplett erledigt (siehe `ROADMAP-ARCHIV.md`).
+Offen ist nur noch:
+- [~] Deploy auf Sicherheits-Design-Fehler prüfen: **CSP** (Content-Security-
+      Policy) noch nicht umgesetzt (bewusst zurückgestellt; Security-Header,
+      HTTPS-Härtung, Registrierungs-Policy, Brute-Force-Schutz und
+      Dependency-Audit sind bereits live – siehe `SICHERHEIT.md`)
 
-### Phase 4b – FAIR-Baum-Eingabe & Ergebnis-Baum (UI-Ausbau) ✅ live
-- [x] **Slice 1:** Baumstruktur + Datenmodell (`fair_tree.py`, alle 12 Knoten, Typen, Schnitt-Validierung)
-- [x] **Slice 2:** Dynamisches Baum-Formular, Verteilungs-Auswahl je Faktor eingeschränkt (inkl. Poisson/Beta/Lognormal), korrekte Beschriftungen, Schnitt-Gültigkeit serverseitig
-- [x] **Slice 3:** Interaktives SVG des FAIR-Baums; aktiver Knoten leuchtet beim Reinklicken auf
-- [x] **Slice 4:** Ergebnis-Baum nach der Simulation — Wert je Knoten, **Eingabe = Sky-Blau**, **berechnet = Grün** (Einzel-Simulation)
-- [x] **Umbau:** SVG nach oben (neben Name/Beschreibung), Faktoren als klickbarer FAIR-Baum (Klick = auffalten), 2-Spalten-/Baum-Fächerung, schmalere Karten
-- [x] Lokale Vorschau vor jedem Live-Deploy; Slices einzeln nach `main` gemergt
+### Danach → Phase 10 – FAOR + FAIR-CAM (@neoprehn)
+- [ ] Einbindung der FAOR-Logik in die Webseite
+- [ ] Einbindung von FAIR-CAM (ggf. als `pyfaircam` zu entwickeln)
+- [ ] Wenn ein Modell schon simuliert wurde: Ergebnisse in der Eingabeseite
+      anzeigen + automatisch nachberechnen bei Änderung („Neu berechnen")
+- [ ] Historie der Simulationen (aufklappbar, Verzeichnis-artig, neueste oben)
+- [ ] Schnittpunkte LEC×Toleranz bzw. mehrere LECs×Toleranz als Tabelle
+      (Vorbild: `fair/results/Laptop_neu.html`)
+- [ ] Punkte-Streudiagramm primäre/sekundäre Verluste (rot/blau, wie Laptop_neu)
+- [ ] Lokaler Test · Commit & Push → `feature-…` mergen in `main`
 
----
+### Ganz zuletzt
 
-### Phase 5 – Grafiken & Auswertung
-- [x] Plotly einbinden _(Plotly.js CDN, LEC-Chart im Dark-Theme)_
-- [x] LEC-Kurve **logarithmische Schadensachse** _(P90 bei ~3/4 der Achse)_
-- [x] **Risikotoleranz-Overlay** _(constant→vline, curve→Punkte, distribution→Exceedance)_
-- [x] LEC-Kurve **animiert aufbauen**
-- [x] **Schnittpunkt LEC × Risikotoleranz** berechnen + im Chart markieren + in Tabelle (Loss €, Toleranz %)
-- [x] **Risikoperzentile als VaR** 10/20/50/80/90/95/99 (farblich umrandete Gruppe)
-- [x] **SVG-Baum-Tooltips** je Knoten (5 Nachkommastellen; berechnet: Mittelwert/StdAbw/P90/P95, Eingabe: Parameter)
-- [x] **Knoten-Detailtabelle** unter der Grafik (pyfair-Report-Form + P90/P95)
-- [x] „Neu berechnen" → führt zum Szenario-Bearbeiten
-- [x] Lokaler Test _(76 Tests grün)_
-- [x] Commit & Push → Branch `feature-ergebnis-grafik` mergen in `main`
-- [x] Weitere Grafiken: **Verteilung** des Jahresschadens + **Häufigkeit** der Schadenereignisse (Histogramme); Ergebnis-SVG schmaler; VaR + Risikotoleranz horizontal angeordnet
-- [x] Schieber bewegen → Kurve aktualisiert sich live _(Live-LEC-Vorschau auf der Eingabeseite: debounced Mini-Simulation via AJAX `lec-vorschau`, inkl. Toleranz-Overlay + Schnittpunkt)_
-- [x] Mehrere Szenarien in einem Chart vergleichen _(neue **Vergleich**-Entität gruppiert bestehende Szenarien; Dashboard-Liste + „Neuer Vergleich"; Ergebnis mit **Compare**-Überlagerung der LECs ↔ **Add**-Summe umschaltbar)_
+#### Eigene ReadTheDocs-Dokumentationssite
+Grundausbau + Live-Betrieb bereits erledigt (siehe `ROADMAP-ARCHIV.md`). Offen:
+- [ ] Beispiele/Tutorials ausbauen (optional, laufend)
 
----
+> **Sprachen-Policy:** Die **deutsche** Doku wird **laufend als DoD** mitgeführt
+> (jeder bedienungs-/engine-relevante Slice aktualisiert `docs/` + In-App-Hilfe
+> im selben Commit). Die **englische Fassung** wird **bewusst aufgeschoben** und
+> erst **ganz am Ende als einmaliger „Big Bang"** erstellt – siehe letzter Punkt
+> der Roadmap.
 
-### Phase 5b – Feinschliff der Auswertungen
-- [x] Einzeichnen der Risikotoleranzkurve bei Compare (durchgezogen in rot) _(Referenz-Szenario am Vergleich wählbar)_
-- [x] Risikotoleranzkurve auf rot durchgezogen ändern _(Einzel- + Vergleichs-Chart)_
-- [x] Risikotoleranz-Eingabe wird jetzt auf der Szenario-Detailseite angezeigt
-- [x] In der Version Vergleichen die Schnittpunkte mit der Risikotoleranz – als Punkt in der Grafik + Tabelle
-- [x] Designänderung bei der einzelnen Simulation:
-    - [x] Maximum-Karte → „Maximum (Worst Case P95)", zeigt P95
-    - [x] SVG: Baum im Kästchen zentriert, 20 % größere Knoten-Kästchen
-    - [x] VaR & Risikotoleranz-Kästchen auf Median-Zeilen-Höhe, rechtsbündig
-    - [x] mehr Abstand zwischen Knoten-Detailtabelle und Grafik-Block
-    - [x] Knoten-Detailtabelle: Min raus, Spalten enden mit P90/P95/Max
-
-
----
-
-### Phase 6 – Deployment auf IONOS VPS ✅ erledigt
-- [x] Per SSH auf VPS verbinden
-- [x] Ubuntu aktualisieren
-- [x] Python & pip installieren
-- [x] MariaDB auf VPS installieren & einrichten
-- [x] Nginx/Reverse-Proxy konfiguriert _(Plesk proxyt auf gunicorn-Unix-Socket, HTTPS aktiv)_
-- [x] Gunicorn installieren & konfigurieren _(systemd-Dienst `pyfair`, 3 Worker, Socket `pyfair.sock`, WSGI `config.wsgi`)_
-- [x] GitHub Repository auf VPS klonen _(am 29.05.2026 nachgeholt – Ordner war vorher KEIN Git-Repo)_
-- [x] Umgebungsvariablen setzen _(`.env` auf dem Server vorhanden, MariaDB-Verbindung steht)_
-- [x] SSL Zertifikat einrichten _(HTTPS auf fair.neoprehn.de aktiv, liefert 200)_
-- [x] Domain `fair.neoprehn.de` verbinden
-- [x] Finaler Test auf neoprehn.de _(Phase-3-App ist live – Dashboard & Anlege-Formular erreichbar)_
-
-> **CI/CD-Hinweis (29.05.2026):** Der Auto-Deploy griff lange Zeit NICHT – das Zielverzeichnis war kein Git-Checkout, und `deploy.yml` verbarg den Fehler hinter grünen Häkchen (kein `set -e`). Beides ist gefixt: Server-Ordner ist jetzt ein `main`-Checkout, `deploy.yml` nutzt `set -euo pipefail` + `git fetch`/`reset --hard`. Push/Merge nach `main` deployt jetzt zuverlässig.
-
----
-
-### Phase 7 – Admin-Bereich
-- [x] Django Admin einrichten _(Modelle registriert: Szenario/Faktor/Angreifertyp/Vergleich/Läufe + App-Konfiguration)_
-- [x] Standard-Seed konfigurierbar (globale Variable in der App-Konfiguration; wenn global → in der Szenarioeingabe „nur lesend")
-- [x] Standard-Simulationsanzahl konfigurierbar (globale Variable; wenn global → „nur lesend")
-- [x] Benutzer & Zugriffsrechte einrichten _(Login-Pflicht + Selbstregistrierung; Rollen Betrachter/Analyst/Konfigurator/Administrator via Gruppen; serverseitige Rechte (403) + UI-Gating je Rolle)_
-- [x] Vorschlagswerte für Konfidenzen editierbar (App-Konfiguration, strukturierter 5×4-Editor): steuert Anzeige UND Berechnung – `to_fair_kwargs` übergibt den expliziten Formparameter (gamma/sigma/range/k) an pyfair statt der Konfidenzstufe (kein pyfair-Patch)
-- [x] Hell/Dunkel-Design Schalter _(Navbar-Umschalter, Bootstrap data-bs-theme, Light-/Dark-Palette via CSS-Variablen, in localStorage gemerkt; Plotly-Charts theme-abhängig)_
-- [x] Euro/Dollar-Schalter (global in App-Konfiguration): tauscht Währungssymbol und Separatoren app-weit (€ → 1.234,56 · $ → 1,234.56) via Locale-Middleware + Context-Processor; Charts/JS folgen der Locale
-- [x] „Unternehmens-Risikotoleranz" als global konfigurierbar (App-Konfiguration; wenn vorgegeben → Eingabe „nur lesend", gilt für alle Szenarien)
-- [ ] Lokaler Test
-- [ ] Commit & Push → Branch `feature-admin` mergen in `main`
-
----
-
-### Phase 8 – Export _(ganz nach hinten gestellt)_
-- [ ] Excel Export mit openpyxl
-- [ ] PPT Bericht mit python-pptx
-- [ ] PDF Bericht 
-- [ ] Grafiken in Export einbetten
+#### Export
+- [ ] Excel-Export (openpyxl)
+- [ ] PPT-Bericht (python-pptx)
+- [ ] PDF-Bericht
+- [ ] Grafiken in den Export einbetten
 - [ ] Download-Button in der Oberfläche
-- [ ] Lokaler Test
-- [ ] Commit & Push → Branch `feature-export` mergen in `main`
-
----
-### ab hier alles von @neoprehn
-### Phase 9 - Sicherheit + Ideen
-- [ ] Prüfen des Deploys hinsichtlich Sicherheits-Design Fehler
-- [ ] Home Bildschirm verbessern (Modellerklärung. interaktives User-Durchklicken ohne Simulation)
-- [ ] Dokumentation zur Webseite (Bedienhilfe etc. aufbauen)
-- [ ] Szenariocluster mit Szenarien 
-- [ ] Bei Auswahl der gemeinsamen Berechnung von Szenarien die Möglichkeit schaffen, compare oder add als Ergebnis zu haben, diese sollte dann auch als Ergebnis abgespeichert werden (unter eigenem Reiter "Gemeinsame Szenarien" oder "Szenariovergleiche")
-- [ ] Eingabe von Annahmen je eigegebener Faktor (ist dann auch im Szenarioergebnis abzuspeichern)
-- [ ] Ausbaustufe: KI-Agent, der bei der Formulierung der Szenarien hilft, um eine hohe Qualität sicherzustellen
-- [ ] Lokaler Test
-- [ ] Commit & Push → Branch `feature-export` mergen in `main`
-
----
-### ab hier alles von @neoprehn
-### Phase 10 - FAOR + FAIR CAM
-- [ ] Einbindung in die Webseite der FAOR - Logik
-- [ ] Einbindung von FAIR CAM (hierzu muss wahrscheinlich noch alles als pyfaircam entwickelt werden)
-- [ ] Wenn Modelle schon einmal simuliert wurden, dann Ergebnisse in der Eingabeseite mit angebeben und automatisch nachberechnen, wenn neue Eingaben stattgefunden haben (Knopf neuberechnen)
-- [ ] Historie in den Simulationen (aufklappbar) im Protokoll zeigen (wie eine Verzeichnisstruktur mit letzter Simulaion ganz oben)
-- [ ] Schnittpunkte in der LEC berechnen zwischen Toleranz und LEC bzw. bei mehreren Simulationen zwischen den individuellen LECs und der Risikotoleranz. Ergebnisdarstellung in Tabellenform (wie bei file:///C:/Users/mirko/OneDrive/Dokumente/Entwicklung/fair/results/Laptop_neu.html)
-- [ ] Punkte-Streudiagramm der primären und sekundären Verluste (in rot und blau) - wie bei Laptop_neu.html
-- [ ] 
-- [ ] Lokaler Test
-- [ ] Commit & Push → Branch `feature-export` mergen in `main`
-
-## Branch-Übersicht
-
-```
-main                    →  stabil, läuft auf VPS
-│
-├── feature-webapp       →  Phase 2: Django Grundgerüst
-├── feature-szenarien    →  Phase 3: FAIR Parameter
-├── feature-berechnung   →  Phase 4: PyFair Anbindung
-├── feature-grafiken     →  Phase 5: Plotly Animationen
-├── feature-export       →  Phase 6: Excel & PPT
-└── feature-admin        →  Phase 7: Admin-Bereich
-```
+- [ ] Lokaler Test · Commit & Push → `feature-export` mergen in `main`
 
 ---
 
-## Deployment Workflow (ab Phase 8)
+### Allerletzter Schritt — Englische Doku (Big Bang)
 
-```
-VS Code → git push → GitHub → VPS: git pull → neoprehn.de
-```
+Wird **erst ganz zum Schluss** angegangen, wenn keine weiteren Feature-Ideen
+mehr offen sind. Bis dahin bleibt die Doku **deutsch** (laufend als DoD gepflegt).
 
----
-
-## Wichtige Dateien zum Start
-
-| Datei | Warum wichtig |
-|---|---|
-| `pyfair/model/model.py` | FairModel Kernlogik |
-| `pyfair/model/meta_model.py` | Mehrere Szenarien kombinieren |
-| `pyfair/report/simple_report.py` | Bestehende Report-Logik |
-| `pyfair/utility/beta_pert.py` | Wahrscheinlichkeitsverteilung |
-| `requirements.txt` | Bestehende Abhängigkeiten |
-| `sample/` | Beispiele wie PyFair genutzt wird |
+- [ ] **Englische Fassung der gesamten RTD-Doku** in einem Rutsch: alle
+      `docs/`-Seiten übersetzen, DE/EN-i18n in `mkdocs.yml` (z. B.
+      `mkdocs-static-i18n`), Sprachumschalter, beide Sprachbäume auf RTD bauen.
