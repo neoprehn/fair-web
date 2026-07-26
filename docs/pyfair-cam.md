@@ -195,6 +195,26 @@ result["cs_vulnerability_scalar"]  # der eine pyfair-native Vulnerability-Wert
 result["note"]                     # Hinweis auf den Streuungs-Fund oben
 ```
 
+## HTML-Report
+
+`FairCamReport.to_html()` erzeugt eine eigenständige, offline lauffähige
+HTML-Datei – keine Bootstrap-CDN-Abhängigkeit wie fair-web selbst, aber
+optisch angelehnt (Bahnschrift, Sky-Blau, Dark/Light-Toggle). Charts sind
+Inline-SVG statt matplotlib/PNG, damit Datenfarben dem Theme-Toggle folgen.
+
+```python
+report = FairCamReport(simulator)
+report.to_html("report.html")
+# Mit optionalem Pfad-A/B-Panel (nur falls pyfair installiert ist):
+report.to_html("report.html", threat_capability=BetaPert(low=0.2, mode=0.4, high=0.8))
+```
+
+Enthält – abhängig von der Modellkonfiguration – automatisch: Kennzahlen,
+Loss Exceedance Curve, Verteilungshistogramm, Control-Wirksamkeit &
+Susceptibility-Zerlegung, Vorher/Nachher-Vergleich (mit/ohne Controls),
+Detection-Stage-Breakdown, LM-Vorher/Nachher-Panel (Parallel-Anzeige) und
+das optionale Pfad-A/B-Panel.
+
 ## Reproduzierbarkeit
 
 Wie pyfair (und wie fair-web es von pyfair kennt) zieht der Simulator alle
@@ -213,8 +233,9 @@ RNG-Ziehungen nie vom Zufallsergebnis selbst abhängt.
 - **Phase 3 abgeschlossen:** pyfair-Integration Pfad Vuln/A und Pfad CS/B
   implementiert und getestet, inkl. `compare_paths()` und End-to-End-Test mit
   vollständigem Ransomware-Szenario (siehe oben).
-- **Als Nächstes:** eigener HTML-Report (Phase 4), danach Web-Integration in
-  fair-web (Phase 5).
+- **Phase 4 abgeschlossen:** eigener, offline lauffähiger HTML-Report
+  (siehe oben).
+- **Als Nächstes:** Web-Integration in fair-web (Phase 5).
 - **Danach geplant:** Variance Management (Phase 6), Decision Support
   (Phase 7), Risikoappetit & Kennzahlen (Phase 8), Root Cause Analysis
   (Phase 9), Resistance-Vertiefung (Phase 10), Opportunity Analysis
