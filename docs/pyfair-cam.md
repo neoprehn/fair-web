@@ -144,14 +144,31 @@ fair_model.export_results()          # natives pyfair-Ergebnis (Risk, LEF, ...)
 cam_result["outcome_class"]          # CAM-Zusatzinfo (falls Detection/Response gesetzt)
 ```
 
-Aktuell ist nur **Pfad Vuln/A** implementiert: `Susceptibility = 1 − OpEff`
-wird direkt als `Vulnerability` an pyfair übergeben (KB-konform). **Pfad
-CS/B** (Andockpunkt an Control Strength/Resistance Strength, pyfairs
-natives TCap-vs-CS-Rennen) ist noch nicht umgesetzt – dafür fehlt eine
-belastbare Abbildung `OpEff → RS-Perzentil` (offene Forschungsfrage, siehe
-[Roadmap](https://github.com/neoprehn/pyfair-cam/blob/main/ROADMAP.md#offene-architektur-entscheidung-andockpunkt-fair--fair-cam)).
-`to_pyfair(mode="cs")` wirft deshalb bewusst `NotImplementedError` statt
-stillschweigend falsche Zahlen zu liefern.
+Es gibt zwei Andockpunkte, beide implementiert, **bewusst unkalibriert**
+(Entscheidung 2026-07-26 – siehe
+[Roadmap](https://github.com/neoprehn/pyfair-cam/blob/main/ROADMAP.md#offene-architektur-entscheidung-andockpunkt-fair--fair-cam)):
+
+- **Pfad Vuln/A** (`mode="vuln"`, KB-konform): `Susceptibility = 1 − OpEff`
+  wird direkt als `Vulnerability` an pyfair übergeben – Ergebnis ist
+  identisch zu `FairCamModel.calculate()`.
+- **Pfad CS/B** (`mode="cs"`): `Control Strength = 1 − Susceptibility` tritt
+  gegen eine separat übergebene `threat_capability`-Verteilung an (FAIR-CAM
+  modelliert Threat Capability nicht selbst); pyfair berechnet
+  `Vulnerability` dabei über seinen **eigenen nativen Step-Vergleich**
+  (`model_calc.py`).
+
+  ```python
+  fair_model, cam_result = model.to_pyfair(
+      mode="cs", threat_capability=BetaPert(low=0.2, mode=0.4, high=0.8),
+  )
+  ```
+
+Statt eine Kalibrierung `OpEff → RS-Perzentil` zu suchen, die beide Pfade
+numerisch synchron macht, wurde das bewusst **nicht** gelöst: Pfad B simuliert
+auf CS/TCap-Ebene und rechnet erst danach auf Susceptibility/Vulnerability
+hoch, darf also von Pfad A abweichende Ergebnisse liefern. Wer Konsistenz mit
+Pfad A braucht, bleibt auf Pfad A. Eine dritte, explizit kalibrierte Variante
+ist als möglicher späterer Task vorgemerkt, aber nicht gebaut.
 
 ## Reproduzierbarkeit
 
@@ -168,9 +185,10 @@ RNG-Ziehungen nie vom Zufallsergebnis selbst abhängt.
 - **Phase 0–2 abgeschlossen:** RNG-Fundament (inkl. CI: `ruff` + `pytest` bei
   jedem Push/PR), Resistance/Prevention (Frequenz-Seite), Detection & Response
   (Loss-Magnitude-Seite).
-- **Phase 3 begonnen:** pyfair-Integration Pfad Vuln/A implementiert und
-  getestet (siehe oben). Offen: Pfad CS/B (Kalibrierungsfrage), Variance
-  Management/Decision Support, End-to-End-Ransomware-Test.
+- **Phase 3 weit fortgeschritten:** pyfair-Integration Pfad Vuln/A und Pfad
+  CS/B implementiert und getestet, inkl. End-to-End-Test mit vollständigem
+  Ransomware-Szenario (siehe oben). Offen: Variance Management/Decision
+  Support (optional).
 - **Offen:** eigener HTML-Report (Phase 4), Web-Integration in fair-web
   (Phase 5) – siehe
   [Roadmap im pyfair-cam-Repository](https://github.com/neoprehn/pyfair-cam/blob/main/ROADMAP.md).
