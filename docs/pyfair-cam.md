@@ -210,12 +210,15 @@ RNG-Ziehungen nie vom Zufallsergebnis selbst abhängt.
 - **Phase 0–2 abgeschlossen:** RNG-Fundament (inkl. CI: `ruff` + `pytest` bei
   jedem Push/PR), Resistance/Prevention (Frequenz-Seite), Detection & Response
   (Loss-Magnitude-Seite).
-- **Phase 3 weit fortgeschritten:** pyfair-Integration Pfad Vuln/A und Pfad
-  CS/B implementiert und getestet, inkl. End-to-End-Test mit vollständigem
-  Ransomware-Szenario (siehe oben). Offen: Variance Management/Decision
-  Support (optional).
-- **Offen:** eigener HTML-Report (Phase 4), Web-Integration in fair-web
-  (Phase 5) – siehe
+- **Phase 3 abgeschlossen:** pyfair-Integration Pfad Vuln/A und Pfad CS/B
+  implementiert und getestet, inkl. `compare_paths()` und End-to-End-Test mit
+  vollständigem Ransomware-Szenario (siehe oben).
+- **Als Nächstes:** eigener HTML-Report (Phase 4), danach Web-Integration in
+  fair-web (Phase 5).
+- **Danach geplant:** Variance Management (Phase 6), Decision Support
+  (Phase 7), Risikoappetit & Kennzahlen (Phase 8), Root Cause Analysis
+  (Phase 9), Resistance-Vertiefung (Phase 10), Opportunity Analysis
+  (Phase 11) – siehe
   [Roadmap im pyfair-cam-Repository](https://github.com/neoprehn/pyfair-cam/blob/main/ROADMAP.md).
 
 !!! note "Lizenz"
