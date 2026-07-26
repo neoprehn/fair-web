@@ -170,6 +170,31 @@ hoch, darf also von Pfad A abweichende Ergebnisse liefern. Wer Konsistenz mit
 Pfad A braucht, bleibt auf Pfad A. Eine dritte, explizit kalibrierte Variante
 ist als möglicher späterer Task vorgemerkt, aber nicht gebaut.
 
+!!! warning "Pfad B verliert Trial-Streuung (struktureller Fund, nicht nur Kalibrierungsfrage)"
+    pyfairs natives `Vulnerability = mean(CS < TCap)` ist **ein einziger Skalar
+    über alle Trials**, kein Wert pro Trial (`model_calc.py._calculate_step_average`)
+    – empirisch geprüft, `Vulnerability.nunique() == 1` über n Trials. Pfad B
+    verliert dadurch strukturell die trialweise Susceptibility-Streuung, die
+    Pfad A erhält. Eine engere/"sicherere" CS-Eingangsverteilung verschiebt nur
+    den einen Vulnerability-Mittelwert, stellt die verlorene Trial-Varianz aber
+    nicht wieder her – Tails/VaR aus Pfad B sind entsprechend vorsichtig zu
+    interpretieren.
+
+### Beide Pfade nebeneinander: `compare_paths()`
+
+Statt zu kalibrieren, lassen sich beide Pfade mit identischem Seed (gleiche
+TEF/Susceptibility/LM-Trials) parallel rechnen und gegenüberstellen – analog
+zur "Parallel-Anzeige statt Ersatz"-Entscheidung bei der LM-Seite:
+
+```python
+result = model.compare_pyfair_paths(
+    threat_capability=BetaPert(low=0.2, mode=0.4, high=0.8),
+)
+result["stats"]                    # mean/std/median/VaR95/VaR99/max je Pfad
+result["cs_vulnerability_scalar"]  # der eine pyfair-native Vulnerability-Wert
+result["note"]                     # Hinweis auf den Streuungs-Fund oben
+```
+
 ## Reproduzierbarkeit
 
 Wie pyfair (und wie fair-web es von pyfair kennt) zieht der Simulator alle
