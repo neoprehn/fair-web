@@ -5,10 +5,11 @@
 Grundlagen siehe [FAIR-CAM-Grundlagen](fair-cam-grundlagen.md).
 
 !!! note "Eigenständige Bibliothek"
-    pyfair-cam hat **keine Abhängigkeit zu pyfair** und ist unabhängig
-    lauffähig. Die Integration von FAIR und FAIR-CAM in fair-web ist für eine
-    spätere Ausbaustufe vorgesehen (Web-UI, Andockpunkt FAIR ↔ FAIR-CAM noch
-    offen) – aktuell nur als eigenständige Python-Bibliothek nutzbar.
+    pyfair-cam hat **keine harte Abhängigkeit zu pyfair** im Core-Install und
+    ist unabhängig lauffähig. Seit Phase 3 gibt es einen optionalen
+    `to_pyfair()`-Adapter (Extra `pyfair-cam[pyfair]`, siehe unten) – die
+    eigentliche Web-Integration (Admin-Umschaltung, UI) ist weiterhin eine
+    spätere Ausbaustufe (Phase 5).
 
 ## Installation
 
@@ -125,6 +126,33 @@ Teil der Risk-Berechnung):
   innerhalb eines Zeitbudgets T?" (SLO-Validierung, z.B. "Initial Access
   innerhalb von 4 Stunden erkennen").
 
+## pyfair-Integration (Phase 3)
+
+Ein optionaler Adapter überträgt ein `FairCamModel` in ein natives
+pyfair-`FairModel`, sodass pyfair die eigentliche Monte-Carlo-Rechnung
+übernimmt. TEF, Susceptibility und Loss Magnitude werden dabei **trialweise
+als volle Rohdatenarrays** übergeben (nicht als Mittelwert), damit die
+Unsicherheit der CAM-Seite nicht vorzeitig weggemittelt wird.
+
+```bash
+pip install pyfair-cam[pyfair]
+```
+
+```python
+fair_model, cam_result = model.to_pyfair(mode="vuln")
+fair_model.export_results()          # natives pyfair-Ergebnis (Risk, LEF, ...)
+cam_result["outcome_class"]          # CAM-Zusatzinfo (falls Detection/Response gesetzt)
+```
+
+Aktuell ist nur **Pfad Vuln/A** implementiert: `Susceptibility = 1 − OpEff`
+wird direkt als `Vulnerability` an pyfair übergeben (KB-konform). **Pfad
+CS/B** (Andockpunkt an Control Strength/Resistance Strength, pyfairs
+natives TCap-vs-CS-Rennen) ist noch nicht umgesetzt – dafür fehlt eine
+belastbare Abbildung `OpEff → RS-Perzentil` (offene Forschungsfrage, siehe
+[Roadmap](https://github.com/neoprehn/pyfair-cam/blob/main/ROADMAP.md#offene-architektur-entscheidung-andockpunkt-fair--fair-cam)).
+`to_pyfair(mode="cs")` wirft deshalb bewusst `NotImplementedError` statt
+stillschweigend falsche Zahlen zu liefern.
+
 ## Reproduzierbarkeit
 
 Wie pyfair (und wie fair-web es von pyfair kennt) zieht der Simulator alle
@@ -137,10 +165,14 @@ RNG-Ziehungen nie vom Zufallsergebnis selbst abhängt.
 
 ## Stand
 
-- **Phase 0–2 abgeschlossen:** RNG-Fundament, Resistance/Prevention
-  (Frequenz-Seite), Detection & Response (Loss-Magnitude-Seite).
-- **Offen:** pyfair-Integration (Phase 3), eigener HTML-Report (Phase 4),
-  Web-Integration in fair-web (Phase 5) – siehe
+- **Phase 0–2 abgeschlossen:** RNG-Fundament (inkl. CI: `ruff` + `pytest` bei
+  jedem Push/PR), Resistance/Prevention (Frequenz-Seite), Detection & Response
+  (Loss-Magnitude-Seite).
+- **Phase 3 begonnen:** pyfair-Integration Pfad Vuln/A implementiert und
+  getestet (siehe oben). Offen: Pfad CS/B (Kalibrierungsfrage), Variance
+  Management/Decision Support, End-to-End-Ransomware-Test.
+- **Offen:** eigener HTML-Report (Phase 4), Web-Integration in fair-web
+  (Phase 5) – siehe
   [Roadmap im pyfair-cam-Repository](https://github.com/neoprehn/pyfair-cam/blob/main/ROADMAP.md).
 
 !!! note "Lizenz"
