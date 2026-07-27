@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ cam_szenario.name }} &middot; fair-web{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'cam:dashboard' %}">FAIR-CAM</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ cam_szenario.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h1 class="h3 mb-1">{{ cam_szenario.name }}</h1>
+        {% if cam_szenario.beschreibung %}<p class="text-body-secondary mb-0">{{ cam_szenario.beschreibung }}</p>{% endif %}
+    </div>
+    <div>
+        {% if perms.cam.change_camszenario %}<a class="btn btn-outline-secondary" href="{% url 'cam:update' cam_szenario.pk %}">Bearbeiten</a>{% endif %}
+        {% if perms.cam.delete_camszenario %}<a class="btn btn-outline-danger" href="{% url 'cam:delete' cam_szenario.pk %}">Löschen</a>{% endif %}
+    </div>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">ID</dt><dd class="col-sm-9">{{ cam_szenario.pk }}</dd>
+    <dt class="col-sm-3">Anzahl Simulationen</dt><dd class="col-sm-9">{{ cam_szenario.n_simulations }}</dd>
+    <dt class="col-sm-3">Zufalls-Seed</dt><dd class="col-sm-9">{{ cam_szenario.random_seed }}</dd>
+    <dt class="col-sm-3">Threat Event Frequency</dt><dd class="col-sm-9">{{ cam_szenario.tef_low }} / {{ cam_szenario.tef_mode }} / {{ cam_szenario.tef_high }} (min/wahrsch./max, pro Jahr)</dd>
+    <dt class="col-sm-3">Containment</dt><dd class="col-sm-9">{{ cam_szenario.t_containment_low }} / {{ cam_szenario.t_containment_mode }} / {{ cam_szenario.t_containment_high }} Tage</dd>
+    <dt class="col-sm-3">Resilience</dt><dd class="col-sm-9">{{ cam_szenario.t_resilience_low }} / {{ cam_szenario.t_resilience_mode }} / {{ cam_szenario.t_resilience_high }} Tage</dd>
+    <dt class="col-sm-3">Concurrency</dt><dd class="col-sm-9">{{ cam_szenario.concurrency_low }} / {{ cam_szenario.concurrency_mode }} / {{ cam_szenario.concurrency_high }}</dd>
+</dl>
+
+<h2 class="h5 mt-4">Resistive Control (Frequenz-Seite)</h2>
+{% if control %}
+<div class="card p-3 mb-2">
+    <strong>{{ control.name }}</strong>
+    <div class="d-flex flex-wrap gap-2 mt-2">
+        <span class="badge text-bg-light">Intended Efficacy = {{ control.intended_efficacy_low }} / {{ control.intended_efficacy_mode }} / {{ control.intended_efficacy_high }}</span>
+        <span class="badge text-bg-light">Variant Efficacy = {{ control.variant_efficacy_low }} / {{ control.variant_efficacy_mode }} / {{ control.variant_efficacy_high }}</span>
+        <span class="badge text-bg-light">Variance Frequency (λ) = {{ control.variance_frequency_lambda }} (range {{ control.variance_frequency_range }})</span>
+        <span class="badge text-bg-light">Variance Duration = {{ control.variance_duration_low }} / {{ control.variance_duration_mode }} / {{ control.variance_duration_high }}</span>
+        <span class="badge text-bg-light">Coverage = {{ control.coverage_low }} / {{ control.coverage_mode }} / {{ control.coverage_high }}</span>
+    </div>
+</div>
+{% else %}
+<p class="text-body-secondary">Kein Control erfasst.</p>
+{% endif %}
+
+<h2 class="h5 mt-4">Kill-Chain-Stufen (Loss-Magnitude-Seite)</h2>
+<div class="table-responsive">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>#</th><th>Name</th><th>Coverage</th><th>Visibility</th><th>Vis.-Rel.</th>
+                <th>Recognition</th><th>Rec.-Rel.</th><th>Mon.-Cadence</th><th>Mon.-Rel.</th>
+                <th>Dauer</th><th>Progression</th><th>Review-Indep.</th><th>Outcome</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for stage in stages %}
+            <tr>
+                <td>{{ stage.reihenfolge }}</td>
+                <td>{{ stage.name }}</td>
+                <td>{{ stage.coverage }}</td>
+                <td>{{ stage.visibility }}</td>
+                <td>{{ stage.vis_reliability }}</td>
+                <td>{{ stage.recognition }}</td>
+                <td>{{ stage.rec_reliability }}</td>
+                <td>{{ stage.monitoring_cadence }}</td>
+                <td>{{ stage.mon_reliability }}</td>
+                <td>{{ stage.duration }}</td>
+                <td>{{ stage.progression_probability }}</td>
+                <td>{{ stage.review_independence }}</td>
+                <td><span class="badge text-bg-light">{{ stage.get_outcome_class_display }}</span></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="13" class="text-body-secondary">Noch keine Stufen erfasst.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2 class="h5 mt-4">Verlustklassen</h2>
+<table class="table table-sm w-auto">
+    <thead><tr><th>Klasse</th><th class="text-end">min (€)</th><th class="text-end">wahrsch. (€)</th><th class="text-end">max (€)</th></tr></thead>
+    <tbody>
+    {% for v in verlustklassen %}
+        <tr>
+            <td>{{ v.get_klasse_display }}</td>
+            <td class="text-end">{{ v.low|floatformat:0 }}</td>
+            <td class="text-end">{{ v.mode|floatformat:0 }}</td>
+            <td class="text-end">{{ v.high|floatformat:0 }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="4" class="text-body-secondary">Noch keine Verlustklassen erfasst.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<p class="text-body-secondary small mt-4">Berechnung und Report-Einbettung folgen als nächster Ausbauschritt.</p>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}FAIR-CAM &middot; fair-web{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">FAIR-CAM</h1>
+    {% if perms.cam.add_camszenario %}<a class="btn btn-primary" href="{% url 'cam:create' %}">+ Neues CAM-Szenario</a>{% endif %}
+</div>
+<p class="text-body-secondary">
+    Controls Analytics Model (FAIR-CAM): Resistive Control auf der Frequenz-Seite plus
+    Detection-&amp;-Response-Kill-Chain auf der Loss-Magnitude-Seite.
+</p>
+
+{% if cam_szenarien %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th class="text-end" style="width:3rem;">ID</th>
+                <th>Name</th>
+                <th class="text-end">Simulationen</th>
+                <th>Geändert</th>
+                {% if perms.cam.change_camszenario or perms.cam.delete_camszenario %}<th class="text-end">Aktionen</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for szenario in cam_szenarien %}
+            <tr>
+                <td class="text-end text-body-secondary">{{ szenario.pk }}</td>
+                <td><a href="{% url 'cam:detail' szenario.pk %}">{{ szenario.name }}</a></td>
+                <td class="text-end">{{ szenario.n_simulations }}</td>
+                <td class="text-body-secondary small">{{ szenario.geaendert_am|date:"d.m.Y H:i" }}</td>
+                {% if perms.cam.change_camszenario or perms.cam.delete_camszenario %}
+                <td class="text-end">
+                    {% if perms.cam.change_camszenario %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'cam:update' szenario.pk %}">Bearbeiten</a>{% endif %}
+                    {% if perms.cam.delete_camszenario %}<a class="btn btn-sm btn-outline-danger" href="{% url 'cam:delete' szenario.pk %}">Löschen</a>{% endif %}
+                </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center text-body-secondary py-5">
+    <p class="lead">Noch keine CAM-Szenarien angelegt.</p>
+    {% if perms.cam.add_camszenario %}<a class="btn btn-primary" href="{% url 'cam:create' %}">Erstes CAM-Szenario anlegen</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

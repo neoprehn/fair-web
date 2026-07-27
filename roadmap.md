@@ -125,7 +125,12 @@ Offen ist nur noch:
 
 ### Danach → Phase 10 – FAOR + FAIR-CAM (@neoprehn)
 - [ ] Einbindung der FAOR-Logik in die Webseite
-- [ ] Einbindung von FAIR-CAM (ggf. als `pyfaircam` zu entwickeln)
+- [~] Einbindung von FAIR-CAM (Library: `pyfair-cam`, eigenes Repo unter
+      `Entwicklung/pyfair-cam`, Rechenkern+Report Phasen 0–4 fertig). Web-Seite:
+      eigene `apps.cam`-App mit Top-Level-Menüpunkt „FAIR-CAM", Übersicht +
+      volles Eingabeformular (vorbelegt mit dem Ransomware-Beispiel) stehen
+      (= pyfair-cam-ROADMAP Phase 5.1). Noch offen: Berechnen/Report-Einbettung
+      (pyfair-cam-ROADMAP Phase 5.2+) – siehe dort für den Feinschnitt.
 - [ ] Wenn ein Modell schon simuliert wurde: Ergebnisse in der Eingabeseite
       anzeigen + automatisch nachberechnen bei Änderung („Neu berechnen")
 - [ ] Historie der Simulationen (aufklappbar, Verzeichnis-artig, neueste oben)

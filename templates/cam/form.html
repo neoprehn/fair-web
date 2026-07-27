@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{% if cam_szenario %}CAM-Szenario bearbeiten{% else %}Neues CAM-Szenario{% endif %} &middot; fair-web{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">{% if cam_szenario %}CAM-Szenario bearbeiten{% else %}Neues CAM-Szenario{% endif %}</h1>
+
+{% if not cam_szenario %}
+<p class="text-body-secondary">Vorbelegt mit dem Ransomware-Beispiel aus der FAIR-CAM Knowledge Base &ndash; alle Werte sind änderbar.</p>
+{% endif %}
+
+{% if schnitt_fehler %}<div class="alert alert-danger">{{ schnitt_fehler }}</div>{% endif %}
+
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="card p-3 mb-3">
+        <h2 class="h6">Szenario</h2>
+        {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+        <div class="row g-2">
+            {% for field in form.visible_fields %}
+            <div class="{% if field.name == 'name' %}col-12 col-lg-6{% elif field.name == 'beschreibung' %}col-12{% else %}col-6 col-lg-3{% endif %}">
+                {% include "cam/_feld.html" with field=field %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card p-3 mb-3">
+        <h2 class="h6">Resistive Control <span class="text-body-secondary small">(Frequenz-Seite)</span></h2>
+        {% for hidden in control_form.hidden_fields %}{{ hidden }}{% endfor %}
+        <div class="row g-2">
+            {% for field in control_form.visible_fields %}
+            <div class="{% if field.name == 'name' %}col-12{% else %}col-6 col-lg-3{% endif %}">
+                {% include "cam/_feld.html" with field=field %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <h2 class="h5 mt-4 mb-2">Kill-Chain-Stufen <span class="text-body-secondary small">(Loss-Magnitude-Seite)</span></h2>
+    {% for n, stage_form in stage_forms.items %}
+    <div class="card p-3 mb-2">
+        <h3 class="h6">Stufe {{ n }}</h3>
+        {% for hidden in stage_form.hidden_fields %}{{ hidden }}{% endfor %}
+        <div class="row g-2">
+            {% for field in stage_form.visible_fields %}
+            <div class="{% if field.name == 'name' %}col-12 col-lg-3{% else %}col-6 col-lg-2{% endif %}">
+                {% include "cam/_feld.html" with field=field %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <h2 class="h5 mt-4 mb-2">Verlustklassen</h2>
+    <div class="row g-2 mb-3">
+    {% for klasse, k_form in verlustklasse_forms.items %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card p-3 h-100">
+                {% for hidden in k_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <strong class="mb-2">{{ k_form.instance.get_klasse_display }}</strong>
+                <div class="row g-2">
+                    {% for field in k_form.visible_fields %}
+                    <div class="col-4">
+                        {% include "cam/_feld.html" with field=field %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Speichern</button>
+    <a class="btn btn-link" href="{% if cam_szenario %}{% url 'cam:detail' cam_szenario.pk %}{% else %}{% url 'cam:dashboard' %}{% endif %}">Abbrechen</a>
+</form>
+{% endblock %}

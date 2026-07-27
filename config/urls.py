@@ -22,6 +22,7 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("berechnung/", include("apps.berechnung.urls")),
     path("szenarien/", include("apps.szenarien.urls")),
+    path("cam/", include("apps.cam.urls")),
     path("hilfe/", TemplateView.as_view(template_name="hilfe.html"), name="hilfe"),
     path("", StartseiteView.as_view(), name="start"),
 ]

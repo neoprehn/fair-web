@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class CamConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.cam"
+    verbose_name = "FAIR-CAM"

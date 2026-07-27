@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "apps.szenarien",
+    "apps.cam",
     "apps.berechnung",
     "apps.auswertung",
     "apps.export",

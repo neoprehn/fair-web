@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}CAM-Szenario löschen &middot; fair-web{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">CAM-Szenario löschen</h1>
+<p>Soll das CAM-Szenario <strong>„{{ camszenario.name }}"</strong> wirklich gelöscht werden? Control, Stufen und Verlustklassen werden mit entfernt.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Endgültig löschen</button>
+    <a class="btn btn-link" href="{% url 'cam:detail' camszenario.pk %}">Abbrechen</a>
+</form>
+{% endblock %}
