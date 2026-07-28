@@ -13,12 +13,8 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
-from .beispiele import RANSOMWARE_BEISPIEL
 from .forms import CamControlForm, CamSzenarioForm, CamStageForm, CamVerlustklasseForm
 from .models import CamControl, CamStage, CamSzenario, CamVerlustklasse
-
-_BEISPIEL_STAGES = {s["reihenfolge"]: s for s in RANSOMWARE_BEISPIEL["stages"]}
-_BEISPIEL_KLASSEN = {v["klasse"]: v for v in RANSOMWARE_BEISPIEL["verlustklassen"]}
 
 
 class CamSzenarioListView(ListView):
@@ -43,9 +39,11 @@ class CamSzenarioDetailView(DetailView):
 class _CamSzenarioFormMixin:
     """Anlegen/Bearbeiten eines CAM-Szenarios mit Control + 6 Stufen + 5 Verlustklassen.
 
-    Bei Neuanlage sind alle Kind-Formulare mit dem Ransomware-Beispiel
-    vorbelegt (siehe ``beispiele.RANSOMWARE_BEISPIEL``); beim Bearbeiten mit
-    den bestehenden Werten.
+    Sowohl bei Neuanlage als auch beim Bearbeiten unbelegt/mit den
+    bestehenden Werten – kein automatisches Vorbelegen mehr mit dem
+    Ransomware-Beispiel (das existiert stattdessen als eigenes, normal
+    anlegbares CAM-Szenario, siehe ``beispiele.RANSOMWARE_BEISPIEL``, das
+    weiterhin von den Tests als Referenzdatensatz genutzt wird).
     """
 
     model = CamSzenario
@@ -53,24 +51,16 @@ class _CamSzenarioFormMixin:
     template_name = "cam/form.html"
     context_object_name = "cam_szenario"
 
-    def get_initial(self):
-        initial = super().get_initial()
-        if not self.object:
-            initial.update(RANSOMWARE_BEISPIEL["szenario"])
-        return initial
-
     def _control_form(self, data=None):
         instance = (getattr(self.object, "control", None) if self.object else None) or CamControl()
-        initial = None if instance.pk else RANSOMWARE_BEISPIEL["control"]
-        return CamControlForm(data, instance=instance, prefix="control", initial=initial)
+        return CamControlForm(data, instance=instance, prefix="control")
 
     def _stage_forms(self, data=None):
         bestehend = {s.reihenfolge: s for s in self.object.stages.all()} if self.object else {}
         forms = {}
         for n in range(1, 7):
             instance = bestehend.get(n) or CamStage(reihenfolge=n)
-            initial = None if instance.pk else _BEISPIEL_STAGES[n]
-            forms[n] = CamStageForm(data, instance=instance, prefix=f"stage{n}", initial=initial)
+            forms[n] = CamStageForm(data, instance=instance, prefix=f"stage{n}")
         return forms
 
     def _verlustklasse_forms(self, data=None):
@@ -78,8 +68,7 @@ class _CamSzenarioFormMixin:
         forms = {}
         for klasse, _label in CamVerlustklasse.Klasse.choices:
             instance = bestehend.get(klasse) or CamVerlustklasse(klasse=klasse)
-            initial = None if instance.pk else _BEISPIEL_KLASSEN[klasse]
-            forms[klasse] = CamVerlustklasseForm(data, instance=instance, prefix=klasse, initial=initial)
+            forms[klasse] = CamVerlustklasseForm(data, instance=instance, prefix=klasse)
         return forms
 
     def get_context_data(self, **kwargs):

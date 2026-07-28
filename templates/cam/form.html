@@ -6,7 +6,7 @@
 <h1 class="h3 mb-3">{% if cam_szenario %}CAM-Szenario bearbeiten{% else %}Neues CAM-Szenario{% endif %}</h1>
 
 {% if not cam_szenario %}
-<p class="text-body-secondary">Vorbelegt mit dem Ransomware-Beispiel aus der FAIR-CAM Knowledge Base &ndash; alle Werte sind änderbar.</p>
+<p class="text-body-secondary">Alle Werte manuell erfassen (min/wahrscheinlich/max je Verteilung, sowie die Kill-Chain-Stufen und Verlustklassen).</p>
 {% endif %}
 
 {% if schnitt_fehler %}<div class="alert alert-danger">{{ schnitt_fehler }}</div>{% endif %}

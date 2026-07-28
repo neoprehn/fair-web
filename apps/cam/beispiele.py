@@ -1,10 +1,11 @@
-"""Vorbelegung für neue CAM-Szenarien: das Ransomware-Beispiel aus pyfair-cam.
+"""Referenz-Datensatz: das Ransomware-Beispiel aus pyfair-cam.
 
 1:1 übertragen aus ``pyfair-cam/examples/ransomware_scenario.py`` (KB-Quelle:
 ``04_Detection_Response_Measurement.md``, "Worked Example: Ransomware
-Attack"). Dient als ``initial=`` für die Formulare beim Neuanlegen eines
-CAM-Szenarios, damit man ein vollständiges, plausibles Beispiel abändert
-statt ein leeres 70-Felder-Formular auszufüllen.
+Attack"). Wird von den Tests (``tests/test_cam_views.py``) als vollständiger
+POST-Payload genutzt. Neue CAM-Szenarien starten mit leerem Formular; wer das
+Beispiel in der App braucht, legt es einmal manuell an (oder klont ein
+bestehendes Szenario).
 """
 
 RANSOMWARE_BEISPIEL = {

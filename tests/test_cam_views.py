@@ -36,11 +36,12 @@ def test_dashboard_zeigt_cam_szenarien(client):
 
 
 @pytest.mark.django_db
-def test_create_formular_vorbelegt_mit_ransomware_beispiel(client):
+def test_create_formular_ist_leer(client):
     resp = client.get(reverse("cam:create"))
     assert resp.status_code == 200
-    assert b"Initial Access" in resp.content
-    assert b"EDR / Anti-Malware" in resp.content
+    # Kein Auto-Vorbelegen mehr mit dem Ransomware-Beispiel – leeres Formular.
+    assert b"Initial Access" not in resp.content
+    assert b"EDR / Anti-Malware" not in resp.content
 
 
 @pytest.mark.django_db
