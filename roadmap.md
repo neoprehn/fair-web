@@ -157,6 +157,14 @@ Grundausbau + Live-Betrieb bereits erledigt (siehe `ROADMAP-ARCHIV.md`). Offen:
 - [ ] PDF-Bericht
 - [ ] Grafiken in den Export einbetten
 - [ ] Download-Button in der Oberfläche
+- [ ] **Batch-API: Excel-Vorlage mit mehreren FAIR-Szenarien hochladen, serverseitig
+      durchsimulieren, ausgefüllte Ergebnis-Excel(s) zurückgeben** (angefragt
+      2026-07-28). Eine Zeile = ein Szenario (Name + Faktor-Parameter je nach
+      gewähltem Schnitt); Antwort = Excel mit angehängten Ergebnis-Spalten
+      (ALE, Median, VaR 95/99, ggf. LEC-Kurzfassung). Format/Validierung noch
+      nicht festgelegt. Soll später auch für FAIR-CAM gebaut werden – siehe
+      `pyfair-cam/ROADMAP.md` Phase 5.6 (bewusst erst nach diesem FAIR-Teil,
+      damit sich ein wiederverwendbares Muster zeigt statt zweimal Ad-hoc).
 - [ ] Lokaler Test · Commit & Push → `feature-export` mergen in `main`
 
 ---
