@@ -12,6 +12,9 @@ _ANALYST = [
     ("szenarien", "delete_cluster"), ("szenarien", "view_cluster"),
     ("berechnung", "add_simulationslauf"), ("berechnung", "view_simulationslauf"),
     ("berechnung", "add_metalauf"), ("berechnung", "view_metalauf"),
+    ("cam", "add_camszenario"), ("cam", "change_camszenario"),
+    ("cam", "delete_camszenario"), ("cam", "view_camszenario"),
+    ("cam", "add_camsimulationslauf"), ("cam", "view_camsimulationslauf"),
 ]
 
 # Konfigurator: wie Analyst + globale Konfiguration + Angreifertypen.
@@ -26,6 +29,7 @@ _BETRACHTER = [
     ("szenarien", "view_szenario"), ("szenarien", "view_faktoreingabe"),
     ("szenarien", "view_vergleich"), ("szenarien", "view_cluster"),
     ("berechnung", "view_simulationslauf"), ("berechnung", "view_metalauf"),
+    ("cam", "view_camszenario"), ("cam", "view_camsimulationslauf"),
 ]
 
 GRUPPEN_RECHTE = {

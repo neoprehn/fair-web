@@ -7,14 +7,18 @@ nur ohne variablen "Schnitt": die Anzahl der Kind-Objekte steht fest, daher
 Update-in-place statt Löschen+Neuanlegen.
 """
 
+from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from .forms import CamControlForm, CamSzenarioForm, CamStageForm, CamVerlustklasseForm
-from .models import CamControl, CamStage, CamSzenario, CamVerlustklasse
+from .models import CamControl, CamSimulationslauf, CamStage, CamSzenario, CamVerlustklasse
+from .services import starte_cam_simulation_async
 
 
 class CamSzenarioListView(ListView):
@@ -136,3 +140,29 @@ class CamSzenarioDeleteView(PermissionRequiredMixin, DeleteView):
     success_url = reverse_lazy("cam:dashboard")
     permission_required = "cam.delete_camszenario"
     raise_exception = True
+
+
+@require_POST
+@permission_required("cam.add_camsimulationslauf", raise_exception=True)
+def cam_simulation_starten(request, pk):
+    """Legt einen CAM-Simulationslauf an, startet ihn im Hintergrund und leitet weiter."""
+    szenario = get_object_or_404(CamSzenario, pk=pk)
+    lauf = CamSimulationslauf.objects.create(
+        szenario=szenario,
+        n_simulations=szenario.n_simulations,
+        random_seed=szenario.random_seed,
+    )
+    starte_cam_simulation_async(lauf.pk)
+    return redirect("cam:lauf", pk=lauf.pk)
+
+
+class CamLaufDetailView(DetailView):
+    model = CamSimulationslauf
+    template_name = "cam/lauf.html"
+    context_object_name = "lauf"
+
+
+def cam_lauf_status(request, pk):
+    """JSON-Endpunkt für das Fortschritts-Polling."""
+    lauf = get_object_or_404(CamSimulationslauf, pk=pk)
+    return JsonResponse({"status": lauf.status, "fortschritt": lauf.fortschritt})

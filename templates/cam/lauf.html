@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Simulation &middot; {{ lauf.szenario.name }}{% endblock %}
+{% block extra_head %}{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'cam:dashboard' %}">FAIR-CAM</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'cam:detail' lauf.szenario.pk %}">{{ lauf.szenario.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Simulation #{{ lauf.pk }}</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-3">CAM Monte-Carlo-Simulation</h1>
+
+{% if lauf.status == "fehler" %}
+    <div class="alert alert-danger">
+        <strong>Fehler bei der Berechnung:</strong> {{ lauf.fehler_text }}
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'cam:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
+
+{% elif lauf.status == "fertig" %}
+    <p class="text-body-secondary">
+        {{ lauf.ergebnis.n|intcomma }} Iterationen &middot; Seed {{ lauf.random_seed }}
+    </p>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Erwarteter Jahresschaden (Mittelwert)</div>
+                <div class="h4 mb-0 text-info">{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Median</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.median|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Maximum (Worst Case P95)</div>
+                <div class="h4 mb-0">{{ lauf.ergebnis.p95|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="card mb-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
+        <h2 class="h6 text-info mb-2">Value at Risk (VaR)</h2>
+        <div class="d-flex flex-wrap gap-2">
+        {% for stufe, wert in lauf.ergebnis.perzentile.items %}
+            <div class="text-center px-3 py-1">
+                <div class="text-body-secondary small">VaR {{ stufe }} %</div>
+                <div class="fw-semibold text-nowrap">{{ wert|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
+            </div>
+        {% endfor %}
+        </div>
+    </div></div>
+
+    <h2 class="h5 mt-4">Loss Exceedance Curve (LEC)</h2>
+    <p class="text-body-secondary small mb-2">
+        Wahrscheinlichkeit, dass der Jahresschaden einen Wert überschreitet.
+    </p>
+    <div class="card mb-3"><div class="card-body">
+        <div id="lec-chart" style="height: 420px;"></div>
+    </div></div>
+    {{ lauf.ergebnis.lec|json_script:"lec-data" }}
+    {{ lauf.ergebnis.p90|json_script:"p90-data" }}
+
+    <div class="row g-3 mb-3">
+        <div class="col-lg-6">
+            <h2 class="h5 mt-2">Verteilung des Jahresschadens</h2>
+            <div class="card h-100"><div class="card-body">
+                <div id="vert-chart" style="height:320px;"></div>
+            </div></div>
+        </div>
+        <div class="col-lg-6">
+            <h2 class="h5 mt-2">Verteilung der Kill-Chain-Outcomes</h2>
+            <div class="card h-100"><div class="card-body">
+                <div id="outcome-chart" style="height:320px;"></div>
+            </div></div>
+        </div>
+    </div>
+    {{ lauf.ergebnis.verteilung_hist|json_script:"vert-data" }}
+    {{ lauf.ergebnis.outcome_verteilung|json_script:"outcome-data" }}
+
+    {% if perms.cam.change_camszenario %}<a class="btn btn-primary" href="{% url 'cam:update' lauf.szenario.pk %}">Szenario bearbeiten</a>{% endif %}
+    <a class="btn btn-link" href="{% url 'cam:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
+
+{% else %}
+    {# angelegt / laeuft -> Fortschritt #}
+    <p class="text-body-secondary">Die Simulation läuft – {{ lauf.n_simulations|intcomma }} Iterationen.</p>
+    <div class="progress" style="height:1.5rem;">
+        <div id="fortschritt-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+             role="progressbar" style="width: {{ lauf.fortschritt }}%;">{{ lauf.fortschritt }}%</div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if lauf.status == "fertig" %}
+<script>
+(function () {
+    if (typeof Plotly === 'undefined') return;
+    var lec = JSON.parse(document.getElementById('lec-data').textContent) || [];
+    var fullX = lec.map(function (p) { return p.verlust; });
+    var fullY = lec.map(function (p) { return p.ueberschreitung; });
+    var traces = [{
+        x: [], y: [],
+        mode: 'lines', name: 'LEC', line: { color: '#7dd3fc', width: 2 }
+    }];
+    var p90 = JSON.parse(document.getElementById('p90-data').textContent);
+
+    // Log-Schadensachse, so skaliert, dass P90 bei ~3/4 der Achsenbreite liegt.
+    var xs = lec.map(function (p) { return p.verlust; }).filter(function (v) { return v > 0; });
+    var xmin = xs.length ? Math.min.apply(null, xs) : 1;
+    var xType = 'linear', xRange = undefined;
+    if (xmin > 0 && p90 > xmin) {
+        var a = Math.log10(xmin);
+        var b = a + (Math.log10(p90) - a) / 0.75;  // P90 bei 75 %
+        xType = 'log';
+        xRange = [a, b];
+    }
+
+    var layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
+        margin: { l: 70, r: 20, t: 10, b: 50 },
+        xaxis: { title: 'Jahresschaden ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid(), zerolinecolor: window.fairChartGrid(),
+                 type: xType, range: xRange },
+        yaxis: { title: 'P(Schaden ≥ x)', gridcolor: window.fairChartGrid(), range: [0, 1], tickformat: '.0%' },
+        legend: { orientation: 'h', y: 1.1 }
+    };
+    Plotly.newPlot('lec-chart', traces, layout, { responsive: true, displayModeBar: false })
+        .then(function () {
+            // LEC animiert aufbauen.
+            var i = 0, step = Math.max(1, Math.round(fullX.length / 40));
+            function grow() {
+                i = Math.min(fullX.length, i + step);
+                Plotly.restyle('lec-chart', { x: [fullX.slice(0, i)], y: [fullY.slice(0, i)] }, [0]);
+                if (i < fullX.length) {
+                    requestAnimationFrame(grow);
+                }
+            }
+            grow();
+        });
+
+    // Histogramm: Verteilung des Jahresschadens.
+    function balken(divId, elId, farbe, xtitel) {
+        var el = document.getElementById(elId);
+        if (!el) return;
+        var d = JSON.parse(el.textContent || 'null');
+        if (!d || !d.x || !d.x.length) return;
+        Plotly.newPlot(divId, [{
+            x: d.x, y: d.y, type: 'bar', marker: { color: farbe },
+            width: d.breite ? d.breite * 0.9 : undefined
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
+            margin: { l: 60, r: 15, t: 10, b: 45 }, bargap: 0.02,
+            xaxis: { title: xtitel, gridcolor: window.fairChartGrid() },
+            yaxis: { title: 'Häufigkeit', gridcolor: window.fairChartGrid() }
+        }, { responsive: true, displayModeBar: false });
+    }
+    balken('vert-chart', 'vert-data', '#7dd3fc', 'Jahresschaden ({{ waehrung_symbol }})');
+
+    // Balkendiagramm: Verteilung der Kill-Chain-Outcomes (kategorial, kein Histogramm).
+    (function () {
+        var el = document.getElementById('outcome-data');
+        if (!el) return;
+        var d = JSON.parse(el.textContent || 'null');
+        if (!d || !d.klassen || !d.klassen.length) return;
+        Plotly.newPlot('outcome-chart', [{
+            x: d.klassen, y: d.anzahl, type: 'bar', marker: { color: '#86efac' }
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
+            margin: { l: 60, r: 15, t: 10, b: 45 }, bargap: 0.2,
+            xaxis: { title: 'Outcome-Klasse', gridcolor: window.fairChartGrid() },
+            yaxis: { title: 'Häufigkeit', gridcolor: window.fairChartGrid() }
+        }, { responsive: true, displayModeBar: false });
+    })();
+})();
+</script>
+{% endif %}
+{% if lauf.status == "angelegt" or lauf.status == "laeuft" %}
+<script>
+(function () {
+    var url = "{% url 'cam:status' lauf.pk %}";
+    var bar = document.getElementById('fortschritt-bar');
+    function poll() {
+        fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+            bar.style.width = d.fortschritt + '%';
+            bar.textContent = d.fortschritt + '%';
+            if (d.status === 'fertig' || d.status === 'fehler') {
+                window.location.reload();
+            } else {
+                setTimeout(poll, 600);
+            }
+        }).catch(function () { setTimeout(poll, 1500); });
+    }
+    poll();
+})();
+</script>
+{% endif %}
+{% endblock %}

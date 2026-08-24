@@ -14,8 +14,7 @@ django-axes>=7.0
 #   pip install -e ../fair
 
 # pyfair-cam wird separat installiert (liegt im Nachbarordner Entwicklung/pyfair-cam, Package-Name: pyfair-cam):
-#   pip install -e ../pyfair-cam
-# (Phase 5.1: noch nicht importiert, nur DB-Modell + Eingabe. Wird in Phase 5.2 fuer Simulation/Report gebraucht.)
+-e ../pyfair-cam
 
 # --- Entwicklung / Tests ---
 pytest>=8.0
