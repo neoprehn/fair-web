@@ -13,8 +13,12 @@ django-axes>=7.0
 # pyfair wird separat installiert (liegt im Nachbarordner Entwicklung/fair, Package-Name: pyfair):
 #   pip install -e ../fair
 
-# pyfair-cam wird separat installiert (liegt im Nachbarordner Entwicklung/pyfair-cam, Package-Name: pyfair-cam):
--e ../pyfair-cam
+# pyfair-cam: lokal als editables Sibling-Package installiert (pip install -e ../pyfair-cam,
+# liegt im Nachbarordner Entwicklung/pyfair-cam). In requirements.txt bewusst als Git-URL statt
+# lokalem Pfad, weil das auch das Deploy-Skript (.github/workflows/deploy.yml) ausführt und der
+# VPS keinen Sibling-Checkout von pyfair-cam hat. Provisorisch auf main, richtiges Version-Tagging
+# ist Phase 5.3 (siehe pyfair-cam/ROADMAP.md).
+git+https://github.com/neoprehn/pyfair-cam.git
 
 # --- Entwicklung / Tests ---
 pytest>=8.0
