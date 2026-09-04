@@ -9,70 +9,167 @@
 <p class="text-body-secondary">Alle Werte manuell erfassen (min/wahrscheinlich/max je Verteilung, sowie die Kill-Chain-Stufen und Verlustklassen).</p>
 {% endif %}
 
-{% if schnitt_fehler %}<div class="alert alert-danger">{{ schnitt_fehler }}</div>{% endif %}
-
-<form method="post" novalidate>
+<form method="post" novalidate id="cam-form">
     {% csrf_token %}
 
     <div class="card p-3 mb-3">
         <h2 class="h6">Szenario</h2>
         {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
         <div class="row g-2">
-            {% for field in form.visible_fields %}
-            <div class="{% if field.name == 'name' %}col-12 col-lg-6{% elif field.name == 'beschreibung' %}col-12{% else %}col-6 col-lg-3{% endif %}">
-                {% include "cam/_feld.html" with field=field %}
-            </div>
-            {% endfor %}
+            <div class="col-12 col-lg-6">{% include "cam/_feld.html" with field=form.name %}</div>
+            <div class="col-12">{% include "cam/_feld.html" with field=form.beschreibung %}</div>
+            <div class="col-6 col-lg-3">{% include "cam/_feld.html" with field=form.n_simulations %}</div>
+            <div class="col-6 col-lg-3">{% include "cam/_feld.html" with field=form.random_seed %}</div>
         </div>
     </div>
 
-    <div class="card p-3 mb-3">
-        <h2 class="h6">Resistive Control <span class="text-body-secondary small">(Frequenz-Seite)</span></h2>
-        {% for hidden in control_form.hidden_fields %}{{ hidden }}{% endfor %}
-        <div class="row g-2">
-            {% for field in control_form.visible_fields %}
-            <div class="{% if field.name == 'name' %}col-12{% else %}col-6 col-lg-3{% endif %}">
-                {% include "cam/_feld.html" with field=field %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-prevention" type="button" role="tab">Prevention</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-detection" type="button" role="tab">Detection &amp; Response</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-verlust" type="button" role="tab">Verlustklassen</button>
+        </li>
+    </ul>
 
-    <h2 class="h5 mt-4 mb-2">Kill-Chain-Stufen <span class="text-body-secondary small">(Loss-Magnitude-Seite)</span></h2>
-    {% for n, stage_form in stage_forms.items %}
-    <div class="card p-3 mb-2">
-        <h3 class="h6">Stufe {{ n }}</h3>
-        {% for hidden in stage_form.hidden_fields %}{{ hidden }}{% endfor %}
-        <div class="row g-2">
-            {% for field in stage_form.visible_fields %}
-            <div class="{% if field.name == 'name' %}col-12 col-lg-3{% else %}col-6 col-lg-2{% endif %}">
-                {% include "cam/_feld.html" with field=field %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endfor %}
+    <div class="tab-content">
 
-    <h2 class="h5 mt-4 mb-2">Verlustklassen</h2>
-    <div class="row g-2 mb-3">
-    {% for klasse, k_form in verlustklasse_forms.items %}
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card p-3 h-100">
-                {% for hidden in k_form.hidden_fields %}{{ hidden }}{% endfor %}
-                <strong class="mb-2">{{ k_form.instance.get_klasse_display }}</strong>
+        <div class="tab-pane fade show active" id="tab-prevention" role="tabpanel">
+            <p class="text-body-secondary small">
+                Frequenz-Seite: wie oft ein Angreifer überhaupt Kontakt aufnimmt (TEF), abgeschwächt
+                durch das Resistive Control.
+            </p>
+            <div class="card p-3 mb-3">
+                <h3 class="h6">Threat Event Frequency</h3>
                 <div class="row g-2">
-                    {% for field in k_form.visible_fields %}
-                    <div class="col-4">
+                    <div class="col-6 col-lg-3">{% include "cam/_feld.html" with field=form.tef_low %}</div>
+                    <div class="col-6 col-lg-3">{% include "cam/_feld.html" with field=form.tef_mode %}</div>
+                    <div class="col-6 col-lg-3">{% include "cam/_feld.html" with field=form.tef_high %}</div>
+                </div>
+            </div>
+
+            <div class="card p-3 mb-3">
+                <h3 class="h6">Resistive Control</h3>
+                {% for hidden in control_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <div class="row g-2">
+                    {% for field in control_form.visible_fields %}
+                    <div class="{% if field.name == 'name' %}col-12{% else %}col-6 col-lg-3{% endif %}">
                         {% include "cam/_feld.html" with field=field %}
                     </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
-    {% endfor %}
+
+        <div class="tab-pane fade" id="tab-detection" role="tabpanel">
+            <p class="text-body-secondary small">
+                Loss-Magnitude-Seite: der Angriff durchläuft die Stufen der Reihe nach. Auf eine
+                Stufe im Diagramm klicken springt zu ihren Feldern.
+            </p>
+            <div class="card mb-3"><div class="card-body py-2" style="overflow-x:auto; text-align:center;">
+                <svg id="cam-chain-svg" viewBox="0 0 1100 260" style="width:100%; max-width:1050px; height:auto; margin:0 auto; display:block;">
+                    {% for e in chain_edges %}
+                    <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"
+                          {% if e.kind == "fail" %}style="stroke-dasharray:5,4; opacity:.55;"{% endif %}/>
+                    {% endfor %}
+                    {% for n in chain_nodes %}
+                    {% if n.kind == "stage" %}<a href="#stage-{{ n.reihenfolge }}">{% endif %}
+                    <g class="svg-node {% if n.kind == 'stage' %}eingabe{% else %}berechnet{% endif %}" data-code="{{ n.code }}">
+                        <title>{{ n.label }}</title>
+                        <rect x="{{ n.x|add:'-68' }}" y="{{ n.y|add:'-21' }}" width="136" height="42" rx="7"/>
+                        <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y }}" text-anchor="middle" dominant-baseline="central" style="font-size:10.5px;">{{ n.label }}</text>
+                    </g>
+                    {% if n.kind == "stage" %}</a>{% endif %}
+                    {% endfor %}
+                </svg>
+            </div></div>
+
+            {% for n, stage_form in stage_forms.items %}
+            <details id="stage-{{ n }}" data-code="stage{{ n }}" class="card p-3 mb-2"{% if n == 1 %} open{% endif %}>
+                <summary class="h6 mb-0" style="cursor:pointer;">
+                    Stufe {{ n }}{% if stage_form.instance.name %}: {{ stage_form.instance.name }}{% endif %}
+                    {% if stage_form.instance.outcome_class %}<span class="badge text-bg-light ms-2">{{ stage_form.instance.get_outcome_class_display }}</span>{% endif %}
+                </summary>
+                <div class="pt-2">
+                    {% for hidden in stage_form.hidden_fields %}{{ hidden }}{% endfor %}
+                    <div class="row g-2">
+                        {% for field in stage_form.visible_fields %}
+                        <div class="{% if field.name == 'name' %}col-12 col-lg-3{% else %}col-6 col-lg-2{% endif %}">
+                            {% include "cam/_feld.html" with field=field %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-verlust" role="tabpanel">
+            <p class="text-body-secondary small">
+                Response-Zeiten (nur Reporting, fließen nicht in die Risikorechnung ein) und die
+                bedingten Verlustverteilungen je Outcome-Klasse.
+            </p>
+            <div class="card p-3 mb-3">
+                <h3 class="h6">Response-Zeiten</h3>
+                <div class="row g-2">
+                    <div class="col-6 col-lg-4">{% include "cam/_feld.html" with field=form.t_containment_low %}</div>
+                    <div class="col-6 col-lg-4">{% include "cam/_feld.html" with field=form.t_containment_mode %}</div>
+                    <div class="col-6 col-lg-4">{% include "cam/_feld.html" with field=form.t_containment_high %}</div>
+                    <div class="col-6 col-lg-4">{% include "cam/_feld.html" with field=form.t_resilience_low %}</div>
+                    <div class="col-6 col-lg-4">{% include "cam/_feld.html" with field=form.t_resilience_mode %}</div>
+                    <div class="col-6 col-lg-4">{% include "cam/_feld.html" with field=form.t_resilience_high %}</div>
+                    <div class="col-6 col-lg-4">{% include "cam/_feld.html" with field=form.concurrency_low %}</div>
+                    <div class="col-6 col-lg-4">{% include "cam/_feld.html" with field=form.concurrency_mode %}</div>
+                    <div class="col-6 col-lg-4">{% include "cam/_feld.html" with field=form.concurrency_high %}</div>
+                </div>
+            </div>
+
+            <h3 class="h6 mt-4">Verlustklassen</h3>
+            <div class="row g-2 mb-3">
+            {% for klasse, k_form in verlustklasse_forms.items %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card p-3 h-100">
+                        {% for hidden in k_form.hidden_fields %}{{ hidden }}{% endfor %}
+                        <strong class="mb-2">{{ k_form.instance.get_klasse_display }}</strong>
+                        <div class="row g-2">
+                            {% for field in k_form.visible_fields %}
+                            <div class="col-4">
+                                {% include "cam/_feld.html" with field=field %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+
     </div>
 
-    <button type="submit" class="btn btn-primary">Speichern</button>
-    <a class="btn btn-link" href="{% if cam_szenario %}{% url 'cam:detail' cam_szenario.pk %}{% else %}{% url 'cam:dashboard' %}{% endif %}">Abbrechen</a>
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Speichern</button>
+        <a class="btn btn-link" href="{% if cam_szenario %}{% url 'cam:detail' cam_szenario.pk %}{% else %}{% url 'cam:dashboard' %}{% endif %}">Abbrechen</a>
+    </div>
 </form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Aktiven Kill-Chain-Knoten hervorheben, sobald man in ein Feld der jeweiligen Stufe klickt
+// (dasselbe Muster wie der FAIR-Baum auf szenarien/form.html, .svg-node.aktiv aus base.html).
+(function () {
+    var form = document.getElementById('cam-form');
+    var svg = document.getElementById('cam-chain-svg');
+    if (!form || !svg) return;
+    form.addEventListener('focusin', function (e) {
+        var host = e.target.closest('[data-code]');
+        svg.querySelectorAll('.svg-node').forEach(function (g) {
+            g.classList.toggle('aktiv', !!host && g.dataset.code === host.dataset.code);
+        });
+    });
+})();
+</script>
 {% endblock %}

@@ -8,7 +8,7 @@ Zwei Diagramme:
 
 - ``susceptibility_layout()`` – die Frequenz-Seite (TEF × Susceptibility über
   das Resistive Control), spiegelt den LEF-Ast des FAIR-Baums.
-- ``kill_chain_layout(szenario)`` – die Loss-Magnitude-Seite: die Kill-Chain
+- ``kill_chain_layout(stages)`` – die Loss-Magnitude-Seite: die Kill-Chain
   als horizontale Prozesskette, mit Abzweigungen zu den Outcome-Klassen und
   den zwei Terminal-Zuständen (voller Schaden / Angreifer scheitert).
 
@@ -62,9 +62,14 @@ _Y_STAGE = 60
 _Y_OUTCOME = 190
 
 
-def kill_chain_layout(szenario):
-    """Knoten + Kanten für die Kill-Chain (Detection & Response) als Prozesskette."""
-    stages = list(szenario.stages.order_by("reihenfolge"))
+def kill_chain_layout(stages):
+    """Knoten + Kanten für die Kill-Chain (Detection & Response) als Prozesskette.
+
+    ``stages``: Iterable mit ``.reihenfolge``/``.name``/``.outcome_class`` — sowohl
+    ein ``CamStage``-Queryset (Ergebnis-Seite) als auch eine Liste von
+    ``CamStageForm``-Instanzen (Eingabeformular, vor dem Speichern) erfüllen das.
+    """
+    stages = sorted(stages, key=lambda s: s.reihenfolge)
     n = len(stages)
 
     nodes = []

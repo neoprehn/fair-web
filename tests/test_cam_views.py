@@ -45,6 +45,16 @@ def test_create_formular_ist_leer(client):
 
 
 @pytest.mark.django_db
+def test_create_formular_zeigt_reiter_und_kill_chain_anker(client):
+    resp = client.get(reverse("cam:create"))
+    assert resp.status_code == 200
+    for label in (b"Prevention", b"Detection", b"Verlustklassen"):
+        assert label in resp.content
+    for n in range(1, 7):
+        assert f'id="stage-{n}"'.encode() in resp.content
+
+
+@pytest.mark.django_db
 def test_create_speichert_alle_stufen_klassen_und_control(client):
     resp = client.post(reverse("cam:create"), data=_post_ransomware(name="Ransomware Test"))
     assert resp.status_code == 302, resp.context["form"].errors if resp.status_code == 200 else None

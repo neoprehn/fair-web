@@ -85,6 +85,9 @@ class _CamSzenarioFormMixin:
             context["control_form"] = self._control_form(data)
             context["stage_forms"] = self._stage_forms(data)
             context["verlustklasse_forms"] = self._verlustklasse_forms(data)
+
+        stages = [f.instance for f in context["stage_forms"].values()]
+        context["chain_nodes"], context["chain_edges"] = cam_tree.kill_chain_layout(stages)
         return context
 
     def form_valid(self, form):
@@ -168,7 +171,7 @@ class CamLaufDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         lauf = self.object
         susc_nodes, susc_edges = cam_tree.susceptibility_layout()
-        chain_nodes, chain_edges = cam_tree.kill_chain_layout(lauf.szenario)
+        chain_nodes, chain_edges = cam_tree.kill_chain_layout(lauf.szenario.stages.order_by("reihenfolge"))
 
         if lauf.ist_fertig and lauf.ergebnis:
             self._annotiere_susceptibility(susc_nodes, lauf.ergebnis)
