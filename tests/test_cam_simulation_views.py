@@ -63,11 +63,18 @@ def test_lauf_seite_zeigt_ergebnis(client, cam_szenario):
         ergebnis={"n": 500, "mittelwert": 12345.0, "median": 9000.0,
                   "min": 0.0, "max": 99999.0, "p90": 50000.0, "p95": 70000.0,
                   "p99": 90000.0, "perzentile": {}, "lec": [], "verteilung_hist": {},
-                  "outcome_verteilung": {"klassen": ["early"], "anzahl": [500]}},
+                  "outcome_verteilung": {"klassen": ["early"], "anzahl": [500]},
+                  "stage_erkennung": {"stufe": [1, 2, 3, 4, 5, 6],
+                                       "anteil": [0.5, 0.1, 0.05, 0.02, 0.01, 0.01]},
+                  "tef_mittel": 10.0, "susceptibility_mittel": 0.2, "lef_mittel": 2.0},
     )
     resp = client.get(reverse("cam:lauf", kwargs={"pk": lauf.pk}))
     assert resp.status_code == 200
     assert b"Erwarteter Jahresschaden" in resp.content
+    # Kill-Chain-Diagramm zeigt die Stufennamen aus dem Ransomware-Beispiel.
+    assert "Initial Access".encode() in resp.content
+    assert "Lateral Movement".encode() in resp.content
+    assert "Angreifer scheitert".encode() in resp.content
 
 
 @pytest.mark.django_db

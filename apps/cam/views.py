@@ -16,6 +16,9 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
+from apps.berechnung.views import _de
+
+from . import cam_tree
 from .forms import CamControlForm, CamSzenarioForm, CamStageForm, CamVerlustklasseForm
 from .models import CamControl, CamSimulationslauf, CamStage, CamSzenario, CamVerlustklasse
 from .services import starte_cam_simulation_async
@@ -160,6 +163,54 @@ class CamLaufDetailView(DetailView):
     model = CamSimulationslauf
     template_name = "cam/lauf.html"
     context_object_name = "lauf"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        lauf = self.object
+        susc_nodes, susc_edges = cam_tree.susceptibility_layout()
+        chain_nodes, chain_edges = cam_tree.kill_chain_layout(lauf.szenario)
+
+        if lauf.ist_fertig and lauf.ergebnis:
+            self._annotiere_susceptibility(susc_nodes, lauf.ergebnis)
+            self._annotiere_kill_chain(chain_nodes, lauf.ergebnis)
+
+        context["susc_nodes"], context["susc_edges"] = susc_nodes, susc_edges
+        context["chain_nodes"], context["chain_edges"] = chain_nodes, chain_edges
+        return context
+
+    @staticmethod
+    def _annotiere_susceptibility(nodes, ergebnis):
+        werte = {
+            "TEF": ergebnis.get("tef_mittel"),
+            "SUSC": ergebnis.get("susceptibility_mittel"),
+            "LEF": ergebnis.get("lef_mittel"),
+        }
+        for n in nodes:
+            wert = werte.get(n["code"])
+            if wert is None:
+                continue
+            n["status"] = "berechnet"
+            n["wert"] = f"{wert * 100:.1f} %" if n["code"] == "SUSC" else f"{_de(wert, 2)} /Jahr"
+
+    @staticmethod
+    def _annotiere_kill_chain(nodes, ergebnis):
+        stufe = ergebnis.get("stage_erkennung", {})
+        anteil_je_stufe = dict(zip(stufe.get("stufe", []), stufe.get("anteil", [])))
+
+        outcome = ergebnis.get("outcome_verteilung", {})
+        gesamt = sum(outcome.get("anzahl", [])) or 1
+        anteil_je_klasse = {
+            k: c / gesamt for k, c in zip(outcome.get("klassen", []), outcome.get("anzahl", []))
+        }
+
+        for n in nodes:
+            n["status"] = "berechnet"
+            if n["kind"] == "stage":
+                p = anteil_je_stufe.get(n["reihenfolge"])
+            else:
+                p = anteil_je_klasse.get(n["code"])
+            if p is not None:
+                n["wert"] = f"{p * 100:.1f} %"
 
 
 def cam_lauf_status(request, pk):

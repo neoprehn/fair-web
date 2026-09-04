@@ -118,12 +118,26 @@ def simuliere_cam(szenario, n_simulations, random_seed):
     ergebnis = _ergebnis_aus_sample(risk)
     ergebnis["verteilung_hist"] = _histogramm(risk)
 
-    outcome = simulator.get_components().get("outcome_class")
+    components = simulator.get_components()
+    for feld, key in (("tef_mittel", "tef"), ("susceptibility_mittel", "susceptibility"), ("lef_mittel", "lef")):
+        arr = components.get(key)
+        if arr is not None:
+            ergebnis[feld] = float(np.mean(arr))
+
+    outcome = components.get("outcome_class")
     if outcome is not None:
         werte, counts = np.unique(outcome, return_counts=True)
         ergebnis["outcome_verteilung"] = {
             "klassen": [str(w) for w in werte.tolist()],
             "anzahl": [int(c) for c in counts.tolist()],
+        }
+
+    detected = components.get("detected_at_stage")
+    if detected is not None:
+        n_stages = szenario.stages.count()
+        ergebnis["stage_erkennung"] = {
+            "stufe": list(range(1, n_stages + 1)),
+            "anteil": [float(np.mean(detected == i)) for i in range(1, n_stages + 1)],
         }
     return ergebnis
 

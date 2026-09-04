@@ -13,13 +13,18 @@
     </ol>
 </nav>
 
-<h1 class="h3 mb-3">CAM Monte-Carlo-Simulation</h1>
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <h1 class="h3 mb-0">CAM Monte-Carlo-Simulation</h1>
+    <div class="d-flex gap-2">
+        {% if perms.cam.change_camszenario %}<a class="btn btn-outline-secondary" href="{% url 'cam:update' lauf.szenario.pk %}">Szenario bearbeiten</a>{% endif %}
+        <a class="btn btn-outline-secondary" href="{% url 'cam:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
+    </div>
+</div>
 
 {% if lauf.status == "fehler" %}
     <div class="alert alert-danger">
         <strong>Fehler bei der Berechnung:</strong> {{ lauf.fehler_text }}
     </div>
-    <a class="btn btn-outline-secondary" href="{% url 'cam:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
 
 {% elif lauf.status == "fertig" %}
     <p class="text-body-secondary">
@@ -47,6 +52,55 @@
         </div>
     </div>
 
+    <h2 class="h5 mt-4">Frequenz-Seite: Threat Event Frequency &times; Susceptibility</h2>
+    <p class="text-body-secondary small mb-2">
+        Wie oft ein Angreifer überhaupt Kontakt aufnimmt (TEF), abgeschwächt durch das Resistive
+        Control &ndash; daraus ergibt sich die Susceptibility und damit die Loss Event Frequency.
+    </p>
+    <div class="row mb-3"><div class="col-12 col-lg-6">
+    <div class="card h-100"><div class="card-body py-2" style="overflow-x:auto; text-align:center;">
+        <svg viewBox="0 0 400 230" style="width:100%; max-width:420px; height:auto; margin:0 auto; display:block;">
+            {% for e in susc_edges %}
+            <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
+            {% endfor %}
+            {% for n in susc_nodes %}
+            <g class="svg-node {% if n.kind == 'input' %}eingabe{% else %}berechnet{% endif %}">
+                <title>{{ n.label }}</title>
+                <rect x="{{ n.x|add:'-55' }}" y="{{ n.y|add:'-18' }}" width="110" height="36" rx="7"/>
+                <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y }}" text-anchor="middle" dominant-baseline="central" style="font-size:11px;">{{ n.label }}</text>
+            </g>
+            {% if n.wert %}<text class="svg-node-wert" x="{{ n.x }}" y="{{ n.y|add:'32' }}" text-anchor="middle">{{ n.wert }}</text>{% endif %}
+            {% endfor %}
+        </svg>
+    </div></div>
+    </div></div>
+
+    <h2 class="h5 mt-4">Loss-Magnitude-Seite: Kill-Chain (Detection &amp; Response)</h2>
+    <p class="text-body-secondary small mb-2">
+        Der Angriff durchläuft die Stufen der Reihe nach. Wird er an einer Stufe entdeckt,
+        bestimmt das die Verlustklasse (früh/mittel/spät). Bleibt er bis zum Ende unentdeckt,
+        entsteht der volle Schaden &ndash; bricht er unterwegs von sich aus ab (gestrichelt),
+        scheitert der Angreifer.
+    </p>
+    <div class="row mb-3"><div class="col-12">
+    <div class="card h-100"><div class="card-body py-2" style="overflow-x:auto; text-align:center;">
+        <svg viewBox="0 0 1100 260" style="width:100%; max-width:1050px; height:auto; margin:0 auto; display:block;">
+            {% for e in chain_edges %}
+            <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"
+                  {% if e.kind == "fail" %}style="stroke-dasharray:5,4; opacity:.55;"{% endif %}/>
+            {% endfor %}
+            {% for n in chain_nodes %}
+            <g class="svg-node {% if n.kind == 'stage' %}eingabe{% else %}berechnet{% endif %}">
+                <title>{{ n.label }}</title>
+                <rect x="{{ n.x|add:'-68' }}" y="{{ n.y|add:'-21' }}" width="136" height="42" rx="7"/>
+                <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y }}" text-anchor="middle" dominant-baseline="central" style="font-size:10.5px;">{{ n.label }}</text>
+            </g>
+            {% if n.wert %}<text class="svg-node-wert" x="{{ n.x }}" y="{{ n.y|add:'34' }}" text-anchor="middle">{{ n.wert }}</text>{% endif %}
+            {% endfor %}
+        </svg>
+    </div></div>
+    </div></div>
+
     <div class="card mb-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
         <h2 class="h6 text-info mb-2">Value at Risk (VaR)</h2>
         <div class="d-flex flex-wrap gap-2">
@@ -68,26 +122,18 @@
     </div></div>
     {{ lauf.ergebnis.lec|json_script:"lec-data" }}
     {{ lauf.ergebnis.p90|json_script:"p90-data" }}
+    {{ lauf.ergebnis.p95|json_script:"p95-data" }}
 
-    <div class="row g-3 mb-3">
-        <div class="col-lg-6">
-            <h2 class="h5 mt-2">Verteilung des Jahresschadens</h2>
-            <div class="card h-100"><div class="card-body">
-                <div id="vert-chart" style="height:320px;"></div>
-            </div></div>
-        </div>
-        <div class="col-lg-6">
-            <h2 class="h5 mt-2">Verteilung der Kill-Chain-Outcomes</h2>
-            <div class="card h-100"><div class="card-body">
-                <div id="outcome-chart" style="height:320px;"></div>
-            </div></div>
-        </div>
-    </div>
+    <h2 class="h5 mt-4">Verteilung des Jahresschadens</h2>
+    <p class="text-body-secondary small mb-2">
+        Häufigkeit der simulierten Jahresschäden, begrenzt auf den Bereich bis P95 &ndash;
+        vereinzelte Extremwerte (Voller Schaden) liegen darüber und würden das Bild sonst
+        auf einen einzigen Balken zusammenstauchen.
+    </p>
+    <div class="card mb-3"><div class="card-body">
+        <div id="vert-chart" style="height:320px;"></div>
+    </div></div>
     {{ lauf.ergebnis.verteilung_hist|json_script:"vert-data" }}
-    {{ lauf.ergebnis.outcome_verteilung|json_script:"outcome-data" }}
-
-    {% if perms.cam.change_camszenario %}<a class="btn btn-primary" href="{% url 'cam:update' lauf.szenario.pk %}">Szenario bearbeiten</a>{% endif %}
-    <a class="btn btn-link" href="{% url 'cam:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
 
 {% else %}
     {# angelegt / laeuft -> Fortschritt #}
@@ -112,6 +158,7 @@
         mode: 'lines', name: 'LEC', line: { color: '#7dd3fc', width: 2 }
     }];
     var p90 = JSON.parse(document.getElementById('p90-data').textContent);
+    var p95 = JSON.parse(document.getElementById('p95-data').textContent);
 
     // Log-Schadensachse, so skaliert, dass P90 bei ~3/4 der Achsenbreite liegt.
     var xs = lec.map(function (p) { return p.verlust; }).filter(function (v) { return v > 0; });
@@ -147,41 +194,23 @@
             grow();
         });
 
-    // Histogramm: Verteilung des Jahresschadens.
-    function balken(divId, elId, farbe, xtitel) {
-        var el = document.getElementById(elId);
-        if (!el) return;
-        var d = JSON.parse(el.textContent || 'null');
-        if (!d || !d.x || !d.x.length) return;
-        Plotly.newPlot(divId, [{
-            x: d.x, y: d.y, type: 'bar', marker: { color: farbe },
-            width: d.breite ? d.breite * 0.9 : undefined
+    // Histogramm: Verteilung des Jahresschadens, x-Achse auf ~P95 begrenzt (sonst
+    // stauchen vereinzelte Extremwerte das Bild auf einen einzigen Balken zusammen).
+    var vertEl = document.getElementById('vert-data');
+    var vert = vertEl ? JSON.parse(vertEl.textContent || 'null') : null;
+    if (vert && vert.x && vert.x.length) {
+        Plotly.newPlot('vert-chart', [{
+            x: vert.x, y: vert.y, type: 'bar', marker: { color: '#7dd3fc' },
+            width: vert.breite ? vert.breite * 0.9 : undefined
         }], {
             paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
             font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
             margin: { l: 60, r: 15, t: 10, b: 45 }, bargap: 0.02,
-            xaxis: { title: xtitel, gridcolor: window.fairChartGrid() },
+            xaxis: { title: 'Jahresschaden ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid(),
+                      range: [0, Math.max(p95 * 1.2, vert.breite || 0)] },
             yaxis: { title: 'Häufigkeit', gridcolor: window.fairChartGrid() }
         }, { responsive: true, displayModeBar: false });
     }
-    balken('vert-chart', 'vert-data', '#7dd3fc', 'Jahresschaden ({{ waehrung_symbol }})');
-
-    // Balkendiagramm: Verteilung der Kill-Chain-Outcomes (kategorial, kein Histogramm).
-    (function () {
-        var el = document.getElementById('outcome-data');
-        if (!el) return;
-        var d = JSON.parse(el.textContent || 'null');
-        if (!d || !d.klassen || !d.klassen.length) return;
-        Plotly.newPlot('outcome-chart', [{
-            x: d.klassen, y: d.anzahl, type: 'bar', marker: { color: '#86efac' }
-        }], {
-            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
-            font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
-            margin: { l: 60, r: 15, t: 10, b: 45 }, bargap: 0.2,
-            xaxis: { title: 'Outcome-Klasse', gridcolor: window.fairChartGrid() },
-            yaxis: { title: 'Häufigkeit', gridcolor: window.fairChartGrid() }
-        }, { responsive: true, displayModeBar: false });
-    })();
 })();
 </script>
 {% endif %}

@@ -47,6 +47,23 @@ def test_simuliere_cam_liefert_outcome_verteilung():
 
 
 @pytest.mark.django_db
+def test_simuliere_cam_liefert_stage_erkennung_und_mittelwerte():
+    pytest.importorskip("pyfair_cam")
+    s = _szenario_ransomware()
+
+    ergebnis = services.simuliere_cam(s, n_simulations=500, random_seed=42)
+
+    stufe = ergebnis["stage_erkennung"]
+    assert stufe["stufe"] == [1, 2, 3, 4, 5, 6]
+    assert len(stufe["anteil"]) == 6
+    assert sum(stufe["anteil"]) <= 1.0
+    assert all(0.0 <= a <= 1.0 for a in stufe["anteil"])
+
+    for feld in ("tef_mittel", "susceptibility_mittel", "lef_mittel"):
+        assert ergebnis[feld] > 0
+
+
+@pytest.mark.django_db
 def test_run_cam_simulation_setzt_lauf_auf_fertig():
     pytest.importorskip("pyfair_cam")
     s = _szenario_ransomware()
