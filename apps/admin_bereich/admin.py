@@ -67,14 +67,28 @@ class AppKonfigurationAdmin(admin.ModelAdmin):
 
     @staticmethod
     def _konfidenz_aus_post(post):
+        """Baut die vollständige Konfidenztabelle aus dem POST.
+
+        Leere oder ungültige Zellen fallen auf die Vorgabe (``CONFIDENCE_DEFAULTS``)
+        zurück, statt komplett zu fehlen - sonst entsteht eine strukturell
+        unvollständige Tabelle, an der ``syncDist()`` in ``szenarien/form.html``
+        scheitert (bricht dort die komplette Baum-Synchronisation ab, siehe
+        Vorfall 2026-09-15: fehlende Zelle -> "alles aufgefaltet").
+        """
+        from apps.szenarien.fair_confidence import CONFIDENCE_DEFAULTS
+
         out = {}
         for lvl, _lbl in KONFIDENZ_STUFEN:
             out[lvl] = {}
             for dist, _dl, param in KONFIDENZ_DISTS:
                 v = post.get(f"kd_{lvl}_{dist}", "")
+                wert = None
                 if v not in ("", None):
                     try:
-                        out[lvl][dist] = {param: float(v)}
+                        wert = float(v)
                     except ValueError:
-                        pass
+                        wert = None
+                if wert is None:
+                    wert = CONFIDENCE_DEFAULTS[lvl][dist][param]
+                out[lvl][dist] = {param: wert}
         return out

@@ -160,9 +160,17 @@ function formatDE(n) {
         if (hatKonf) {
             var stufe = parseInt(ni.querySelector('.unsicherheit-slider').value, 10);
             var conf = CONF.unsicherheitToConfidence[stufe];
-            var shape = CONF.defaults[conf][vert];
-            var key = Object.keys(shape)[0];
-            ni.querySelector('.confidence-readout').textContent = CONF.labels[stufe] + ' · ' + key + ' = ' + shape[key];
+            var shape = conf && CONF.defaults[conf] && CONF.defaults[conf][vert];
+            var readout = ni.querySelector('.confidence-readout');
+            if (shape) {
+                var key = Object.keys(shape)[0];
+                readout.textContent = CONF.labels[stufe] + ' · ' + key + ' = ' + shape[key];
+            } else {
+                // Admin-Konfidenztabelle deckt diese Verteilung/Stufe nicht ab (siehe
+                // AppKonfiguration.konfidenz_defaults) - Anzeige auslassen statt die
+                // ganze Baum-Synchronisation mit einer Exception abzubrechen.
+                readout.textContent = CONF.labels[stufe];
+            }
         }
     }
 

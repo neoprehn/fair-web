@@ -188,6 +188,38 @@ def test_admin_konfidenz_editor_speichert(admin_client):
 
 
 @pytest.mark.django_db
+def test_admin_konfidenz_editor_fuellt_leere_zellen_mit_vorgabe(admin_client):
+    """Regressionstest (2026-09-15): leere Zellen fehlten komplett in der
+
+    gespeicherten Tabelle, wodurch szenarien/form.html's JS bei genau dieser
+    Verteilung/Stufe mit einer Exception abbrach (Object.keys(undefined)) und
+    dadurch *alle* Knoten unfiltriert/aufgefaltet blieben. Leere/ungueltige
+    Zellen muessen auf die Vorgabe zurueckfallen, damit die Tabelle immer
+    vollstaendig ist (5 Stufen x 4 Verteilungen).
+    """
+    from apps.szenarien.fair_confidence import (
+        CONFIDENCE_DEFAULTS, CONFIDENCE_DISTRIBUTIONS, CONFIDENCE_PARAM, UNSICHERHEIT_TO_CONFIDENCE,
+    )
+
+    AppKonfiguration.load()
+    url = reverse("admin:admin_bereich_appkonfiguration_change", args=[1])
+    resp = admin_client.post(url, {
+        "waehrung": "EUR", "standard_seed": 42, "standard_n_simulations": 10000,
+        "kd_moderate_pert": "7",  # nur eine Zelle gesetzt, Rest bleibt leer im Formular
+    })
+    assert resp.status_code == 302
+    k = AppKonfiguration.objects.get()
+
+    for stufe in UNSICHERHEIT_TO_CONFIDENCE:
+        for verteilung in CONFIDENCE_DISTRIBUTIONS:
+            param = CONFIDENCE_PARAM[verteilung]
+            assert param in k.konfidenz_defaults[stufe][verteilung]
+    # explizit gesetzte Zelle bleibt der eigene Wert, alle anderen die Vorgabe.
+    assert k.konfidenz_defaults["moderate"]["pert"] == {"gamma": 7.0}
+    assert k.konfidenz_defaults["high"]["lognormal"] == CONFIDENCE_DEFAULTS["high"]["lognormal"]
+
+
+@pytest.mark.django_db
 def test_create_ohne_global_nutzt_eingaben(client):
     # Default-Konfiguration: nichts global -> eigene Werte greifen.
     resp = client.post(reverse("szenarien:create"),
