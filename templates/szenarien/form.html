@@ -42,7 +42,7 @@
                         {% if konfig.seed_global %}<div class="form-text text-info">Global vorgegeben (nur lesend).</div>{% endif %}
                         <label class="form-label mt-3">Loss-Magnitude-Eingabe</label>
                         {{ form.lm_modus }}{{ form.lm_modus.errors }}
-                        <div class="form-text">"6 Forms of Loss" blendet unten Karten für PL/SL ein.</div>
+                        <div class="form-text">"6 Forms of Loss" bzw. "FAIR-MAM-Fragebogen" blenden unten Karten für PL/SL ein.</div>
                     </div></div>
                 </div>
                 <div class="col-md-8">
@@ -165,6 +165,54 @@
                 {% endfor %}
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="mam-bereich" style="display:none;">
+        <h2 class="h5 mt-4">FAIR-MAM-Fragebogen</h2>
+        <p class="text-body-secondary small">
+            Feinere Aufschlüsselung von PL/SL nach FAIR-MAM-Kostenkategorien (10 Module, 26
+            Kategorien) statt der 6 klassischen Loss-Formen – Primary/Secondary (und damit PL/SL)
+            ist je Kategorie fest vorgegeben. Leer gelassene Kategorien werden nicht verwendet;
+            ohne mindestens eine ausgefüllte Kategorie je Seite gilt die Seite weiterhin wie
+            gewohnt (direkte Eingabe im Baum oben). Kategorien nach FAIR-MAM™ (FAIR Institute) –
+            nicht-kommerzielle Nutzung, siehe
+            <a href="https://www.fairinstitute.org/resources/FAIR-MAM" target="_blank" rel="noopener">fairinstitute.org/resources/FAIR-MAM</a>.
+        </p>
+        <div class="accordion" id="mam-accordion">
+        {% for modul in mam_module %}
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
+                            data-bs-target="#mam-modul-{{ forloop.counter }}">{{ modul }}</button>
+                </h2>
+                <div id="mam-modul-{{ forloop.counter }}" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <div class="row g-2">
+                        {% for kategorie, kat_form in mam_forms.items %}
+                            {% if kat_form.instance.modul == modul %}
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <div class="verlustform-card card p-2 h-100 {% if kat_form.instance.seite == 'PL' %}verlustform-card-pl{% else %}verlustform-card-sl{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong class="small">{{ kat_form.instance.get_kategorie_display }}</strong>
+                                        <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" data-bs-toggle="modal"
+                                                data-bs-target="#verlustform-info-modal"
+                                                data-titel="{{ kat_form.instance.get_kategorie_display }}"
+                                                data-text="{{ kat_form.instance.erklaerung }}"
+                                                title="Was bedeutet das?">ℹ️</button>
+                                    </div>
+                                    <div class="node-input">
+                                        {% include "szenarien/_verlustform_felder.html" with form=kat_form %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
         </div>
     </div>
 
@@ -340,12 +388,14 @@ function formatDE(n) {
         if (sl) sl.addEventListener('input', function () { syncDist(card); });
     });
 
-    // LM-Modus-Umschalter: 6-Forms-Bereich nur bei Auswahl "formen" anzeigen.
+    // LM-Modus-Umschalter: passenden Aufschlüsselungs-Bereich anzeigen ("formen"/"fair_mam").
     var lmModusSelect = document.getElementById('id_lm_modus');
     var lossFormenBereich = document.getElementById('loss-formen-bereich');
+    var mamBereich = document.getElementById('mam-bereich');
     function syncLmModus() {
-        if (!lmModusSelect || !lossFormenBereich) return;
-        lossFormenBereich.style.display = (lmModusSelect.value === 'formen') ? '' : 'none';
+        if (!lmModusSelect) return;
+        if (lossFormenBereich) lossFormenBereich.style.display = (lmModusSelect.value === 'formen') ? '' : 'none';
+        if (mamBereich) mamBereich.style.display = (lmModusSelect.value === 'fair_mam') ? '' : 'none';
     }
     if (lmModusSelect) {
         lmModusSelect.addEventListener('change', syncLmModus);

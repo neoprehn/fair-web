@@ -11,7 +11,7 @@ from django import forms
 
 from . import fair_tree
 from .fair_confidence import UNSICHERHEIT_MAX, UNSICHERHEIT_MIN
-from .models import Cluster, FaktorEingabe, Szenario, Vergleich, VerlustFormEingabe
+from .models import Cluster, FaktorEingabe, Szenario, Vergleich, VerlustFormEingabe, VerlustMamEingabe
 
 
 class ClusterForm(forms.ModelForm):
@@ -136,13 +136,17 @@ FELD_MAP = {
 }
 
 
-class VerlustFormEingabeForm(forms.ModelForm):
-    """ModelForm für eine einzelne Loss-Form (6 Forms of Loss) auf PL- oder SL-Seite.
+class _VerlustEingabeFormBasis(forms.ModelForm):
+    """Gemeinsame Basis für Verlust-Eingabeformulare mit fester Verteilungsmenge (magnitude):
+    6 Forms of Loss (``VerlustFormEingabeForm``) und FAIR-MAM-Kategorien
+    (``VerlustMamEingabeForm``) - identische Felder/Validierung, nur ``Meta.model``
+    unterscheidet sich.
 
     Immer ein Geldbetrag (magnitude) - anders als ``FaktorEingabeForm`` daher nur
     PERT/Normal/Konstant/Lognormal zur Auswahl, kein Poisson (Frequenz) oder Beta
-    (0–1-Anteil). ``seite``/``form`` stehen durch die Karte fest (analog ``faktor``
-    bei ``FaktorEingabeForm``) und werden von der View gesetzt, nicht vom Formular.
+    (0–1-Anteil). Welche konkrete Zeile (Form-/Kategorie-Code) gemeint ist, steht durch
+    die Karte fest (analog ``faktor`` bei ``FaktorEingabeForm``) und wird von der View
+    gesetzt, nicht vom Formular.
     """
 
     low = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
@@ -154,7 +158,6 @@ class VerlustFormEingabeForm(forms.ModelForm):
     ln_mean = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
 
     class Meta:
-        model = VerlustFormEingabe
         fields = ("verteilung", "unsicherheit", "annahmen", "quellentext")
         widgets = {
             "verteilung": forms.Select(attrs={"class": "form-select form-select-sm verteilung-select"}),
@@ -172,13 +175,13 @@ class VerlustFormEingabeForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         erlaubt = set(fair_tree.DISTS_BY_TYP["magnitude"])
         self.fields["verteilung"].choices = [
-            (w, label) for w, label in VerlustFormEingabe.Verteilung.choices if w in erlaubt
+            (w, label) for w, label in self._meta.model.Verteilung.choices if w in erlaubt
         ]
         for key, label in _PARAM_LABELS["magnitude"].items():
             if key in self.fields:
                 self.fields[key].label = label
         if not (self.instance and self.instance.pk):
-            self.initial.setdefault("verteilung", VerlustFormEingabe.Verteilung.PERT)
+            self.initial.setdefault("verteilung", self._meta.model.Verteilung.PERT)
         if self.instance and self.instance.pk:
             vorhandene = self.instance.params or {}
             for feld, key in FELD_MAP.get(self.instance.verteilung, []):
@@ -197,6 +200,20 @@ class VerlustFormEingabeForm(forms.ModelForm):
         # params VOR der Modell-Validierung setzen (clean() prüft Pflichtfelder/PERT-Reihenfolge).
         self.instance.params = params
         return cleaned
+
+
+class VerlustFormEingabeForm(_VerlustEingabeFormBasis):
+    """ModelForm für eine einzelne Loss-Form (6 Forms of Loss) auf PL- oder SL-Seite."""
+
+    class Meta(_VerlustEingabeFormBasis.Meta):
+        model = VerlustFormEingabe
+
+
+class VerlustMamEingabeForm(_VerlustEingabeFormBasis):
+    """ModelForm für eine einzelne FAIR-MAM-Kostenkategorie (zweite LM-Taxonomie)."""
+
+    class Meta(_VerlustEingabeFormBasis.Meta):
+        model = VerlustMamEingabe
 
 
 class FaktorEingabeForm(forms.ModelForm):

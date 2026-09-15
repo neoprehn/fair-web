@@ -28,8 +28,25 @@ from .fair_confidence import (
     UNSICHERHEIT_TO_CONFIDENCE,
     aktuelle_konfidenz_defaults,
 )
-from .forms import ClusterForm, FaktorEingabeForm, SzenarioForm, VergleichForm, VerlustFormEingabeForm
-from .models import Angreifertyp, Cluster, FaktorEingabe, Szenario, Vergleich, VerlustFormEingabe
+from .forms import (
+    ClusterForm,
+    FaktorEingabeForm,
+    SzenarioForm,
+    VergleichForm,
+    VerlustFormEingabeForm,
+    VerlustMamEingabeForm,
+)
+from .models import (
+    Angreifertyp,
+    Cluster,
+    FaktorEingabe,
+    MAM_KATEGORIE_INFO,
+    MAM_MODULE,
+    Szenario,
+    Vergleich,
+    VerlustFormEingabe,
+    VerlustMamEingabe,
+)
 
 
 def risikotoleranz_aus_post(post):
@@ -183,11 +200,19 @@ class SzenarioDetailView(DetailView):
         for vf in self.object.verlustformen.all():
             try:
                 samples = FairDataInput().generate(
-                    f"{vf.seite}-{vf.form}", 3000, distribution=vf.verteilung, params=vf.params
+                    vf.eindeutiger_code, 3000, distribution=vf.verteilung, params=vf.params
                 )
                 vorschau[f"vf{vf.pk}"] = _verteilung_kurve(samples)
             except Exception:  # noqa: BLE001
                 vorschau[f"vf{vf.pk}"] = None
+        for m in self.object.mam_kategorien.all():
+            try:
+                samples = FairDataInput().generate(
+                    m.eindeutiger_code, 3000, distribution=m.verteilung, params=m.params
+                )
+                vorschau[f"mam{m.pk}"] = _verteilung_kurve(samples)
+            except Exception:  # noqa: BLE001
+                vorschau[f"mam{m.pk}"] = None
         context["verteilung_vorschau"] = vorschau
         return context
 
@@ -263,13 +288,29 @@ class _SzenarioFormMixin:
         return forms
 
     def _verlustform_ist_belegt(self, form):
-        """True, wenn im POST mindestens ein Zahlenfeld dieser Loss-Form ausgefüllt wurde."""
+        """True, wenn im POST mindestens ein Zahlenfeld dieser Loss-Form/-Kategorie ausgefüllt
+        wurde. Modellagnostisch (prüft nur ``form.data``/``form.prefix``) - dient sowohl
+        ``VerlustFormEingabeForm`` (6 Forms) als auch ``VerlustMamEingabeForm`` (FAIR-MAM).
+        """
         if not form.is_bound:
             return form.instance.pk is not None
         return any(
             (form.data.get(f"{form.prefix}-{feld}") or "").strip()
             for feld in self._VERLUSTFORM_ZAHLENFELDER
         )
+
+    def _mam_forms(self, data=None):
+        """Ein VerlustMamEingabeForm je FAIR-MAM-Kategorie (26 Karten, gruppiert nach Modul)."""
+        bestehend = (
+            {m.kategorie: m for m in self.object.mam_kategorien.all()}
+            if self.object else {}
+        )
+        forms = {}
+        for kategorie, _label in VerlustMamEingabe.Kategorie.choices:
+            prefix = f"mam-{kategorie}"
+            inst = bestehend.get(kategorie) or VerlustMamEingabe(kategorie=kategorie)
+            forms[kategorie] = VerlustMamEingabeForm(data, instance=inst, prefix=prefix)
+        return forms
 
     def _risikotoleranz_aus_post(self):
         return risikotoleranz_aus_post(self.request.POST)
@@ -304,11 +345,13 @@ class _SzenarioFormMixin:
         context["konfig"] = AppKonfiguration.load()
         context["risikotoleranz"] = self.object.risikotoleranz if self.object else None
         context["svg_nodes"], context["svg_edges"] = fair_tree.svg_layout()
+        context["mam_module"] = MAM_MODULE
         if "baum_lef" not in context:
             if self.request.method == "POST":
                 node_forms = self._node_forms(self.request.POST)
                 modus = self._modus_aus_post()
                 verlustform_forms = self._verlustform_forms(self.request.POST)
+                mam_forms = self._mam_forms(self.request.POST)
             else:
                 node_forms = self._node_forms()
                 modus = (
@@ -317,8 +360,10 @@ class _SzenarioFormMixin:
                     else {c: "direkt" for c in fair_tree.NICHT_BLATT}
                 )
                 verlustform_forms = self._verlustform_forms()
+                mam_forms = self._mam_forms()
             context.update(self._baum_kontext(node_forms, modus))
             context["verlustform_forms"] = verlustform_forms
+            context["mam_forms"] = mam_forms
         return context
 
     def form_valid(self, form):
@@ -329,23 +374,32 @@ class _SzenarioFormMixin:
 
         lm_modus = self.request.POST.get("lm_modus", Szenario.LMModus.KLASSISCH)
         verlustform_forms = self._verlustform_forms(self.request.POST)
+        mam_forms = self._mam_forms(self.request.POST)
         belegte_verlustform_forms = (
             {key: f for key, f in verlustform_forms.items() if self._verlustform_ist_belegt(f)}
             if lm_modus == Szenario.LMModus.FORMEN else {}
         )
-        # PL/SL-Knotenformular NICHT validieren/speichern, wenn dafür belegte Loss-Form-
-        # Karten vorliegen - die Werte kommen dann von dort (siehe services.simuliere).
-        for seite in {seite for seite, _form in belegte_verlustform_forms}:
+        belegte_mam_forms = (
+            {key: f for key, f in mam_forms.items() if self._verlustform_ist_belegt(f)}
+            if lm_modus == Szenario.LMModus.FAIR_MAM else {}
+        )
+        # PL/SL-Knotenformular NICHT validieren/speichern, wenn dafür belegte Loss-Form- oder
+        # FAIR-MAM-Karten vorliegen - die Werte kommen dann von dort (siehe services.simuliere).
+        belegte_seiten = {seite for seite, _form in belegte_verlustform_forms}
+        belegte_seiten |= {MAM_KATEGORIE_INFO[k]["seite"] for k in belegte_mam_forms}
+        for seite in belegte_seiten:
             frontier_forms.pop(seite, None)
 
         alle_ok = (
             all(f.is_valid() for f in frontier_forms.values())
             and all(f.is_valid() for f in belegte_verlustform_forms.values())
+            and all(f.is_valid() for f in belegte_mam_forms.values())
         )
         schnitt_ok = fair_tree.schnitt_ist_gueltig(frontier)
         if not (alle_ok and schnitt_ok):
             context = self.get_context_data(
-                form=form, verlustform_forms=verlustform_forms, **self._baum_kontext(node_forms, modus)
+                form=form, verlustform_forms=verlustform_forms, mam_forms=mam_forms,
+                **self._baum_kontext(node_forms, modus)
             )
             if not schnitt_ok:
                 context["schnitt_fehler"] = (
@@ -393,6 +447,16 @@ class _SzenarioFormMixin:
                 eingabe.szenario = self.object
                 eingabe.seite = seite
                 eingabe.form = form_code
+                eingabe.save()
+            # FAIR-MAM-Eingaben (zweite LM-Taxonomie) - dasselbe Muster, Seite ergibt sich
+            # automatisch aus der Kategorie (siehe VerlustMamEingabe.seite).
+            self.object.mam_kategorien.all().delete()
+            for kategorie, f in belegte_mam_forms.items():
+                eingabe = f.save(commit=False)
+                eingabe.pk = None
+                eingabe._state.adding = True
+                eingabe.szenario = self.object
+                eingabe.kategorie = kategorie
                 eingabe.save()
         return HttpResponseRedirect(self.get_success_url())
 

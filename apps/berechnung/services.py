@@ -130,10 +130,9 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
         raise ValueError("Szenario hat keine FAIR-Faktoren – nichts zu berechnen.")
     pro_batch = max(1, n_simulations // batches)
 
-    formen_je_seite = {
-        seite: list(szenario.verlustformen.filter(seite=seite).order_by("form"))
-        for seite in formen_seiten
-    }
+    # Taxonomie-unabhängig: liefert je nach lm_modus VerlustFormEingabe- oder
+    # VerlustMamEingabe-Objekte (beide mit .eindeutiger_code/.to_fair_kwargs()).
+    formen_je_seite = {seite: szenario.verlust_komponenten(seite) for seite in formen_seiten}
     ziel_je_seite = {"PL": fair_tree.target("PL"), "SL": fair_tree.target("SL")}
     # Grosser, seitenabhaengiger Offset, damit PL- und SL-Loss-Form-Stichproben
     # (falls beide Seiten im "formen"-Modus sind) unabhaengig voneinander bleiben.
@@ -153,8 +152,8 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
         for seite, formen in formen_je_seite.items():
             np.random.seed(random_seed + i + seiten_offset[seite])
             werte = np.zeros(n)
-            for vf in formen:  # feste Reihenfolge (order_by("form")) fuer Reproduzierbarkeit
-                werte += FairDataInput().generate(f"{seite}-{vf.form}", n, **vf.to_fair_kwargs())
+            for vf in formen:  # feste, deterministische Reihenfolge (siehe verlust_komponenten())
+                werte += FairDataInput().generate(vf.eindeutiger_code, n, **vf.to_fair_kwargs())
             raw_werte[seite] = werte
 
         model = pyfair.FairModel(

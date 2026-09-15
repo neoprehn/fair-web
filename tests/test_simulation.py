@@ -4,7 +4,7 @@ import pytest
 
 from apps.berechnung import services
 from apps.berechnung.models import Simulationslauf
-from apps.szenarien.models import FaktorEingabe, Szenario, VerlustFormEingabe
+from apps.szenarien.models import FaktorEingabe, Szenario, VerlustFormEingabe, VerlustMamEingabe
 
 
 def _szenario_mit_faktoren():
@@ -95,6 +95,35 @@ def test_simuliere_aggregiert_loss_formen_elementweise():
 
     # Beide Loss-Formen sind konstant (2000 + 3000) -> PL muss in jedem Trial exakt 5000 sein,
     # wenn die Aggregation tatsächlich elementweise summiert statt nur eine Form zu übernehmen.
+    pl = ergebnis["knoten"]["PL"]
+    assert pl["mittelwert"] == pytest.approx(5000)
+    assert pl["stdev"] == pytest.approx(0, abs=1e-6)
+
+
+@pytest.mark.django_db
+def test_simuliere_aggregiert_fair_mam_elementweise():
+    """lm_modus='fair_mam': PL wird aus den einzelnen FAIR-MAM-Kategorien summiert."""
+    pytest.importorskip("pyfair")
+    s = Szenario.objects.create(
+        name="MAM-Test", n_simulations=200, lm_modus=Szenario.LMModus.FAIR_MAM,
+    )
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="LEF", verteilung="pert",
+        params={"low": 1, "mode": 3, "high": 6},
+    )
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="SL", verteilung="constant", params={"constant": 0},
+    )
+    # "ransom" und "server_replacement" sind beide Primary (-> PL) in MAM_KATEGORIE_INFO.
+    VerlustMamEingabe.objects.create(
+        szenario=s, kategorie="ransom", verteilung="constant", params={"constant": 2000},
+    )
+    VerlustMamEingabe.objects.create(
+        szenario=s, kategorie="server_replacement", verteilung="constant", params={"constant": 3000},
+    )
+
+    ergebnis = services.simuliere(s, n_simulations=200, random_seed=42, batches=4)
+
     pl = ergebnis["knoten"]["PL"]
     assert pl["mittelwert"] == pytest.approx(5000)
     assert pl["stdev"] == pytest.approx(0, abs=1e-6)

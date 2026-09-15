@@ -139,6 +139,19 @@ Offen ist nur noch:
 - [ ] Punkte-Streudiagramm primäre/sekundäre Verluste (rot/blau, wie Laptop_neu)
 - [ ] Lokaler Test · Commit & Push → `feature-…` mergen in `main`
 
+### LM-Seite – Aufschlüsselung von PL/SL (Slices, @neoprehn)
+
+`Szenario.lm_modus` steuert, wie Primary/Secondary Loss modelliert werden – elementweise
+Monte-Carlo-Aggregation in `apps/berechnung/services.py::simuliere`, taxonomie-agnostisch über
+`Szenario.verlust_komponenten()`.
+
+- [x] Slice 1: Grundgerüst + **6 Forms of Loss** (`VerlustFormEingabe`, Modus `formen`)
+- [x] Slice 2: **FAIR-MAM-Fragebogen** (`VerlustMamEingabe`, Modus `fair_mam`) – 10 Module/26
+      Kategorien, Primary/Secondary je Kategorie fest vorgegeben (→ PL/SL)
+- [ ] Slice 3 (später): Aggregationsmodus-Umschalter ("nur Kennwerte addieren" als einfachere
+      Alternative zur elementweisen Summe)
+- [ ] Slice 4 (später): SLEF-Granularität je Form/Kategorie statt nur gemeinsam für alle SL-Formen
+
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
 Angefragt 2026-09-15. Ziel: ein Zwischendialog, der ein neues FAIR-Szenario Schritt für
