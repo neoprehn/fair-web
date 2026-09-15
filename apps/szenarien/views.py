@@ -28,8 +28,8 @@ from .fair_confidence import (
     UNSICHERHEIT_TO_CONFIDENCE,
     aktuelle_konfidenz_defaults,
 )
-from .forms import ClusterForm, FaktorEingabeForm, SzenarioForm, VergleichForm
-from .models import Angreifertyp, Cluster, FaktorEingabe, Szenario, Vergleich
+from .forms import ClusterForm, FaktorEingabeForm, SzenarioForm, VergleichForm, VerlustFormEingabeForm
+from .models import Angreifertyp, Cluster, FaktorEingabe, Szenario, Vergleich, VerlustFormEingabe
 
 
 def risikotoleranz_aus_post(post):
@@ -165,6 +165,8 @@ class SzenarioDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         from pyfair.model.model_input import FairDataInput
 
+        # String-Präfix, da FaktorEingabe- und VerlustFormEingabe-PKs (unterschiedliche
+        # Tabellen) sich sonst überschneiden könnten.
         vorschau = {}
         for f in self.object.faktoren.all():
             try:
@@ -175,9 +177,17 @@ class SzenarioDetailView(DetailView):
                 if f.verteilung == "beta" and "low" in (f.params or {}):
                     erzeuge_kwargs["input_mode"] = "confidence_interval"
                 samples = FairDataInput().generate(fair_tree.target(f.faktor), 3000, **erzeuge_kwargs)
-                vorschau[f.pk] = _verteilung_kurve(samples)
+                vorschau[f"f{f.pk}"] = _verteilung_kurve(samples)
             except Exception:  # noqa: BLE001 – Vorschau ist optional, darf die Seite nie kippen
-                vorschau[f.pk] = None
+                vorschau[f"f{f.pk}"] = None
+        for vf in self.object.verlustformen.all():
+            try:
+                samples = FairDataInput().generate(
+                    f"{vf.seite}-{vf.form}", 3000, distribution=vf.verteilung, params=vf.params
+                )
+                vorschau[f"vf{vf.pk}"] = _verteilung_kurve(samples)
+            except Exception:  # noqa: BLE001
+                vorschau[f"vf{vf.pk}"] = None
         context["verteilung_vorschau"] = vorschau
         return context
 
@@ -236,6 +246,31 @@ class _SzenarioFormMixin:
     def _modus_aus_post(self):
         return {c: self.request.POST.get(f"modus-{c}", "direkt") for c in fair_tree.NICHT_BLATT}
 
+    _VERLUSTFORM_ZAHLENFELDER = ("low", "mode", "high", "mean", "stdev", "constant", "ln_mean")
+
+    def _verlustform_forms(self, data=None):
+        """Ein VerlustFormEingabeForm je (Seite, Form)-Kombination - bis zu 6 je Seite."""
+        bestehend = (
+            {(vf.seite, vf.form): vf for vf in self.object.verlustformen.all()}
+            if self.object else {}
+        )
+        forms = {}
+        for seite, _seite_label in VerlustFormEingabe.Seite.choices:
+            for form_code, _form_label in VerlustFormEingabe.Form.choices:
+                prefix = f"vf-{seite}-{form_code}"
+                inst = bestehend.get((seite, form_code)) or VerlustFormEingabe(seite=seite, form=form_code)
+                forms[(seite, form_code)] = VerlustFormEingabeForm(data, instance=inst, prefix=prefix)
+        return forms
+
+    def _verlustform_ist_belegt(self, form):
+        """True, wenn im POST mindestens ein Zahlenfeld dieser Loss-Form ausgefüllt wurde."""
+        if not form.is_bound:
+            return form.instance.pk is not None
+        return any(
+            (form.data.get(f"{form.prefix}-{feld}") or "").strip()
+            for feld in self._VERLUSTFORM_ZAHLENFELDER
+        )
+
     def _risikotoleranz_aus_post(self):
         return risikotoleranz_aus_post(self.request.POST)
 
@@ -273,6 +308,7 @@ class _SzenarioFormMixin:
             if self.request.method == "POST":
                 node_forms = self._node_forms(self.request.POST)
                 modus = self._modus_aus_post()
+                verlustform_forms = self._verlustform_forms(self.request.POST)
             else:
                 node_forms = self._node_forms()
                 modus = (
@@ -280,7 +316,9 @@ class _SzenarioFormMixin:
                     if self.object
                     else {c: "direkt" for c in fair_tree.NICHT_BLATT}
                 )
+                verlustform_forms = self._verlustform_forms()
             context.update(self._baum_kontext(node_forms, modus))
+            context["verlustform_forms"] = verlustform_forms
         return context
 
     def form_valid(self, form):
@@ -289,10 +327,26 @@ class _SzenarioFormMixin:
         node_forms = self._node_forms(self.request.POST)
         frontier_forms = {code: node_forms[code] for code in frontier}
 
-        alle_ok = all(f.is_valid() for f in frontier_forms.values())
+        lm_modus = self.request.POST.get("lm_modus", Szenario.LMModus.KLASSISCH)
+        verlustform_forms = self._verlustform_forms(self.request.POST)
+        belegte_verlustform_forms = (
+            {key: f for key, f in verlustform_forms.items() if self._verlustform_ist_belegt(f)}
+            if lm_modus == Szenario.LMModus.FORMEN else {}
+        )
+        # PL/SL-Knotenformular NICHT validieren/speichern, wenn dafür belegte Loss-Form-
+        # Karten vorliegen - die Werte kommen dann von dort (siehe services.simuliere).
+        for seite in {seite for seite, _form in belegte_verlustform_forms}:
+            frontier_forms.pop(seite, None)
+
+        alle_ok = (
+            all(f.is_valid() for f in frontier_forms.values())
+            and all(f.is_valid() for f in belegte_verlustform_forms.values())
+        )
         schnitt_ok = fair_tree.schnitt_ist_gueltig(frontier)
         if not (alle_ok and schnitt_ok):
-            context = self.get_context_data(form=form, **self._baum_kontext(node_forms, modus))
+            context = self.get_context_data(
+                form=form, verlustform_forms=verlustform_forms, **self._baum_kontext(node_forms, modus)
+            )
             if not schnitt_ok:
                 context["schnitt_fehler"] = (
                     "Bitte einen vollständigen, rechenbaren Schnitt angeben "
@@ -329,6 +383,16 @@ class _SzenarioFormMixin:
                 eingabe._state.adding = True
                 eingabe.szenario = self.object
                 eingabe.faktor = code
+                eingabe.save()
+            # Loss-Form-Eingaben (6 Forms of Loss) - immer frisch anlegen wie bei faktoren.
+            self.object.verlustformen.all().delete()
+            for (seite, form_code), f in belegte_verlustform_forms.items():
+                eingabe = f.save(commit=False)
+                eingabe.pk = None
+                eingabe._state.adding = True
+                eingabe.szenario = self.object
+                eingabe.seite = seite
+                eingabe.form = form_code
                 eingabe.save()
         return HttpResponseRedirect(self.get_success_url())
 

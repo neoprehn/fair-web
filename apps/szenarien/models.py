@@ -48,12 +48,21 @@ class Angreifertyp(models.Model):
 
 
 class Szenario(models.Model):
+    class LMModus(models.TextChoices):
+        KLASSISCH = "klassisch", "Klassisch (PL/SL direkt)"
+        FORMEN = "formen", "6 Forms of Loss"
+
     name = models.CharField("Name", max_length=200)
     beschreibung = models.TextField("Beschreibung", blank=True)
     n_simulations = models.PositiveIntegerField("Anzahl Simulationen", default=10_000)
     random_seed = models.PositiveIntegerField("Zufalls-Seed", default=42)
     # Risikotoleranz, kontextbasiert: {"type": "constant"|"curve"|"distribution", ...}
     risikotoleranz = models.JSONField("Risikotoleranz", null=True, blank=True)
+    # Steuert, ob PL/SL direkt eingegeben werden (wie bisher) oder aus VerlustFormEingabe
+    # (6 Forms of Loss) aggregiert werden - siehe apps/berechnung/services.py::simuliere.
+    lm_modus = models.CharField(
+        "LM-Modus", max_length=20, choices=LMModus.choices, default=LMModus.KLASSISCH,
+    )
     erstellt_am = models.DateTimeField("Erstellt am", auto_now_add=True)
     geaendert_am = models.DateTimeField("Geändert am", auto_now=True)
 
@@ -68,16 +77,37 @@ class Szenario(models.Model):
     def fair_inputs(self):
         """Eingaben als Dict ``{FAIR-Target: input_data-kwargs}``.
 
-        Direkt an ``FairModel.input_data(target, **kwargs)`` übergebbar.
+        Direkt an ``FairModel.input_data(target, **kwargs)`` übergebbar. Im
+        LM-Modus "formen" fehlt PL/SL hier bewusst, falls dafür Loss-Form-
+        Eingaben existieren - ``services.simuliere()`` füttert diese Seiten
+        dann stattdessen aggregiert über ``model.input_raw_data(...)`` (eine
+        ggf. noch vorhandene alte PL/SL-``FaktorEingabe`` wird hier daher
+        übersprungen, damit dasselbe Ziel nicht doppelt gesetzt wird).
         """
+        formen_seiten = self.formen_seiten()
         return {
             faktor.fair_target: faktor.to_fair_kwargs()
             for faktor in self.faktoren.all()
+            if faktor.faktor not in formen_seiten
         }
 
+    def formen_seiten(self):
+        """Set der Seiten ("PL"/"SL"), die im LM-Modus "formen" Loss-Form-Eingaben haben."""
+        if self.lm_modus != self.LMModus.FORMEN:
+            return set()
+        return set(self.verlustformen.values_list("seite", flat=True).distinct())
+
     def schnitt_codes(self):
-        """Die angegebenen Faktor-Codes (der Schnitt durch den FAIR-Baum)."""
-        return list(self.faktoren.values_list("faktor", flat=True))
+        """Die angegebenen Faktor-Codes (der Schnitt durch den FAIR-Baum).
+
+        PL/SL gelten auch dann als abgedeckt, wenn sie im LM-Modus "formen"
+        über Loss-Form-Eingaben statt einer eigenen ``FaktorEingabe`` kommen.
+        """
+        codes = list(self.faktoren.values_list("faktor", flat=True))
+        for seite in self.formen_seiten():
+            if seite not in codes:
+                codes.append(seite)
+        return codes
 
     def schnitt_ist_gueltig(self):
         """True, wenn die Faktoren einen rechenbaren Schnitt bilden (Risk abgedeckt)."""
@@ -151,22 +181,12 @@ class Cluster(models.Model):
         return self.name
 
 
-class FaktorEingabe(models.Model):
-    """Eine Verteilungs-Eingabe für genau einen FAIR-Faktor eines Szenarios."""
-
-    class Faktor(models.TextChoices):
-        LEF = "LEF", "Loss Event Frequency (LEF)"
-        TEF = "TEF", "Threat Event Frequency (TEF)"
-        CF = "CF", "Contact Frequency (CF)"
-        POA = "POA", "Probability of Action (PoA)"
-        VULN = "VULN", "Vulnerability (Vuln)"
-        TC = "TC", "Threat Capability (TC)"
-        CS = "CS", "Control Strength (CS)"
-        LM = "LM", "Loss Magnitude (LM)"
-        PL = "PL", "Primary Loss (PL)"
-        SL = "SL", "Secondary Loss (SL)"
-        SLEF = "SLEF", "Secondary Loss Event Frequency (SLEF)"
-        SLEM = "SLEM", "Secondary Loss Event Magnitude (SLEM)"
+class _VerteilungsEingabe(models.Model):
+    """Abstrakte Basis: eine Verteilungs-Eingabe (Verteilung + Parameter + Unsicherheit
+    + Annahmen/Quelle). Gemeinsame Felder/Methoden für ``FaktorEingabe`` (FAIR-Baumknoten)
+    und ``VerlustFormEingabe`` (Loss-Form auf der PL/SL-Seite) - beide werden identisch
+    validiert und identisch in pyfair-``input_data``-kwargs übersetzt.
+    """
 
     class Verteilung(models.TextChoices):
         PERT = "pert", "PERT (min / wahrscheinlich / max)"
@@ -184,16 +204,9 @@ class FaktorEingabe(models.Model):
         Verteilung.CONSTANT: ("constant",),
         Verteilung.POISSON: ("lambda",),
         Verteilung.LOGNORMAL: ("mean",),
-        # Beta wird separat validiert (zwei Eingabearten, siehe clean()).
+        # Beta wird separat validiert (zwei Eingabearten, siehe _validiere_verteilung()).
     }
 
-    szenario = models.ForeignKey(
-        Szenario,
-        related_name="faktoren",
-        on_delete=models.CASCADE,
-        verbose_name="Szenario",
-    )
-    faktor = models.CharField("Faktor", max_length=10, choices=Faktor.choices)
     verteilung = models.CharField(
         "Verteilung",
         max_length=20,
@@ -208,31 +221,11 @@ class FaktorEingabe(models.Model):
         default=UNSICHERHEIT_DEFAULT,
         validators=[MinValueValidator(UNSICHERHEIT_MIN), MaxValueValidator(UNSICHERHEIT_MAX)],
     )
-    angreifertyp = models.CharField("Angreifertyp", max_length=120, blank=True)
     annahmen = models.TextField("Annahmen", blank=True)
     quellentext = models.TextField("Quellentext", blank=True)
 
     class Meta:
-        verbose_name = "Faktor-Eingabe"
-        verbose_name_plural = "Faktor-Eingaben"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["szenario", "faktor"],
-                name="unique_faktor_pro_szenario",
-            )
-        ]
-
-    def __str__(self):
-        return f"{self.get_faktor_display()} – {self.get_verteilung_display()}"
-
-    @property
-    def fair_target(self):
-        """Der pyfair-Knotenname für diesen Faktor (z. B. 'Loss Magnitude')."""
-        return fair_tree.target(self.faktor)
-
-    @property
-    def faktor_abbr(self):
-        return fair_tree.abbr(self.faktor)
+        abstract = True
 
     @property
     def confidence_level(self):
@@ -252,7 +245,7 @@ class FaktorEingabe(models.Model):
         return aktuelle_konfidenz_defaults().get(self.confidence_level, {}).get(self.verteilung)
 
     def to_fair_kwargs(self):
-        """kwargs für die strukturierte pyfair-API ``input_data``.
+        """kwargs für die strukturierte pyfair-API ``input_data``/``FairDataInput.generate``.
 
         Für Verteilungen mit Konfidenz-Formparameter (PERT/Lognormal/
         Poisson/Beta) wird ``confidence`` mitgegeben – pyfair leitet daraus
@@ -273,8 +266,8 @@ class FaktorEingabe(models.Model):
                 params.update(shape)
         return kwargs
 
-    def clean(self):
-        """Prüft, dass ``params`` zur gewählten Verteilung passt."""
+    def _validiere_verteilung(self):
+        """Prüft, dass ``params`` zur gewählten Verteilung passt. Wirft ``ValidationError``."""
         params = self.params or {}
         required = self.REQUIRED_PARAMS.get(self.verteilung, ())
         fehlend = [key for key in required if key not in params]
@@ -302,9 +295,60 @@ class FaktorEingabe(models.Model):
                 if fehlend:
                     raise ValidationError(f"Beta benötigt: {', '.join(fehlend)}.")
 
+
+class FaktorEingabe(_VerteilungsEingabe):
+    """Eine Verteilungs-Eingabe für genau einen FAIR-Faktor eines Szenarios."""
+
+    class Faktor(models.TextChoices):
+        LEF = "LEF", "Loss Event Frequency (LEF)"
+        TEF = "TEF", "Threat Event Frequency (TEF)"
+        CF = "CF", "Contact Frequency (CF)"
+        POA = "POA", "Probability of Action (PoA)"
+        VULN = "VULN", "Vulnerability (Vuln)"
+        TC = "TC", "Threat Capability (TC)"
+        CS = "CS", "Control Strength (CS)"
+        LM = "LM", "Loss Magnitude (LM)"
+        PL = "PL", "Primary Loss (PL)"
+        SL = "SL", "Secondary Loss (SL)"
+        SLEF = "SLEF", "Secondary Loss Event Frequency (SLEF)"
+        SLEM = "SLEM", "Secondary Loss Event Magnitude (SLEM)"
+
+    szenario = models.ForeignKey(
+        Szenario,
+        related_name="faktoren",
+        on_delete=models.CASCADE,
+        verbose_name="Szenario",
+    )
+    faktor = models.CharField("Faktor", max_length=10, choices=Faktor.choices)
+    angreifertyp = models.CharField("Angreifertyp", max_length=120, blank=True)
+
+    class Meta:
+        verbose_name = "Faktor-Eingabe"
+        verbose_name_plural = "Faktor-Eingaben"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["szenario", "faktor"],
+                name="unique_faktor_pro_szenario",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.get_faktor_display()} – {self.get_verteilung_display()}"
+
+    @property
+    def fair_target(self):
+        """Der pyfair-Knotenname für diesen Faktor (z. B. 'Loss Magnitude')."""
+        return fair_tree.target(self.faktor)
+
+    @property
+    def faktor_abbr(self):
+        return fair_tree.abbr(self.faktor)
+
+    def clean(self):
+        self._validiere_verteilung()
         # Wahrscheinlichkeits-Faktoren müssen in [0, 1] liegen ("k" ist davon ausgenommen).
         if self.faktor and fair_tree.ist_gebunden(self.faktor):
-            for key, value in params.items():
+            for key, value in (self.params or {}).items():
                 if key == "k":
                     continue
                 if isinstance(value, (int, float)) and not (0.0 <= value <= 1.0):
@@ -312,3 +356,52 @@ class FaktorEingabe(models.Model):
                         f"„{fair_tree.abbr(self.faktor)}“ ist eine Wahrscheinlichkeit – "
                         f"Werte müssen zwischen 0 und 1 liegen (war {key}={value})."
                     )
+
+
+class VerlustFormEingabe(_VerteilungsEingabe):
+    """Eine Loss-Form (6 Forms of Loss) auf der Primary- oder Secondary-Loss-Seite.
+
+    Mehrere Formen je Seite werden in ``apps/berechnung/services.py::simuliere`` pro
+    Trial elementweise aufsummiert (statt Kennwerte zu addieren) und über
+    ``FairModel.input_raw_data("Primary Loss"/"Secondary Loss", ...)`` eingespeist -
+    siehe ``Szenario.lm_modus``.
+    """
+
+    class Seite(models.TextChoices):
+        PL = "PL", "Primary Loss"
+        SL = "SL", "Secondary Loss"
+
+    class Form(models.TextChoices):
+        PRODUCTIVITY = "productivity", "Productivity"
+        RESPONSE = "response", "Response"
+        REPLACEMENT = "replacement", "Replacement"
+        COMPETITIVE_ADVANTAGE = "competitive_advantage", "Competitive Advantage"
+        FINES_JUDGEMENTS = "fines_judgements", "Fines & Judgements"
+        REPUTATION = "reputation", "Reputation"
+
+    szenario = models.ForeignKey(
+        Szenario,
+        related_name="verlustformen",
+        on_delete=models.CASCADE,
+        verbose_name="Szenario",
+    )
+    seite = models.CharField("Seite", max_length=2, choices=Seite.choices)
+    form = models.CharField("Loss-Form", max_length=30, choices=Form.choices)
+
+    class Meta:
+        verbose_name = "Verlust-Form-Eingabe"
+        verbose_name_plural = "Verlust-Form-Eingaben"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["szenario", "seite", "form"],
+                name="unique_form_pro_seite_und_szenario",
+            )
+        ]
+        ordering = ["seite", "form"]
+
+    def __str__(self):
+        return f"{self.get_seite_display()} – {self.get_form_display()}"
+
+    def clean(self):
+        # Loss-Formen sind immer Geldbeträge - keine [0,1]-Bindung wie bei FAIR-Faktoren.
+        self._validiere_verteilung()

@@ -103,6 +103,35 @@ def test_create_aufgeschluesselter_schnitt(client):
 
 
 @pytest.mark.django_db
+def test_create_lm_modus_formen_speichert_loss_formen_statt_pl(client):
+    from apps.szenarien.models import VerlustFormEingabe
+
+    data = {
+        "name": "Formen-View-Test", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,
+        "lm_modus": "formen",
+        "LEF-verteilung": "pert", "LEF-low": "1", "LEF-mode": "3", "LEF-high": "6", "LEF-unsicherheit": "2",
+        "modus-LM": "aufschluesseln",
+        "SL-verteilung": "constant", "SL-constant": "0", "SL-unsicherheit": "2",
+        "vf-PL-response-verteilung": "constant", "vf-PL-response-constant": "2000",
+        "vf-PL-response-unsicherheit": "2",
+        "vf-PL-replacement-verteilung": "constant", "vf-PL-replacement-constant": "3000",
+        "vf-PL-replacement-unsicherheit": "2",
+    }
+    resp = client.post(reverse("szenarien:create"), data=data)
+    assert resp.status_code == 302, resp.context["verlustform_forms"] if resp.status_code == 200 else None
+    s = Szenario.objects.get(name="Formen-View-Test")
+
+    assert s.lm_modus == Szenario.LMModus.FORMEN
+    assert not s.faktoren.filter(faktor="PL").exists()
+    assert set(s.verlustformen.values_list("seite", "form")) == {
+        ("PL", "response"), ("PL", "replacement"),
+    }
+    # PL gilt trotzdem als abgedeckt (über die Loss-Formen), der Schnitt bleibt gültig.
+    assert s.schnitt_ist_gueltig()
+    assert s.formen_seiten() == {"PL"}
+
+
+@pytest.mark.django_db
 def test_create_wahrscheinlichkeit_ueber_eins_fehler(client):
     data = {
         "name": "Ungueltig", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,

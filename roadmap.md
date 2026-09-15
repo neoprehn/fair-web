@@ -139,6 +139,18 @@ Offen ist nur noch:
 - [ ] Punkte-Streudiagramm primäre/sekundäre Verluste (rot/blau, wie Laptop_neu)
 - [ ] Lokaler Test · Commit & Push → `feature-…` mergen in `main`
 
+### Später — Geführter Szenario-Dialog (Name noch offen)
+
+Angefragt 2026-09-15. Ziel: ein Zwischendialog, der ein neues FAIR-Szenario Schritt für
+Schritt mit allen Werten füllt (statt der aktuellen "alles auf einer Seite"-Eingabe direkt im
+Baum) — Arbeitstitel bisher nur "neues Szenario geführter Dialog", kürzerer Name noch zu finden.
+Bewusst **zurückgestellt bis nach** der LM-Seite/6-Forms-of-Loss-Überarbeitung (siehe
+`ROADMAP-ARCHIV.md`-Vorlauf bzw. den aktuellen Slice dazu) — der geführte Dialog soll die dann
+neue LM-Struktur (PL/SL-Aufschlüsselung nach Loss-Formen) mit abfragen, macht also erst danach
+Sinn.
+- [ ] Konzept/Screens für den Dialog entwerfen, sobald die LM-Struktur steht
+- [ ] Kürzeren Arbeitsnamen festlegen
+
 ### Ganz zuletzt
 
 #### Eigene ReadTheDocs-Dokumentationssite

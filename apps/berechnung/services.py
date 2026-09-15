@@ -119,24 +119,51 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
     fortschritt : callable(int) | None
         Wird nach jedem Batch mit dem Prozentwert (0–100) aufgerufen.
     """
+    import numpy as np
     import pandas as pd
     import pyfair
+    from pyfair.model.model_input import FairDataInput
 
     inputs = szenario.fair_inputs()
-    if not inputs:
+    formen_seiten = szenario.formen_seiten()  # z.B. {"PL"} oder {"PL","SL"} oder leer
+    if not inputs and not formen_seiten:
         raise ValueError("Szenario hat keine FAIR-Faktoren – nichts zu berechnen.")
     pro_batch = max(1, n_simulations // batches)
+
+    formen_je_seite = {
+        seite: list(szenario.verlustformen.filter(seite=seite).order_by("form"))
+        for seite in formen_seiten
+    }
+    ziel_je_seite = {"PL": fair_tree.target("PL"), "SL": fair_tree.target("SL")}
+    # Grosser, seitenabhaengiger Offset, damit PL- und SL-Loss-Form-Stichproben
+    # (falls beide Seiten im "formen"-Modus sind) unabhaengig voneinander bleiben.
+    seiten_offset = {"PL": 10_000_000, "SL": 20_000_000}
 
     teile = []
     erzeugt = 0
     i = 0
     while erzeugt < n_simulations:
         n = min(pro_batch, n_simulations - erzeugt)
+
+        # Loss-Form-Seiten VOR dem FairModel sampeln: FairModel seedet den globalen
+        # np.random-Strom beim Konstruieren neu (siehe pyfair.model.model.FairModel.
+        # __init__), das setzt den Strom fuer die "klassischen" Faktoren unabhaengig
+        # davon zurueck, was hier vorher gezogen wurde - Reihenfolge ist also sicher.
+        raw_werte = {}
+        for seite, formen in formen_je_seite.items():
+            np.random.seed(random_seed + i + seiten_offset[seite])
+            werte = np.zeros(n)
+            for vf in formen:  # feste Reihenfolge (order_by("form")) fuer Reproduzierbarkeit
+                werte += FairDataInput().generate(f"{seite}-{vf.form}", n, **vf.to_fair_kwargs())
+            raw_werte[seite] = werte
+
         model = pyfair.FairModel(
             name=szenario.name, n_simulations=n, random_seed=random_seed + i
         )
         for target, kwargs in inputs.items():
             model.input_data(target, **kwargs)
+        for seite, werte in raw_werte.items():
+            model.input_raw_data(ziel_je_seite[seite], werte)
         model.calculate_all()
         teile.append(model.export_results())  # alle Knoten-Spalten
 

@@ -40,6 +40,9 @@
                         <label class="form-label">Zufalls-Seed</label>
                         {{ form.random_seed }}{{ form.random_seed.errors }}
                         {% if konfig.seed_global %}<div class="form-text text-info">Global vorgegeben (nur lesend).</div>{% endif %}
+                        <label class="form-label mt-3">Loss-Magnitude-Eingabe</label>
+                        {{ form.lm_modus }}{{ form.lm_modus.errors }}
+                        <div class="form-text">"6 Forms of Loss" blendet unten Karten für PL/SL ein.</div>
                     </div></div>
                 </div>
                 <div class="col-md-8">
@@ -96,6 +99,46 @@
         <div class="d-flex gap-5 justify-content-center align-items-start baum-roots py-2">
             {% include "szenarien/_baum_node.html" with node=baum_lef %}
             {% include "szenarien/_baum_node.html" with node=baum_lm %}
+        </div>
+    </div>
+
+    <div id="loss-formen-bereich" style="display:none;">
+        <h2 class="h5 mt-4">6 Forms of Loss</h2>
+        <p class="text-body-secondary small">
+            Primary Loss (PL) und Secondary Loss (SL) je Verlustart einzeln modellieren – wird pro
+            Simulations-Trial elementweise zu PL/SL aufsummiert (statt nur Kennwerte zu addieren).
+            Leer gelassene Formen werden nicht verwendet; ohne mindestens eine ausgefüllte Form je
+            Seite gilt die Seite weiterhin wie gewohnt (direkte Eingabe im Baum oben).
+        </p>
+        <h3 class="h6 mt-3">Primary Loss</h3>
+        <div class="row g-2 mb-3">
+        {% for key, vf_form in verlustform_forms.items %}
+            {% if key.0 == "PL" %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="verlustform-card card p-2 h-100">
+                    <strong class="mb-1 small d-block">{{ vf_form.instance.get_form_display }}</strong>
+                    <div class="node-input">
+                        {% include "szenarien/_verlustform_felder.html" with form=vf_form %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+        </div>
+        <h3 class="h6 mt-3">Secondary Loss</h3>
+        <div class="row g-2 mb-3">
+        {% for key, vf_form in verlustform_forms.items %}
+            {% if key.0 == "SL" %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="verlustform-card card p-2 h-100">
+                    <strong class="mb-1 small d-block">{{ vf_form.instance.get_form_display }}</strong>
+                    <div class="node-input">
+                        {% include "szenarien/_verlustform_felder.html" with form=vf_form %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
         </div>
     </div>
 
@@ -189,6 +232,7 @@ function formatDE(n) {
 
     function syncAllDist() {
         document.querySelectorAll('.tree-node').forEach(syncDist);
+        document.querySelectorAll('.verlustform-card').forEach(syncDist);
     }
 
     function setExpanded(tn, expanded) {
@@ -246,6 +290,29 @@ function formatDE(n) {
             }
         }
     });
+
+    // 6 Forms of Loss: dieselbe Verteilungs-/Konfidenz-Logik wie die Baumknoten,
+    // aber ohne das Baum-spezifische Auf-/Zuklappen (kein .node-box nötig).
+    document.querySelectorAll('.verlustform-card').forEach(function (card) {
+        var ni = child(card, '.node-input');
+        if (!ni) return;
+        var vs = ni.querySelector('.verteilung-select');
+        if (vs) vs.addEventListener('change', function () { syncDist(card); });
+        var sl = ni.querySelector('.unsicherheit-slider');
+        if (sl) sl.addEventListener('input', function () { syncDist(card); });
+    });
+
+    // LM-Modus-Umschalter: 6-Forms-Bereich nur bei Auswahl "formen" anzeigen.
+    var lmModusSelect = document.getElementById('id_lm_modus');
+    var lossFormenBereich = document.getElementById('loss-formen-bereich');
+    function syncLmModus() {
+        if (!lmModusSelect || !lossFormenBereich) return;
+        lossFormenBereich.style.display = (lmModusSelect.value === 'formen') ? '' : 'none';
+    }
+    if (lmModusSelect) {
+        lmModusSelect.addEventListener('change', syncLmModus);
+        syncLmModus();
+    }
 
     // SVG-Knoten hervorheben, sobald man in ein Feld eines Knotens klickt.
     var svg = document.getElementById('fair-svg');

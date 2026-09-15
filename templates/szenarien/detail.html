@@ -2,7 +2,7 @@
 {% load humanize %}
 
 {% block title %}{{ szenario.name }} &middot; fair-web{% endblock %}
-{% block extra_head %}{% if szenario.faktoren.all %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
+{% block extra_head %}{% if szenario.faktoren.all or szenario.verlustformen.all %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -70,7 +70,7 @@
             <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
                 <button type="button" class="btn btn-sm btn-outline-info vorschau-btn" data-bs-toggle="modal"
                         data-bs-target="#verteilung-modal"
-                        data-code="{{ faktor.pk }}" data-faktor="{{ faktor.get_faktor_display }}"
+                        data-code="f{{ faktor.pk }}" data-faktor="{{ faktor.get_faktor_display }}"
                         title="Verteilungskurve anzeigen">📈</button>
             </td>
         </tr>
@@ -80,7 +80,52 @@
     </tbody>
 </table>
 
-{% if szenario.faktoren.all %}
+{% if szenario.lm_modus == "formen" %}
+<h2 class="h5 mt-4">6 Forms of Loss</h2>
+<p class="text-body-secondary small">
+    Primary Loss (PL) und Secondary Loss (SL) werden elementweise aus diesen Verlustarten
+    aufsummiert (statt eines direkten PL/SL-Werts im FAIR-Baum).
+</p>
+<table class="table">
+    <thead>
+        <tr><th>Seite</th><th>Loss-Form</th><th>Verteilung</th><th>Parameter</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;">Annahmen</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;">Vorschau</th></tr>
+    </thead>
+    <tbody>
+    {% for vf in szenario.verlustformen.all %}
+        <tr>
+            <td>{{ vf.get_seite_display }}</td>
+            <td>{{ vf.get_form_display }}</td>
+            <td>{{ vf.get_verteilung_display }}</td>
+            <td>
+                {% for key, value in vf.params.items %}
+                    <span class="badge text-bg-light">{{ key }} = {{ value }}</span>
+                {% endfor %}
+            </td>
+            <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
+                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                        data-bs-target="#annahmen-modal"
+                        data-annahmen="{{ vf.annahmen|default:'' }}"
+                        data-quellentext="{{ vf.quellentext|default:'' }}"
+                        data-faktor="{{ vf.get_seite_display }} – {{ vf.get_form_display }}"
+                        title="Annahmen &amp; Quellentext anzeigen">📝</button>
+            </td>
+            <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
+                <button type="button" class="btn btn-sm btn-outline-info vorschau-btn" data-bs-toggle="modal"
+                        data-bs-target="#verteilung-modal"
+                        data-code="vf{{ vf.pk }}" data-faktor="{{ vf.get_seite_display }} – {{ vf.get_form_display }}"
+                        title="Verteilungskurve anzeigen">📈</button>
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="6" class="text-body-secondary">Noch keine Loss-Formen erfasst.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if szenario.faktoren.all or szenario.verlustformen.all %}
 {{ verteilung_vorschau|json_script:"verteilung-data" }}
 <div class="modal fade" id="verteilung-modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg"><div class="modal-content">

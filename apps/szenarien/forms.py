@@ -11,7 +11,7 @@ from django import forms
 
 from . import fair_tree
 from .fair_confidence import UNSICHERHEIT_MAX, UNSICHERHEIT_MIN
-from .models import Cluster, FaktorEingabe, Szenario, Vergleich
+from .models import Cluster, FaktorEingabe, Szenario, Vergleich, VerlustFormEingabe
 
 
 class ClusterForm(forms.ModelForm):
@@ -36,17 +36,22 @@ class RangeInput(forms.NumberInput):
 class SzenarioForm(forms.ModelForm):
     class Meta:
         model = Szenario
-        fields = ("name", "beschreibung", "n_simulations", "random_seed")
+        fields = ("name", "beschreibung", "n_simulations", "random_seed", "lm_modus")
         localized_fields = ("n_simulations", "random_seed")
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "beschreibung": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "n_simulations": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
             "random_seed": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+            "lm_modus": forms.Select(attrs={"class": "form-select", "id": "id_lm_modus"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Nicht zwingend erforderlich: alte Formular-Posts (Tests, ältere Clients) kennen
+        # das Feld ggf. nicht - fehlt es, greift der Modell-Default ("klassisch") statt
+        # eines Validierungsfehlers (siehe clean_lm_modus()).
+        self.fields["lm_modus"].required = False
         # Global vorgegebene Werte: Feld deaktivieren + globalen Wert vorbelegen.
         from apps.admin_bereich.models import AppKonfiguration
         konfig = AppKonfiguration.load()
@@ -56,6 +61,9 @@ class SzenarioForm(forms.ModelForm):
         if konfig.n_simulations_global:
             self.fields["n_simulations"].disabled = True
             self.initial["n_simulations"] = konfig.standard_n_simulations
+
+    def clean_lm_modus(self):
+        return self.cleaned_data.get("lm_modus") or Szenario.LMModus.KLASSISCH
 
 
 class VergleichForm(forms.ModelForm):
@@ -126,6 +134,69 @@ FELD_MAP = {
     "lognormal": [("ln_mean", "mean")],
     # Beta separat (zwei Eingabearten: mean+k oder Konfidenzintervall).
 }
+
+
+class VerlustFormEingabeForm(forms.ModelForm):
+    """ModelForm für eine einzelne Loss-Form (6 Forms of Loss) auf PL- oder SL-Seite.
+
+    Immer ein Geldbetrag (magnitude) - anders als ``FaktorEingabeForm`` daher nur
+    PERT/Normal/Konstant/Lognormal zur Auswahl, kein Poisson (Frequenz) oder Beta
+    (0–1-Anteil). ``seite``/``form`` stehen durch die Karte fest (analog ``faktor``
+    bei ``FaktorEingabeForm``) und werden von der View gesetzt, nicht vom Formular.
+    """
+
+    low = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    mode = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    high = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    mean = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    stdev = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    constant = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    ln_mean = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+
+    class Meta:
+        model = VerlustFormEingabe
+        fields = ("verteilung", "unsicherheit", "annahmen", "quellentext")
+        widgets = {
+            "verteilung": forms.Select(attrs={"class": "form-select form-select-sm verteilung-select"}),
+            "unsicherheit": RangeInput(attrs={
+                "class": "form-range unsicherheit-slider",
+                "min": UNSICHERHEIT_MIN, "max": UNSICHERHEIT_MAX, "step": 1,
+            }),
+            "annahmen": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 2,
+                                              "placeholder": "Annahmen / Begründung …"}),
+            "quellentext": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 2,
+                                                 "placeholder": "Quelle / Beleg …"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        erlaubt = set(fair_tree.DISTS_BY_TYP["magnitude"])
+        self.fields["verteilung"].choices = [
+            (w, label) for w, label in VerlustFormEingabe.Verteilung.choices if w in erlaubt
+        ]
+        for key, label in _PARAM_LABELS["magnitude"].items():
+            if key in self.fields:
+                self.fields[key].label = label
+        if not (self.instance and self.instance.pk):
+            self.initial.setdefault("verteilung", VerlustFormEingabe.Verteilung.PERT)
+        if self.instance and self.instance.pk:
+            vorhandene = self.instance.params or {}
+            for feld, key in FELD_MAP.get(self.instance.verteilung, []):
+                if key in vorhandene:
+                    self.fields[feld].initial = vorhandene[key]
+
+    def clean(self):
+        cleaned = super().clean()
+        verteilung = cleaned.get("verteilung")
+        if not verteilung:
+            return cleaned
+        params = {}
+        for feld, key in FELD_MAP.get(verteilung, []):
+            if cleaned.get(feld) is not None:
+                params[key] = cleaned[feld]
+        # params VOR der Modell-Validierung setzen (clean() prüft Pflichtfelder/PERT-Reihenfolge).
+        self.instance.params = params
+        return cleaned
 
 
 class FaktorEingabeForm(forms.ModelForm):
