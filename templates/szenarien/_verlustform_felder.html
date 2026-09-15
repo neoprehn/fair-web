@@ -1,6 +1,8 @@
-{# Eingabefelder einer Loss-Form (6 Forms of Loss). Erwartet `form` (VerlustFormEingabeForm).
-   Analog zu _node_fields.html, aber ohne Beta/Poisson (Loss-Formen sind immer Geldbeträge)
-   und ohne KI-Button/Angreifertyp. #}
+{% comment %}
+Eingabefelder einer Loss-Form (6 Forms of Loss). Erwartet `form` (VerlustFormEingabeForm).
+Analog zu _node_fields.html, aber ohne Beta/Poisson (Loss-Formen sind immer Geldbeträge)
+und ohne KI-Button/Angreifertyp.
+{% endcomment %}
 {% if form.non_field_errors %}<div class="alert alert-danger py-1 small mb-2">{{ form.non_field_errors }}</div>{% endif %}
 
 <label class="form-label mb-1 small">Verteilung</label>
