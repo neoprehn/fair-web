@@ -358,6 +358,24 @@ class FaktorEingabe(_VerteilungsEingabe):
                     )
 
 
+# Kurz-Erklärungen je Loss-Form (Open-FAIR "Six Forms of Loss"), für den Info-Knopf
+# im Eingabeformular - eigene, knappe Formulierung, keine Übernahme von Standardtexten.
+VERLUSTFORM_ERKLAERUNG = {
+    "productivity": "Wert verlorener Produktivität, weil ein Asset (System, Mitarbeitende, "
+                    "Prozess) durch das Ereignis für die normale Arbeit nicht zur Verfügung steht.",
+    "response": "Kosten, das Ereignis selbst zu bewältigen – z. B. forensische Untersuchung, "
+                "Incident-Response-Team, interne und externe Kommunikation.",
+    "replacement": "Kosten, durch das Ereignis zerstörte oder unbrauchbar gewordene "
+                   "Vermögenswerte zu ersetzen oder wiederherzustellen – z. B. Hardware, Daten, Systeme.",
+    "competitive_advantage": "Wert eines verlorenen Wettbewerbsvorteils – z. B. wenn gestohlene "
+                             "Geschäftsgeheimnisse oder geistiges Eigentum einem Konkurrenten nutzen.",
+    "fines_judgements": "Bußgelder, Vertragsstrafen oder Schadensersatz aus rechtlichen bzw. "
+                        "regulatorischen Verfahren infolge des Ereignisses.",
+    "reputation": "Wert entgangener künftiger Erträge durch Vertrauens-/Reputationsschaden – "
+                  "z. B. Kundenabwanderung, sinkender Markenwert, erschwerte Neukundengewinnung.",
+}
+
+
 class VerlustFormEingabe(_VerteilungsEingabe):
     """Eine Loss-Form (6 Forms of Loss) auf der Primary- oder Secondary-Loss-Seite.
 
@@ -401,6 +419,11 @@ class VerlustFormEingabe(_VerteilungsEingabe):
 
     def __str__(self):
         return f"{self.get_seite_display()} – {self.get_form_display()}"
+
+    @property
+    def erklaerung(self):
+        """Kurzerklärung dieser Loss-Form (für den Info-Knopf im Formular)."""
+        return VERLUSTFORM_ERKLAERUNG.get(self.form, "")
 
     def clean(self):
         # Loss-Formen sind immer Geldbeträge - keine [0,1]-Bindung wie bei FAIR-Faktoren.

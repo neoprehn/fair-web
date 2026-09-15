@@ -110,35 +110,61 @@
             Leer gelassene Formen werden nicht verwendet; ohne mindestens eine ausgefüllte Form je
             Seite gilt die Seite weiterhin wie gewohnt (direkte Eingabe im Baum oben).
         </p>
-        <h3 class="h6 mt-3">Primary Loss</h3>
-        <div class="row g-2 mb-3">
-        {% for key, vf_form in verlustform_forms.items %}
-            {% if key.0 == "PL" %}
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="verlustform-card card p-2 h-100">
-                    <strong class="mb-1 small d-block">{{ vf_form.instance.get_form_display }}</strong>
-                    <div class="node-input">
-                        {% include "szenarien/_verlustform_felder.html" with form=vf_form %}
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-pl" type="button" role="tab">Primary Loss</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-sl" type="button" role="tab">Secondary Loss</button>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-pl" role="tabpanel">
+                <div class="row g-2 mb-3">
+                {% for key, vf_form in verlustform_forms.items %}
+                    {% if key.0 == "PL" %}
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="verlustform-card card p-2 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="small">{{ vf_form.instance.get_form_display }}</strong>
+                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" data-bs-toggle="modal"
+                                        data-bs-target="#verlustform-info-modal"
+                                        data-titel="{{ vf_form.instance.get_form_display }}"
+                                        data-text="{{ vf_form.instance.erklaerung }}"
+                                        title="Was bedeutet das?">ℹ️</button>
+                            </div>
+                            <div class="node-input">
+                                {% include "szenarien/_verlustform_felder.html" with form=vf_form %}
+                            </div>
+                        </div>
                     </div>
+                    {% endif %}
+                {% endfor %}
                 </div>
             </div>
-            {% endif %}
-        {% endfor %}
-        </div>
-        <h3 class="h6 mt-3">Secondary Loss</h3>
-        <div class="row g-2 mb-3">
-        {% for key, vf_form in verlustform_forms.items %}
-            {% if key.0 == "SL" %}
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="verlustform-card card p-2 h-100">
-                    <strong class="mb-1 small d-block">{{ vf_form.instance.get_form_display }}</strong>
-                    <div class="node-input">
-                        {% include "szenarien/_verlustform_felder.html" with form=vf_form %}
+            <div class="tab-pane fade" id="tab-sl" role="tabpanel">
+                <div class="row g-2 mb-3">
+                {% for key, vf_form in verlustform_forms.items %}
+                    {% if key.0 == "SL" %}
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="verlustform-card card p-2 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="small">{{ vf_form.instance.get_form_display }}</strong>
+                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" data-bs-toggle="modal"
+                                        data-bs-target="#verlustform-info-modal"
+                                        data-titel="{{ vf_form.instance.get_form_display }}"
+                                        data-text="{{ vf_form.instance.erklaerung }}"
+                                        title="Was bedeutet das?">ℹ️</button>
+                            </div>
+                            <div class="node-input">
+                                {% include "szenarien/_verlustform_felder.html" with form=vf_form %}
+                            </div>
+                        </div>
                     </div>
+                    {% endif %}
+                {% endfor %}
                 </div>
             </div>
-            {% endif %}
-        {% endfor %}
         </div>
     </div>
 
@@ -151,6 +177,18 @@
         <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Abbrechen</a>
     </div>
 </form>
+
+<div class="modal fade" id="verlustform-info-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="verlustform-info-titel"></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+            <p id="verlustform-info-text" class="mb-0"></p>
+        </div>
+    </div></div>
+</div>
 
 <div class="offcanvas offcanvas-end" tabindex="-1" id="ki-offcanvas" aria-labelledby="ki-offcanvas-label">
     <div class="offcanvas-header">
@@ -328,6 +366,18 @@ function formatDE(n) {
     });
 
     syncAllDist();
+})();
+</script>
+
+<script>
+// Loss-Form-Info-Modal: Titel/Text aus den data-Attributen des geklickten Knopfs befüllen.
+(function () {
+    var modal = document.getElementById('verlustform-info-modal');
+    if (!modal) return;
+    modal.addEventListener('show.bs.modal', function (e) {
+        document.getElementById('verlustform-info-titel').textContent = e.relatedTarget.dataset.titel || '';
+        document.getElementById('verlustform-info-text').textContent = e.relatedTarget.dataset.text || '';
+    });
 })();
 </script>
 
