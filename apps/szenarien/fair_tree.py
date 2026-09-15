@@ -156,6 +156,11 @@ def ist_blatt(code):
     return code not in CHILDREN
 
 
+# Zweig-Einfärbung: die vier Gabelknoten der Frequenz- (TEF/VULN) und
+# Magnitude-Seite (PL/SL) bekommen eine eigene CSS-Klasse statt des
+# einheitlichen Eingabe-/Berechnet-Blaus/Grüns (rein visuell, siehe base.html).
+ZWEIG_CSS = {"TEF": "zweig-tef", "VULN": "zweig-vuln", "PL": "zweig-pl", "SL": "zweig-sl"}
+
 # Feste Positionen (x, y) für die SVG-Darstellung des Baums (inkl. Risk-Wurzel).
 SVG_POS = {
     "Risk": (461, 26),
@@ -176,7 +181,7 @@ def svg_layout():
     nodes = []
     for code, (x, y) in SVG_POS.items():
         label = "R" if code == "Risk" else abbr(code)
-        nodes.append({"code": code, "label": label, "x": x, "y": y})
+        nodes.append({"code": code, "label": label, "x": x, "y": y, "zweig": ZWEIG_CSS.get(code, "")})
 
     paare = [("Risk", "LEF"), ("Risk", "LM")]
     for code, (_n, _a, parent_code, _t) in FAIR_NODES.items():

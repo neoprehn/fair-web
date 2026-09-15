@@ -19,7 +19,7 @@ def test_start_anonym_login_pflicht():
 def test_start_zeigt_fair_baum(client):
     html = client.get(reverse("start")).content.decode()
     assert "FAIR" in html
-    assert 'class="svg-node startnode"' in html
+    assert 'class="svg-node startnode' in html
     assert 'id="knoten-infos"' in html  # Erklärungen fürs Klick-Panel
 
 

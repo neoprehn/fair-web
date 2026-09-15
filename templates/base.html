@@ -21,6 +21,8 @@
             --bg-0:#020617; --bg-1:#07111f; --bg-2:#0f172a; --bg-3:#101826;
             --txt:#f8fafc; --txt-muted:#cbd5e1; --txt-dim:#94a3b8;
             --accent:#7dd3fc; --accent-2:#93c5fd; --ok:#86efac; --danger:#f87171;
+            /* Zweig-Farben FAIR-Baum: TEF/VULN unter LEF, PL/SL unter LM (rein visuell). */
+            --zweig-tef:#fbbf24; --zweig-vuln:#f472b6; --zweig-pl:#2dd4bf; --zweig-sl:#a78bfa;
             --border:#1e293b;
             --card-accent-bg:#181c3a; --card-accent-border:#2e3361;
             --svg-flaeche-bg:#17243c;
@@ -37,6 +39,7 @@
             --bg-0:#ffffff; --bg-1:#f4f7fb; --bg-2:#ffffff; --bg-3:#eef2f7;
             --txt:#0f172a; --txt-muted:#334155; --txt-dim:#64748b;
             --accent:#0284c7; --accent-2:#0369a1; --ok:#16a34a; --danger:#dc2626;
+            --zweig-tef:#d97706; --zweig-vuln:#db2777; --zweig-pl:#0d9488; --zweig-sl:#7c3aed;
             --border:#d8e0ea;
             --card-accent-bg:#eef2ff; --card-accent-border:#c7d2fe;
             --svg-flaeche-bg:#eaf0f8;
@@ -100,6 +103,13 @@
         .svg-node.eingabe rect { fill: var(--accent); stroke: var(--accent); }
         .svg-node.berechnet rect { fill: var(--ok); stroke: var(--ok); }
         .svg-node.unused { opacity: .38; }
+        /* Zweig-Einfärbung TEF/VULN (Frequenz-Seite) und PL/SL (Magnitude-Seite) */
+        .svg-node.zweig-tef rect { fill: var(--zweig-tef); stroke: var(--zweig-tef); }
+        .svg-node.zweig-vuln rect { fill: var(--zweig-vuln); stroke: var(--zweig-vuln); }
+        .svg-node.zweig-pl rect { fill: var(--zweig-pl); stroke: var(--zweig-pl); }
+        .svg-node.zweig-sl rect { fill: var(--zweig-sl); stroke: var(--zweig-sl); }
+        .svg-node.zweig-tef .svg-node-label, .svg-node.zweig-vuln .svg-node-label,
+        .svg-node.zweig-pl .svg-node-label, .svg-node.zweig-sl .svg-node-label { fill: #04223a; font-weight: 700; }
         .svg-node.eingabe .svg-node-label,
         .svg-node.berechnet .svg-node-label { fill: #04223a; font-weight: 700; }
         .svg-node-wert { fill: var(--txt-muted); font-size: 10px; font-family: Bahnschrift, "Segoe UI", sans-serif; }
@@ -125,6 +135,14 @@
         .svg-flaeche { background: var(--svg-flaeche-bg); border-radius: .75rem; }
         /* Farbige Block-Karten im Formularkopf */
         .card-meta, .card-config { background: var(--card-accent-bg); border: 1px solid var(--card-accent-border); }
+        /* PL/SL-Reiter (6 Forms of Loss) farblich vom Standard-Blau/Grau abheben */
+        .nav-tabs-zweig .nav-link { color: var(--txt-dim); border-color: transparent; font-weight: 500; }
+        .nav-tabs-zweig .nav-link.zweig-pl.active { color: var(--zweig-pl); border-color: var(--border) var(--border) var(--bg-1); border-bottom: 2px solid var(--zweig-pl); }
+        .nav-tabs-zweig .nav-link.zweig-sl.active { color: var(--zweig-sl); border-color: var(--border) var(--border) var(--bg-1); border-bottom: 2px solid var(--zweig-sl); }
+        .nav-tabs-zweig .nav-link.zweig-pl:hover { color: var(--zweig-pl); }
+        .nav-tabs-zweig .nav-link.zweig-sl:hover { color: var(--zweig-sl); }
+        .verlustform-card-pl { border-left: 3px solid var(--zweig-pl); }
+        .verlustform-card-sl { border-left: 3px solid var(--zweig-sl); }
         .node-box.expanded::after {
             content: ''; position: absolute; left: 50%; bottom: -1rem;
             width: 2px; height: 1rem; background: var(--border);

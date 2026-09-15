@@ -72,7 +72,7 @@
                     <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
                     {% endfor %}
                     {% for n in svg_nodes %}
-                    <g class="svg-node" data-code="{{ n.code }}">
+                    <g class="svg-node {{ n.zweig }}" data-code="{{ n.code }}">
                         <rect x="{{ n.x|add:'-30' }}" y="{{ n.y|add:'-13' }}" width="60" height="26" rx="6"/>
                         <text x="{{ n.x }}" y="{{ n.y|add:'4' }}" text-anchor="middle">{{ n.label }}</text>
                     </g>
@@ -110,12 +110,12 @@
             Leer gelassene Formen werden nicht verwendet; ohne mindestens eine ausgefüllte Form je
             Seite gilt die Seite weiterhin wie gewohnt (direkte Eingabe im Baum oben).
         </p>
-        <ul class="nav nav-tabs mb-3" role="tablist">
+        <ul class="nav nav-tabs nav-tabs-zweig mb-3" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-pl" type="button" role="tab">Primary Loss</button>
+                <button class="nav-link zweig-pl active" data-bs-toggle="tab" data-bs-target="#tab-pl" type="button" role="tab">Primary Loss</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-sl" type="button" role="tab">Secondary Loss</button>
+                <button class="nav-link zweig-sl" data-bs-toggle="tab" data-bs-target="#tab-sl" type="button" role="tab">Secondary Loss</button>
             </li>
         </ul>
         <div class="tab-content">
@@ -124,7 +124,7 @@
                 {% for key, vf_form in verlustform_forms.items %}
                     {% if key.0 == "PL" %}
                     <div class="col-12 col-md-6 col-lg-4">
-                        <div class="verlustform-card card p-2 h-100">
+                        <div class="verlustform-card verlustform-card-pl card p-2 h-100">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <strong class="small">{{ vf_form.instance.get_form_display }}</strong>
                                 <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" data-bs-toggle="modal"
@@ -147,7 +147,7 @@
                 {% for key, vf_form in verlustform_forms.items %}
                     {% if key.0 == "SL" %}
                     <div class="col-12 col-md-6 col-lg-4">
-                        <div class="verlustform-card card p-2 h-100">
+                        <div class="verlustform-card verlustform-card-sl card p-2 h-100">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <strong class="small">{{ vf_form.instance.get_form_display }}</strong>
                                 <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" data-bs-toggle="modal"

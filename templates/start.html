@@ -19,7 +19,7 @@
                 <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"/>
                 {% endfor %}
                 {% for n in svg_nodes %}
-                <g class="svg-node startnode" data-code="{{ n.code }}" style="cursor:pointer;">
+                <g class="svg-node startnode {{ n.zweig }}" data-code="{{ n.code }}" style="cursor:pointer;">
                     <rect x="{{ n.x|add:'-36' }}" y="{{ n.y|add:'-16' }}" width="72" height="32" rx="7"/>
                     <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y }}" text-anchor="middle" dominant-baseline="central">{{ n.label }}</text>
                 </g>
