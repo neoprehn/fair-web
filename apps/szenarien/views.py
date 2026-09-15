@@ -138,6 +138,23 @@ class SzenarioDetailView(DetailView):
     template_name = "szenarien/detail.html"
     context_object_name = "szenario"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.berechnung.services import _histogramm
+        from pyfair.model.model_input import FairDataInput
+
+        vorschau = {}
+        for f in self.object.faktoren.all():
+            try:
+                samples = FairDataInput().generate(
+                    fair_tree.target(f.faktor), 3000, distribution=f.verteilung, params=f.params
+                )
+                vorschau[f.pk] = _histogramm(samples)
+            except Exception:  # noqa: BLE001 – Vorschau ist optional, darf die Seite nie kippen
+                vorschau[f.pk] = None
+        context["verteilung_vorschau"] = vorschau
+        return context
+
 
 def _szenario_kopieren(orig, name):
     """Legt eine Kopie eines Szenarios (neue ID) inkl. Faktoren an."""

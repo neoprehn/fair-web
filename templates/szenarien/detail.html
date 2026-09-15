@@ -2,6 +2,7 @@
 {% load humanize %}
 
 {% block title %}{{ szenario.name }} &middot; fair-web{% endblock %}
+{% block extra_head %}{% if szenario.faktoren.all %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -32,7 +33,7 @@
 <h2 class="h5 mt-4">FAIR-Faktoren</h2>
 <table class="table">
     <thead>
-        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th><th>Unsicherheit</th><th>Annahmen</th></tr>
+        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th><th>Unsicherheit</th><th>Annahmen</th><th>Vorschau</th></tr>
     </thead>
     <tbody>
     {% for faktor in szenario.faktoren.all %}
@@ -56,13 +57,51 @@
                     {% endfor %}
                 {% endif %}{% endif %}
             </td>
-            <td class="small text-body-secondary">{{ faktor.annahmen|default:"–" }}</td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                        data-bs-target="#annahmen-modal"
+                        data-annahmen="{{ faktor.annahmen|default:'' }}"
+                        data-quellentext="{{ faktor.quellentext|default:'' }}"
+                        data-faktor="{{ faktor.get_faktor_display }}"
+                        title="Annahmen &amp; Quellentext anzeigen">📝</button>
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline-info vorschau-btn"
+                        data-code="{{ faktor.pk }}" data-faktor="{{ faktor.get_faktor_display }}"
+                        title="Verteilungskurve anzeigen">📈</button>
+            </td>
         </tr>
     {% empty %}
-        <tr><td colspan="5" class="text-body-secondary">Noch keine Faktoren erfasst.</td></tr>
+        <tr><td colspan="6" class="text-body-secondary">Noch keine Faktoren erfasst.</td></tr>
     {% endfor %}
     </tbody>
 </table>
+
+{% if szenario.faktoren.all %}
+<div class="card mb-4" id="verteilung-karte" style="display:none;"><div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="text-body-secondary small">Verteilungs-Vorschau: <strong id="verteilung-titel"></strong></span>
+        <button type="button" class="btn btn-sm btn-link" onclick="document.getElementById('verteilung-karte').style.display='none';">schließen</button>
+    </div>
+    <div id="verteilung-chart" style="height:280px;"></div>
+</div></div>
+{{ verteilung_vorschau|json_script:"verteilung-data" }}
+{% endif %}
+
+<div class="modal fade" id="annahmen-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="annahmen-modal-titel"></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+            <label class="form-label small">Annahmen</label>
+            <p id="annahmen-modal-annahmen" class="text-body-secondary"></p>
+            <label class="form-label small">Quellentext</label>
+            <p id="annahmen-modal-quelle" class="text-body-secondary mb-0"></p>
+        </div>
+    </div></div>
+</div>
 
 <h2 class="h5 mt-4">Risikotoleranz</h2>
 {% with rt=szenario.risikotoleranz %}
@@ -118,4 +157,54 @@
 {% else %}
 <p class="text-body-secondary">Noch keine Berechnung. Klicke auf „Berechnen", um die Monte-Carlo-Simulation zu starten.</p>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Annahmen/Quellentext-Modal: Inhalt aus den data-Attributen des geklickten Knopfs befüllen.
+(function () {
+    var modal = document.getElementById('annahmen-modal');
+    if (!modal) return;
+    modal.addEventListener('show.bs.modal', function (e) {
+        var btn = e.relatedTarget;
+        document.getElementById('annahmen-modal-titel').textContent = btn.dataset.faktor || '';
+        document.getElementById('annahmen-modal-annahmen').textContent = btn.dataset.annahmen || '–';
+        document.getElementById('annahmen-modal-quelle').textContent = btn.dataset.quellentext || '–';
+    });
+})();
+
+// Verteilungs-Vorschau: eine gemeinsame Karte, per Knopf neu gerendert (Plotly.react).
+(function () {
+    if (typeof Plotly === 'undefined') return;
+    var datenEl = document.getElementById('verteilung-data');
+    if (!datenEl) return;
+    var daten = JSON.parse(datenEl.textContent || '{}');
+    var karte = document.getElementById('verteilung-karte');
+    var titel = document.getElementById('verteilung-titel');
+
+    document.querySelectorAll('.vorschau-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var d = daten[btn.dataset.code];
+            if (!d || !d.x || !d.x.length) {
+                titel.textContent = btn.dataset.faktor + ' – keine Vorschau möglich';
+                karte.style.display = '';
+                Plotly.purge('verteilung-chart');
+                return;
+            }
+            titel.textContent = btn.dataset.faktor;
+            karte.style.display = '';
+            Plotly.react('verteilung-chart', [{
+                x: d.x, y: d.y, type: 'bar', marker: { color: '#7dd3fc' },
+                width: d.breite ? d.breite * 0.9 : undefined
+            }], {
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
+                margin: { l: 60, r: 15, t: 10, b: 40 }, bargap: 0.02,
+                xaxis: { title: 'Wert', gridcolor: window.fairChartGrid() },
+                yaxis: { title: 'Häufigkeit', gridcolor: window.fairChartGrid() }
+            }, { responsive: true, displayModeBar: false });
+        });
+    });
+})();
+</script>
 {% endblock %}

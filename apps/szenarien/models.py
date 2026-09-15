@@ -210,6 +210,7 @@ class FaktorEingabe(models.Model):
     )
     angreifertyp = models.CharField("Angreifertyp", max_length=120, blank=True)
     annahmen = models.TextField("Annahmen", blank=True)
+    quellentext = models.TextField("Quellentext", blank=True)
 
     class Meta:
         verbose_name = "Faktor-Eingabe"

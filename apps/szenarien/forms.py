@@ -153,7 +153,7 @@ class FaktorEingabeForm(forms.ModelForm):
 
     class Meta:
         model = FaktorEingabe
-        fields = ("verteilung", "unsicherheit", "annahmen", "angreifertyp")
+        fields = ("verteilung", "unsicherheit", "annahmen", "quellentext", "angreifertyp")
         widgets = {
             "verteilung": forms.Select(attrs={"class": "form-select form-select-sm verteilung-select"}),
             "unsicherheit": RangeInput(attrs={
@@ -162,6 +162,8 @@ class FaktorEingabeForm(forms.ModelForm):
             }),
             "annahmen": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 2,
                                               "placeholder": "Annahmen / Begründung …"}),
+            "quellentext": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 2,
+                                                 "placeholder": "Quelle / Beleg …"}),
             "angreifertyp": forms.HiddenInput(),
         }
 
