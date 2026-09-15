@@ -209,13 +209,33 @@
         }
         chartEl.style.display = '';
         leer.style.display = 'none';
+
+        function formatDE(n) {
+            return Number(n).toLocaleString(window.fairLocale || 'de-DE', { maximumFractionDigits: 3 });
+        }
+        var shapes = [], annotations = [];
+        function linie(x, farbe, label, dash, yshift) {
+            if (x === undefined || x === null) return;
+            shapes.push({
+                type: 'line', x0: x, x1: x, y0: 0, y1: 1, yref: 'paper',
+                line: { color: farbe, width: 2, dash: dash }
+            });
+            annotations.push({
+                x: x, y: 1, yref: 'paper', yanchor: 'bottom', yshift: yshift, showarrow: false,
+                text: label + ' ' + formatDE(x), font: { color: farbe, size: 11 }
+            });
+        }
+        linie(d.mittelwert, '#fbbf24', 'Ø', 'dash', 16);
+        linie(d.median, '#f87171', 'Median', 'dot', 0);
+
         Plotly.react('verteilung-chart', [{
             x: d.x, y: d.y, mode: 'lines', line: { shape: 'spline', color: '#7dd3fc', width: 2 },
             fill: 'tozeroy', fillcolor: 'rgba(125,211,252,0.2)'
         }], {
             paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            shapes: shapes, annotations: annotations,
             font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
-            margin: { l: 60, r: 15, t: 10, b: 40 },
+            margin: { l: 60, r: 15, t: 45, b: 40 },
             xaxis: { title: 'Wert', gridcolor: window.fairChartGrid() },
             yaxis: { title: 'Dichte', gridcolor: window.fairChartGrid(), zeroline: false }
         }, { responsive: true, displayModeBar: false });

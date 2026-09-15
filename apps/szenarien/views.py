@@ -150,7 +150,10 @@ def _verteilung_kurve(samples, punkte=200):
     kde = gaussian_kde(arr)
     x = np.linspace(arr.min(), arr.max(), punkte)
     y = kde(x)
-    return {"x": x.tolist(), "y": y.tolist()}
+    return {
+        "x": x.tolist(), "y": y.tolist(),
+        "mittelwert": float(arr.mean()), "median": float(np.median(arr)),
+    }
 
 
 class SzenarioDetailView(DetailView):
