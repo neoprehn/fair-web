@@ -33,7 +33,9 @@
 <h2 class="h5 mt-4">FAIR-Faktoren</h2>
 <table class="table">
     <thead>
-        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th><th>Unsicherheit</th><th>Annahmen</th><th>Vorschau</th></tr>
+        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th><th>Unsicherheit</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;">Annahmen</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;">Vorschau</th></tr>
     </thead>
     <tbody>
     {% for faktor in szenario.faktoren.all %}
@@ -57,7 +59,7 @@
                     {% endfor %}
                 {% endif %}{% endif %}
             </td>
-            <td>
+            <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
                         data-bs-target="#annahmen-modal"
                         data-annahmen="{{ faktor.annahmen|default:'' }}"
@@ -65,8 +67,9 @@
                         data-faktor="{{ faktor.get_faktor_display }}"
                         title="Annahmen &amp; Quellentext anzeigen">📝</button>
             </td>
-            <td>
-                <button type="button" class="btn btn-sm btn-outline-info vorschau-btn"
+            <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
+                <button type="button" class="btn btn-sm btn-outline-info vorschau-btn" data-bs-toggle="modal"
+                        data-bs-target="#verteilung-modal"
                         data-code="{{ faktor.pk }}" data-faktor="{{ faktor.get_faktor_display }}"
                         title="Verteilungskurve anzeigen">📈</button>
             </td>
@@ -78,14 +81,19 @@
 </table>
 
 {% if szenario.faktoren.all %}
-<div class="card mb-4" id="verteilung-karte" style="display:none;"><div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="text-body-secondary small">Verteilungs-Vorschau: <strong id="verteilung-titel"></strong></span>
-        <button type="button" class="btn btn-sm btn-link" onclick="document.getElementById('verteilung-karte').style.display='none';">schließen</button>
-    </div>
-    <div id="verteilung-chart" style="height:280px;"></div>
-</div></div>
 {{ verteilung_vorschau|json_script:"verteilung-data" }}
+<div class="modal fade" id="verteilung-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Verteilungs-Vorschau: <span id="verteilung-modal-titel"></span></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+            <div id="verteilung-chart" style="height:340px;"></div>
+            <p id="verteilung-modal-leer" class="text-body-secondary mb-0" style="display:none;">Keine Vorschau möglich.</p>
+        </div>
+    </div></div>
+</div>
 {% endif %}
 
 <div class="modal fade" id="annahmen-modal" tabindex="-1" aria-hidden="true">
@@ -173,37 +181,44 @@
     });
 })();
 
-// Verteilungs-Vorschau: eine gemeinsame Karte, per Knopf neu gerendert (Plotly.react).
+// Verteilungs-Vorschau: eigenes Modal (wie Annahmen), Kurve statt Balken. Gerendert
+// erst bei "shown.bs.modal" (nicht beim Klick), da Plotly die tatsächliche, sichtbare
+// Größe des Containers braucht - die hat der Modal-Body erst nach dem Öffnen.
 (function () {
     if (typeof Plotly === 'undefined') return;
+    var modal = document.getElementById('verteilung-modal');
     var datenEl = document.getElementById('verteilung-data');
-    if (!datenEl) return;
+    if (!modal || !datenEl) return;
     var daten = JSON.parse(datenEl.textContent || '{}');
-    var karte = document.getElementById('verteilung-karte');
-    var titel = document.getElementById('verteilung-titel');
+    var titel = document.getElementById('verteilung-modal-titel');
+    var leer = document.getElementById('verteilung-modal-leer');
+    var aktuellerCode = null;
 
-    document.querySelectorAll('.vorschau-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var d = daten[btn.dataset.code];
-            if (!d || !d.x || !d.x.length) {
-                titel.textContent = btn.dataset.faktor + ' – keine Vorschau möglich';
-                karte.style.display = '';
-                Plotly.purge('verteilung-chart');
-                return;
-            }
-            titel.textContent = btn.dataset.faktor;
-            karte.style.display = '';
-            Plotly.react('verteilung-chart', [{
-                x: d.x, y: d.y, type: 'bar', marker: { color: '#7dd3fc' },
-                width: d.breite ? d.breite * 0.9 : undefined
-            }], {
-                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
-                font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
-                margin: { l: 60, r: 15, t: 10, b: 40 }, bargap: 0.02,
-                xaxis: { title: 'Wert', gridcolor: window.fairChartGrid() },
-                yaxis: { title: 'Häufigkeit', gridcolor: window.fairChartGrid() }
-            }, { responsive: true, displayModeBar: false });
-        });
+    modal.addEventListener('show.bs.modal', function (e) {
+        aktuellerCode = e.relatedTarget.dataset.code;
+        titel.textContent = e.relatedTarget.dataset.faktor || '';
+    });
+
+    modal.addEventListener('shown.bs.modal', function () {
+        var d = daten[aktuellerCode];
+        var chartEl = document.getElementById('verteilung-chart');
+        if (!d || !d.x || !d.x.length) {
+            chartEl.style.display = 'none';
+            leer.style.display = '';
+            return;
+        }
+        chartEl.style.display = '';
+        leer.style.display = 'none';
+        Plotly.react('verteilung-chart', [{
+            x: d.x, y: d.y, mode: 'lines', line: { shape: 'spline', color: '#7dd3fc', width: 2 },
+            fill: 'tozeroy', fillcolor: 'rgba(125,211,252,0.2)'
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
+            margin: { l: 60, r: 15, t: 10, b: 40 },
+            xaxis: { title: 'Wert', gridcolor: window.fairChartGrid() },
+            yaxis: { title: 'Dichte', gridcolor: window.fairChartGrid(), zeroline: false }
+        }, { responsive: true, displayModeBar: false });
     });
 })();
 </script>

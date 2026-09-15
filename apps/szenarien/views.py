@@ -133,6 +133,26 @@ class SzenarioListView(ListView):
         return context
 
 
+def _verteilung_kurve(samples, punkte=200):
+    """Glatte Dichtekurve (Kernel-Density-Schätzung) aus simulierten Werten.
+
+    Für die Verteilungs-Vorschau auf der Szenario-Detailseite - liefert eine
+    Kurve statt eines Histogramms, damit die Form der Verteilung auf einen
+    Blick erkennbar ist.
+    """
+    import numpy as np
+    from scipy.stats import gaussian_kde
+
+    arr = np.asarray(samples, dtype=float)
+    arr = arr[np.isfinite(arr)]
+    if arr.size < 2 or np.ptp(arr) == 0:
+        return {"x": [], "y": []}
+    kde = gaussian_kde(arr)
+    x = np.linspace(arr.min(), arr.max(), punkte)
+    y = kde(x)
+    return {"x": x.tolist(), "y": y.tolist()}
+
+
 class SzenarioDetailView(DetailView):
     model = Szenario
     template_name = "szenarien/detail.html"
@@ -140,16 +160,19 @@ class SzenarioDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        from apps.berechnung.services import _histogramm
         from pyfair.model.model_input import FairDataInput
 
         vorschau = {}
         for f in self.object.faktoren.all():
             try:
-                samples = FairDataInput().generate(
-                    fair_tree.target(f.faktor), 3000, distribution=f.verteilung, params=f.params
-                )
-                vorschau[f.pk] = _histogramm(samples)
+                erzeuge_kwargs = {"distribution": f.verteilung, "params": f.params}
+                # Beta im Konfidenzintervall-Eingabemodus (low/high/confidence statt
+                # mean/k) braucht pyfair zufolge explizit input_mode="confidence_interval",
+                # sonst schlaegt die Validierung fehl (z.B. bei PoA).
+                if f.verteilung == "beta" and "low" in (f.params or {}):
+                    erzeuge_kwargs["input_mode"] = "confidence_interval"
+                samples = FairDataInput().generate(fair_tree.target(f.faktor), 3000, **erzeuge_kwargs)
+                vorschau[f.pk] = _verteilung_kurve(samples)
             except Exception:  # noqa: BLE001 – Vorschau ist optional, darf die Seite nie kippen
                 vorschau[f.pk] = None
         context["verteilung_vorschau"] = vorschau
