@@ -179,6 +179,31 @@ def test_create_aggregations_modus_kennwerte_wird_gespeichert(client):
 
 
 @pytest.mark.django_db
+def test_create_slef_je_form_speichert_verlustformslef(client):
+    from apps.szenarien.models import VerlustFormSlef
+
+    data = {
+        "name": "SLEF-View-Test", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,
+        "lm_modus": "formen", "slef_modus": "je_form",
+        "LEF-verteilung": "pert", "LEF-low": "1", "LEF-mode": "3", "LEF-high": "6", "LEF-unsicherheit": "2",
+        "modus-LM": "aufschluesseln",
+        "PL-verteilung": "constant", "PL-constant": "0", "PL-unsicherheit": "2",
+        "vf-SL-response-verteilung": "constant", "vf-SL-response-constant": "2000",
+        "vf-SL-response-unsicherheit": "2",
+        "slef-vf-SL-response-verteilung": "constant", "slef-vf-SL-response-constant": "0.3",
+        "slef-vf-SL-response-unsicherheit": "2",
+    }
+    resp = client.post(reverse("szenarien:create"), data=data)
+    assert resp.status_code == 302, resp.context["verlustform_forms"] if resp.status_code == 200 else None
+    s = Szenario.objects.get(name="SLEF-View-Test")
+
+    assert s.slef_modus == Szenario.SlefModus.JE_FORM
+    vf = s.verlustformen.get(seite="SL", form="response")
+    assert VerlustFormSlef.objects.filter(verlustform=vf).exists()
+    assert vf.slef.params == {"constant": 0.3}
+
+
+@pytest.mark.django_db
 def test_create_wahrscheinlichkeit_ueber_eins_fehler(client):
     data = {
         "name": "Ungueltig", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,

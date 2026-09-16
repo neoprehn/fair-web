@@ -34,7 +34,9 @@ from .forms import (
     SzenarioForm,
     VergleichForm,
     VerlustFormEingabeForm,
+    VerlustFormSlefForm,
     VerlustMamEingabeForm,
+    VerlustMamSlefForm,
 )
 from .models import (
     Angreifertyp,
@@ -45,7 +47,9 @@ from .models import (
     Szenario,
     Vergleich,
     VerlustFormEingabe,
+    VerlustFormSlef,
     VerlustMamEingabe,
+    VerlustMamSlef,
 )
 
 
@@ -271,10 +275,16 @@ class _SzenarioFormMixin:
     def _modus_aus_post(self):
         return {c: self.request.POST.get(f"modus-{c}", "direkt") for c in fair_tree.NICHT_BLATT}
 
-    _VERLUSTFORM_ZAHLENFELDER = ("low", "mode", "high", "mean", "stdev", "constant", "ln_mean")
+    _VERLUSTFORM_ZAHLENFELDER = ("low", "mode", "high", "mean", "stdev", "constant", "ln_mean", "rate")
 
     def _verlustform_forms(self, data=None):
-        """Ein VerlustFormEingabeForm je (Seite, Form)-Kombination - bis zu 6 je Seite."""
+        """Ein VerlustFormEingabeForm je (Seite, Form)-Kombination - bis zu 6 je Seite.
+
+        Für SL-seitige Formen hängt jedes Formular zusätzlich sein individuelles
+        SLEF-Unterformular als ``.slef_form``-Attribut an (Slice 4, nur relevant bei
+        ``slef_modus="je_form"``) - Template/View können es direkt darüber ansprechen,
+        kein separater Context-Dict/Lookup nötig.
+        """
         bestehend = (
             {(vf.seite, vf.form): vf for vf in self.object.verlustformen.all()}
             if self.object else {}
@@ -284,7 +294,13 @@ class _SzenarioFormMixin:
             for form_code, _form_label in VerlustFormEingabe.Form.choices:
                 prefix = f"vf-{seite}-{form_code}"
                 inst = bestehend.get((seite, form_code)) or VerlustFormEingabe(seite=seite, form=form_code)
-                forms[(seite, form_code)] = VerlustFormEingabeForm(data, instance=inst, prefix=prefix)
+                f = VerlustFormEingabeForm(data, instance=inst, prefix=prefix)
+                if seite == "SL":
+                    slef_inst = getattr(inst, "slef", None) or VerlustFormSlef()
+                    f.slef_form = VerlustFormSlefForm(data, instance=slef_inst, prefix=f"slef-{prefix}")
+                else:
+                    f.slef_form = None
+                forms[(seite, form_code)] = f
         return forms
 
     def _verlustform_ist_belegt(self, form):
@@ -300,7 +316,11 @@ class _SzenarioFormMixin:
         )
 
     def _mam_forms(self, data=None):
-        """Ein VerlustMamEingabeForm je FAIR-MAM-Kategorie (26 Karten, gruppiert nach Modul)."""
+        """Ein VerlustMamEingabeForm je FAIR-MAM-Kategorie (26 Karten, gruppiert nach Modul).
+
+        Für SL-seitige Kategorien hängt jedes Formular zusätzlich sein individuelles
+        SLEF-Unterformular als ``.slef_form``-Attribut an (Slice 4, analog ``_verlustform_forms()``).
+        """
         bestehend = (
             {m.kategorie: m for m in self.object.mam_kategorien.all()}
             if self.object else {}
@@ -309,7 +329,13 @@ class _SzenarioFormMixin:
         for kategorie, _label in VerlustMamEingabe.Kategorie.choices:
             prefix = f"mam-{kategorie}"
             inst = bestehend.get(kategorie) or VerlustMamEingabe(kategorie=kategorie)
-            forms[kategorie] = VerlustMamEingabeForm(data, instance=inst, prefix=prefix)
+            f = VerlustMamEingabeForm(data, instance=inst, prefix=prefix)
+            if inst.seite == "SL":
+                slef_inst = getattr(inst, "slef", None) or VerlustMamSlef()
+                f.slef_form = VerlustMamSlefForm(data, instance=slef_inst, prefix=f"slef-{prefix}")
+            else:
+                f.slef_form = None
+            forms[kategorie] = f
         return forms
 
     def _risikotoleranz_aus_post(self):
@@ -383,17 +409,38 @@ class _SzenarioFormMixin:
             {key: f for key, f in mam_forms.items() if self._verlustform_ist_belegt(f)}
             if lm_modus == Szenario.LMModus.FAIR_MAM else {}
         )
+        # Individuelle SLEF (Slice 4) - nur je belegter SL-seitiger Form/Kategorie, nur im
+        # Modus "je_form". Orphane SLEF-Eingaben (Magnitude-Feld leer) werden verworfen, da
+        # keine Zeile zum Anhängen existiert.
+        slef_modus = self.request.POST.get("slef_modus", Szenario.SlefModus.GEMEINSAM)
+        belegte_verlustform_slef = (
+            {code: f.slef_form for (seite, code), f in belegte_verlustform_forms.items()
+             if seite == "SL" and f.slef_form and self._verlustform_ist_belegt(f.slef_form)}
+            if slef_modus == Szenario.SlefModus.JE_FORM else {}
+        )
+        belegte_mam_slef = (
+            {code: f.slef_form for code, f in belegte_mam_forms.items()
+             if f.slef_form and self._verlustform_ist_belegt(f.slef_form)}
+            if slef_modus == Szenario.SlefModus.JE_FORM else {}
+        )
         # PL/SL-Knotenformular NICHT validieren/speichern, wenn dafür belegte Loss-Form- oder
         # FAIR-MAM-Karten vorliegen - die Werte kommen dann von dort (siehe services.simuliere).
         belegte_seiten = {seite for seite, _form in belegte_verlustform_forms}
         belegte_seiten |= {MAM_KATEGORIE_INFO[k]["seite"] for k in belegte_mam_forms}
         for seite in belegte_seiten:
             frontier_forms.pop(seite, None)
+        if "SL" in belegte_seiten:
+            # SLEM ist durch die SL-Formen-Summe ersetzt; nur SLEF (falls der Baum-Knoten SLEF
+            # durch "aufschlüsseln" aktiv ist) bleibt als gemeinsamer Multiplikator relevant
+            # (Slice 4, wiederverwendeter Baum-Knoten, ganz normal über frontier_forms gespeichert).
+            frontier_forms.pop("SLEM", None)
 
         alle_ok = (
             all(f.is_valid() for f in frontier_forms.values())
             and all(f.is_valid() for f in belegte_verlustform_forms.values())
             and all(f.is_valid() for f in belegte_mam_forms.values())
+            and all(f.is_valid() for f in belegte_verlustform_slef.values())
+            and all(f.is_valid() for f in belegte_mam_slef.values())
         )
         schnitt_ok = fair_tree.schnitt_ist_gueltig(frontier)
         if not (alle_ok and schnitt_ok):
@@ -439,7 +486,9 @@ class _SzenarioFormMixin:
                 eingabe.faktor = code
                 eingabe.save()
             # Loss-Form-Eingaben (6 Forms of Loss) - immer frisch anlegen wie bei faktoren.
+            # verlustformen.all().delete() räumt per CASCADE auch alte VerlustFormSlef-Zeilen mit ab.
             self.object.verlustformen.all().delete()
+            gespeicherte_verlustformen = {}
             for (seite, form_code), f in belegte_verlustform_forms.items():
                 eingabe = f.save(commit=False)
                 eingabe.pk = None
@@ -448,15 +497,38 @@ class _SzenarioFormMixin:
                 eingabe.seite = seite
                 eingabe.form = form_code
                 eingabe.save()
+                if seite == "SL":
+                    gespeicherte_verlustformen[form_code] = eingabe
+            for form_code, f in belegte_verlustform_slef.items():
+                parent = gespeicherte_verlustformen.get(form_code)
+                if not parent:
+                    continue
+                eingabe = f.save(commit=False)
+                eingabe.pk = None
+                eingabe._state.adding = True
+                eingabe.verlustform = parent
+                eingabe.save()
             # FAIR-MAM-Eingaben (zweite LM-Taxonomie) - dasselbe Muster, Seite ergibt sich
             # automatisch aus der Kategorie (siehe VerlustMamEingabe.seite).
             self.object.mam_kategorien.all().delete()
+            gespeicherte_mam = {}
             for kategorie, f in belegte_mam_forms.items():
                 eingabe = f.save(commit=False)
                 eingabe.pk = None
                 eingabe._state.adding = True
                 eingabe.szenario = self.object
                 eingabe.kategorie = kategorie
+                eingabe.save()
+                if eingabe.seite == "SL":
+                    gespeicherte_mam[kategorie] = eingabe
+            for kategorie, f in belegte_mam_slef.items():
+                parent = gespeicherte_mam.get(kategorie)
+                if not parent:
+                    continue
+                eingabe = f.save(commit=False)
+                eingabe.pk = None
+                eingabe._state.adding = True
+                eingabe.mam_kategorie = parent
                 eingabe.save()
         return HttpResponseRedirect(self.get_success_url())
 

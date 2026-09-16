@@ -103,6 +103,27 @@ def test_momente_pert_gegen_pyfair_nachgerechnet():
 
 
 # ---------------------------------------------------------------------------
+# _produkt_momente() - Grundlage für SLEF × Magnitude im Kennwerte-Modus (Slice 4)
+# ---------------------------------------------------------------------------
+
+def test_produkt_momente_beide_konstant():
+    from apps.szenarien.models import _produkt_momente
+
+    mean, var = _produkt_momente(0.5, 0.0, 5000, 0.0)
+    assert mean == pytest.approx(2500.0)
+    assert var == pytest.approx(0.0)
+
+
+def test_produkt_momente_formel():
+    from apps.szenarien.models import _produkt_momente
+
+    m1, v1, m2, v2 = 0.4, 0.02, 5000, 200_000
+    mean, var = _produkt_momente(m1, v1, m2, v2)
+    assert mean == pytest.approx(m1 * m2)
+    assert var == pytest.approx((m1 ** 2) * v2 + (m2 ** 2) * v1 + v1 * v2)
+
+
+# ---------------------------------------------------------------------------
 # Mit Datenbank
 # ---------------------------------------------------------------------------
 

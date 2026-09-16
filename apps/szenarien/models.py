@@ -59,6 +59,10 @@ class Szenario(models.Model):
         ELEMENTWEISE = "elementweise", "Elementweise (Monte-Carlo-Faltung)"
         KENNWERTE = "kennwerte", "Kennwerte (Momente addieren, Lognormal-Näherung)"
 
+    class SlefModus(models.TextChoices):
+        GEMEINSAM = "gemeinsam", "Gemeinsam (ein SLEF-Wert für alle SL-Formen)"
+        JE_FORM = "je_form", "Individuell je Form/Kategorie"
+
     name = models.CharField("Name", max_length=200)
     beschreibung = models.TextField("Beschreibung", blank=True)
     n_simulations = models.PositiveIntegerField("Anzahl Simulationen", default=10_000)
@@ -76,6 +80,13 @@ class Szenario(models.Model):
     aggregations_modus = models.CharField(
         "Aggregationsmodus", max_length=20,
         choices=AggregationsModus.choices, default=AggregationsModus.ELEMENTWEISE,
+    )
+    # Nur relevant, solange die SL-Seite aufgeschlüsselt ist - steuert, ob SLEF (Secondary Loss
+    # Event Frequency) als EIN gemeinsamer Multiplikator (wiederverwendet aus dem Baum-Knoten
+    # SLEF) oder je Form/Kategorie individuell angewendet wird (siehe VerlustFormSlef/
+    # VerlustMamSlef, apps/berechnung/services.py::simuliere).
+    slef_modus = models.CharField(
+        "SLEF-Modus", max_length=20, choices=SlefModus.choices, default=SlefModus.GEMEINSAM,
     )
     erstellt_am = models.DateTimeField("Erstellt am", auto_now_add=True)
     geaendert_am = models.DateTimeField("Geändert am", auto_now=True)
@@ -146,8 +157,28 @@ class Szenario(models.Model):
         aber nicht die tatsächliche Form/Schiefe der Summenverteilung.
         """
         komponenten = self.verlust_komponenten(seite)
-        mittelwert = sum(k.momente()[0] for k in komponenten)
-        varianz = sum(k.momente()[1] for k in komponenten)
+        if seite == "SL" and self.slef_modus == self.SlefModus.JE_FORM:
+            # Individuelle SLEF (Slice 4): jede Komponente ist ein Produkt aus Magnitude × eigener
+            # SLEF (unabhängig), die Produkte werden danach wie gewohnt aufsummiert.
+            mittelwert = 0.0
+            varianz = 0.0
+            for k in komponenten:
+                m_mean, m_var = k.momente()
+                slef = getattr(k, "slef", None)
+                s_mean, s_var = slef.momente() if slef else (1.0, 0.0)
+                p_mean, p_var = _produkt_momente(m_mean, m_var, s_mean, s_var)
+                mittelwert += p_mean
+                varianz += p_var
+        else:
+            mittelwert = sum(k.momente()[0] for k in komponenten)
+            varianz = sum(k.momente()[1] for k in komponenten)
+            if seite == "SL" and self.slef_modus == self.SlefModus.GEMEINSAM:
+                # Gemeinsame SLEF (Slice 4): wiederverwendeter Baum-Knoten SLEF (FaktorEingabe),
+                # als ein Multiplikator auf die gesamte Formen-Summe angewendet. Ohne Eintrag
+                # (Baum-SL steht auf "direkt") bleibt das Verhalten wie in Slice 1-3 (SLEF=1).
+                slef_row = self.faktoren.filter(faktor="SLEF").first()
+                if slef_row:
+                    mittelwert, varianz = _produkt_momente(mittelwert, varianz, *slef_row.momente())
         if mittelwert <= 0:  # Lognormal erfordert mean > 0 (pyfair) - degenerierter Fall
             return {"distribution": "constant", "params": {"constant": mittelwert}}
         sigma = math.sqrt(math.log(1 + varianz / mittelwert ** 2)) if varianz > 0 else 0.0
@@ -235,6 +266,15 @@ class Cluster(models.Model):
 
     def __str__(self):
         return self.name
+
+
+def _produkt_momente(m1, v1, m2, v2):
+    """(Mittelwert, Varianz) des Produkts zweier unabhängiger Zufallsvariablen - exakt, keine
+    Näherung (``E[XY]=E[X]E[Y]``, ``Var[XY]=E[X]²Var[Y]+E[Y]²Var[X]+Var[X]Var[Y]``). Für Slice 4
+    (SLEF × Magnitude) im "Kennwerte"-Aggregationsmodus (Slice 3)."""
+    mittelwert = m1 * m2
+    varianz = (m1 ** 2) * v2 + (m2 ** 2) * v1 + v1 * v2
+    return mittelwert, varianz
 
 
 class _VerteilungsEingabe(models.Model):
@@ -755,4 +795,45 @@ class VerlustMamEingabe(_VerteilungsEingabe):
 
     def clean(self):
         # FAIR-MAM-Kategorien sind immer Geldbeträge - keine [0,1]-Bindung wie bei FAIR-Faktoren.
+        self._validiere_verteilung()
+
+
+class VerlustFormSlef(_VerteilungsEingabe):
+    """Individuelle SLEF (Secondary Loss Event Frequency) einer einzelnen Loss-Form (Slice 4,
+    ``Szenario.slef_modus == "je_form"``). Wie der Baum-eigene SLEF-Knoten eine Frequenz (kein
+    Geldbetrag) - Verteilungsauswahl daher wie dort eingeschränkt (siehe
+    ``fair_tree.erlaubte_verteilungen("SLEF")``), nicht auf ``DISTS_BY_TYP["magnitude"]``.
+    """
+
+    verlustform = models.OneToOneField(
+        VerlustFormEingabe, related_name="slef", on_delete=models.CASCADE, verbose_name="Loss-Form",
+    )
+
+    class Meta:
+        verbose_name = "Individuelle SLEF (Loss-Form)"
+        verbose_name_plural = "Individuelle SLEF (Loss-Formen)"
+
+    def __str__(self):
+        return f"SLEF – {self.verlustform}"
+
+    def clean(self):
+        self._validiere_verteilung()
+
+
+class VerlustMamSlef(_VerteilungsEingabe):
+    """Individuelle SLEF (Secondary Loss Event Frequency) einer einzelnen FAIR-MAM-Kategorie
+    (Slice 4, ``Szenario.slef_modus == "je_form"``). Analog ``VerlustFormSlef``."""
+
+    mam_kategorie = models.OneToOneField(
+        VerlustMamEingabe, related_name="slef", on_delete=models.CASCADE, verbose_name="FAIR-MAM-Kategorie",
+    )
+
+    class Meta:
+        verbose_name = "Individuelle SLEF (FAIR-MAM)"
+        verbose_name_plural = "Individuelle SLEF (FAIR-MAM)"
+
+    def __str__(self):
+        return f"SLEF – {self.mam_kategorie}"
+
+    def clean(self):
         self._validiere_verteilung()

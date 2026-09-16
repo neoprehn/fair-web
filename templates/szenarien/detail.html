@@ -85,11 +85,14 @@
 <p class="text-body-secondary small">
     Primary Loss (PL) und Secondary Loss (SL) werden aus diesen Verlustarten aufsummiert (statt
     eines direkten PL/SL-Werts im FAIR-Baum). Aggregationsmodus:
-    <strong>{{ szenario.get_aggregations_modus_display }}</strong>.
+    <strong>{{ szenario.get_aggregations_modus_display }}</strong>. SLEF-Modus (nur SL):
+    <strong>{{ szenario.get_slef_modus_display }}</strong>
+    {% if szenario.slef_modus == "gemeinsam" %}(siehe SLEF-Baumknoten – ohne Eintrag gilt SLEF=1){% endif %}.
 </p>
 <table class="table">
     <thead>
         <tr><th>Seite</th><th>Loss-Form</th><th>Verteilung</th><th>Parameter</th>
+            <th>SLEF</th>
             <th class="text-center" style="width:1%; white-space:nowrap;">Annahmen</th>
             <th class="text-center" style="width:1%; white-space:nowrap;">Vorschau</th></tr>
     </thead>
@@ -103,6 +106,12 @@
                 {% for key, value in vf.params.items %}
                     <span class="badge text-bg-light">{{ key }} = {{ value }}</span>
                 {% endfor %}
+            </td>
+            <td>
+                {% if vf.seite == "SL" and szenario.slef_modus == "je_form" %}
+                    {% if vf.slef %}<span class="badge text-bg-light">{{ vf.slef.get_verteilung_display }}</span>
+                    {% else %}<span class="text-body-secondary small">–</span>{% endif %}
+                {% else %}<span class="text-body-secondary small">–</span>{% endif %}
             </td>
             <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
@@ -120,7 +129,7 @@
             </td>
         </tr>
     {% empty %}
-        <tr><td colspan="6" class="text-body-secondary">Noch keine Loss-Formen erfasst.</td></tr>
+        <tr><td colspan="7" class="text-body-secondary">Noch keine Loss-Formen erfasst.</td></tr>
     {% endfor %}
     </tbody>
 </table>
@@ -131,12 +140,15 @@
 <p class="text-body-secondary small">
     Primary Loss (PL) und Secondary Loss (SL) werden aus diesen FAIR-MAM-Kostenkategorien
     aufsummiert. Aggregationsmodus: <strong>{{ szenario.get_aggregations_modus_display }}</strong>.
+    SLEF-Modus (nur SL): <strong>{{ szenario.get_slef_modus_display }}</strong>
+    {% if szenario.slef_modus == "gemeinsam" %}(siehe SLEF-Baumknoten – ohne Eintrag gilt SLEF=1){% endif %}.
     Kategorien nach FAIR-MAM™ (FAIR Institute) – nicht-kommerzielle Nutzung, siehe
     <a href="https://www.fairinstitute.org/resources/FAIR-MAM" target="_blank" rel="noopener">fairinstitute.org/resources/FAIR-MAM</a>.
 </p>
 <table class="table">
     <thead>
         <tr><th>Seite</th><th>Modul</th><th>Kategorie</th><th>Verteilung</th><th>Parameter</th>
+            <th>SLEF</th>
             <th class="text-center" style="width:1%; white-space:nowrap;">Annahmen</th>
             <th class="text-center" style="width:1%; white-space:nowrap;">Vorschau</th></tr>
     </thead>
@@ -151,6 +163,12 @@
                 {% for key, value in m.params.items %}
                     <span class="badge text-bg-light">{{ key }} = {{ value }}</span>
                 {% endfor %}
+            </td>
+            <td>
+                {% if m.seite == "SL" and szenario.slef_modus == "je_form" %}
+                    {% if m.slef %}<span class="badge text-bg-light">{{ m.slef.get_verteilung_display }}</span>
+                    {% else %}<span class="text-body-secondary small">–</span>{% endif %}
+                {% else %}<span class="text-body-secondary small">–</span>{% endif %}
             </td>
             <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
@@ -168,7 +186,7 @@
             </td>
         </tr>
     {% empty %}
-        <tr><td colspan="7" class="text-body-secondary">Noch keine FAIR-MAM-Kategorien erfasst.</td></tr>
+        <tr><td colspan="8" class="text-body-secondary">Noch keine FAIR-MAM-Kategorien erfasst.</td></tr>
     {% endfor %}
     </tbody>
 </table>

@@ -147,6 +147,14 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
     # (falls beide Seiten im "formen"-Modus sind) unabhaengig voneinander bleiben.
     seiten_offset = {"PL": 10_000_000, "SL": 20_000_000}
 
+    # SLEF (Slice 4) - nur fuer die elementweise SL-Aggregation relevant (Kennwerte-Modus regelt
+    # das bereits innerhalb von verlust_kennwerte_kwargs()). "gemeinsam" nutzt den Baum-eigenen
+    # SLEF-Faktor (FaktorEingabe, wiederverwendet - kein Eintrag noetig, dann wirkt SLEF wie 1
+    # und das Verhalten bleibt wie in Slice 1-3).
+    slef_gemeinsam = None
+    if "SL" in formen_je_seite and szenario.slef_modus == szenario.SlefModus.GEMEINSAM:
+        slef_gemeinsam = szenario.faktoren.filter(faktor="SLEF").first()
+
     teile = []
     erzeugt = 0
     i = 0
@@ -162,7 +170,16 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
             np.random.seed(random_seed + i + seiten_offset[seite])
             werte = np.zeros(n)
             for vf in formen:  # feste, deterministische Reihenfolge (siehe verlust_komponenten())
-                werte += FairDataInput().generate(vf.eindeutiger_code, n, **vf.to_fair_kwargs())
+                m = FairDataInput().generate(vf.eindeutiger_code, n, **vf.to_fair_kwargs())
+                if seite == "SL" and szenario.slef_modus == szenario.SlefModus.JE_FORM:
+                    slef_eingabe = getattr(vf, "slef", None)
+                    if slef_eingabe:
+                        s = FairDataInput().generate(f"{vf.eindeutiger_code}-slef", n, **slef_eingabe.to_fair_kwargs())
+                        m = m * s
+                werte += m
+            if seite == "SL" and slef_gemeinsam:
+                s = FairDataInput().generate("SLEF-gemeinsam", n, **slef_gemeinsam.to_fair_kwargs())
+                werte = werte * s
             raw_werte[seite] = werte
 
         model = pyfair.FairModel(

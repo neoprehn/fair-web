@@ -152,7 +152,12 @@ Monte-Carlo-Aggregation in `apps/berechnung/services.py::simuliere`, taxonomie-a
       Monte-Carlo-Faltung, bisheriges Verhalten) vs. "Kennwerte" (Mittelwert+Varianz je Form/
       Kategorie exakt addieren, per Moment-Matching in eine Lognormalverteilung für PL/SL
       übersetzt – schneller, aber Näherung an die Form der Summenverteilung)
-- [ ] Slice 4 (später): SLEF-Granularität je Form/Kategorie statt nur gemeinsam für alle SL-Formen
+- [x] Slice 4: **SLEF-Granularität** (`slef_modus`) – behebt, dass SLEF (Secondary Loss Event
+      Frequency) bei aufgeschlüsseltem SL bisher komplett ignoriert wurde (SL = Formen-Summe, als
+      gälte SLEF=1). "Gemeinsam" nutzt den wiederverwendeten Baum-Knoten SLEF als ein
+      Multiplikator auf die gesamte SL-Formen-Summe; "Individuell" gibt jeder SL-Form/-Kategorie
+      eine eigene SLEF-Verteilung (`VerlustFormSlef`/`VerlustMamSlef`). Damit ist die
+      LM-Aufschlüsselungs-Serie (Slices 1–4) vollständig abgeschlossen.
 
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 

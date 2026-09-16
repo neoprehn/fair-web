@@ -48,6 +48,11 @@
                             {{ form.aggregations_modus }}{{ form.aggregations_modus.errors }}
                             <div class="form-text">"Elementweise" faltet die Formen/Kategorien exakt per Monte-Carlo; "Kennwerte" addiert Mittelwert+Varianz und nähert die Summe über eine Lognormalverteilung an (schneller, ungenauer in der Form).</div>
                         </div>
+                        <div id="slef-modus-feld" class="mt-3" style="display:none;">
+                            <label class="form-label">SLEF-Modus (nur SL)</label>
+                            {{ form.slef_modus }}{{ form.slef_modus.errors }}
+                            <div class="form-text">"Gemeinsam": SL im Baum rechts auf "aufschlüsseln" stellen und dort SLEF eintragen – wirkt als ein Multiplikator auf die gesamte SL-Formen-Summe (SLEM wird dann nicht benötigt). Ohne Eingabe gilt SLEF=1. "Individuell": je SL-Form/-Kategorie ein eigenes SLEF-Unterfeld unten.</div>
+                        </div>
                     </div></div>
                 </div>
                 <div class="col-md-8">
@@ -164,6 +169,14 @@
                             <div class="node-input">
                                 {% include "szenarien/_verlustform_felder.html" with form=vf_form %}
                             </div>
+                            {% if vf_form.slef_form %}
+                            <div class="slef-unterfeld mt-2 pt-2 border-top" data-slef-feld style="display:none;">
+                                <strong class="small d-block mb-1">Individuelle SLEF</strong>
+                                <div class="node-input">
+                                    {% include "szenarien/_slef_felder.html" with form=vf_form.slef_form %}
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     {% endif %}
@@ -209,6 +222,14 @@
                                     <div class="node-input">
                                         {% include "szenarien/_verlustform_felder.html" with form=kat_form %}
                                     </div>
+                                    {% if kat_form.slef_form %}
+                                    <div class="slef-unterfeld mt-2 pt-2 border-top" data-slef-feld style="display:none;">
+                                        <strong class="small d-block mb-1">Individuelle SLEF</strong>
+                                        <div class="node-input">
+                                            {% include "szenarien/_slef_felder.html" with form=kat_form.slef_form %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endif %}
@@ -324,6 +345,7 @@ function formatDE(n) {
     function syncAllDist() {
         document.querySelectorAll('.tree-node').forEach(syncDist);
         document.querySelectorAll('.verlustform-card').forEach(syncDist);
+        document.querySelectorAll('.slef-unterfeld').forEach(syncDist);
     }
 
     function setExpanded(tn, expanded) {
@@ -382,9 +404,11 @@ function formatDE(n) {
         }
     });
 
-    // 6 Forms of Loss: dieselbe Verteilungs-/Konfidenz-Logik wie die Baumknoten,
-    // aber ohne das Baum-spezifische Auf-/Zuklappen (kein .node-box nötig).
-    document.querySelectorAll('.verlustform-card').forEach(function (card) {
+    // 6 Forms of Loss/FAIR-MAM: dieselbe Verteilungs-/Konfidenz-Logik wie die Baumknoten,
+    // aber ohne das Baum-spezifische Auf-/Zuklappen (kein .node-box nötig). SLEF-Unterfelder
+    // (Slice 4, nur SL-Seite) sind eigene Sync-Einheiten (eigener direkter .node-input-Kind),
+    // daher in derselben Schleife mit erfasst.
+    document.querySelectorAll('.verlustform-card, .slef-unterfeld').forEach(function (card) {
         var ni = child(card, '.node-input');
         if (!ni) return;
         var vs = ni.querySelector('.verteilung-select');
@@ -394,20 +418,35 @@ function formatDE(n) {
     });
 
     // LM-Modus-Umschalter: passenden Aufschlüsselungs-Bereich anzeigen ("formen"/"fair_mam"),
-    // Aggregationsmodus-Feld nur bei aktiver Aufschlüsselung (nicht bei "klassisch").
+    // Aggregationsmodus-/SLEF-Modus-Feld nur bei aktiver Aufschlüsselung (nicht bei "klassisch").
     var lmModusSelect = document.getElementById('id_lm_modus');
     var lossFormenBereich = document.getElementById('loss-formen-bereich');
     var mamBereich = document.getElementById('mam-bereich');
     var aggregationsModusFeld = document.getElementById('aggregations-modus-feld');
+    var slefModusFeld = document.getElementById('slef-modus-feld');
+    var slefModusSelect = document.getElementById('id_slef_modus');
     function syncLmModus() {
         if (!lmModusSelect) return;
         if (lossFormenBereich) lossFormenBereich.style.display = (lmModusSelect.value === 'formen') ? '' : 'none';
         if (mamBereich) mamBereich.style.display = (lmModusSelect.value === 'fair_mam') ? '' : 'none';
         if (aggregationsModusFeld) aggregationsModusFeld.style.display = (lmModusSelect.value === 'klassisch') ? 'none' : '';
+        if (slefModusFeld) slefModusFeld.style.display = (lmModusSelect.value === 'klassisch') ? 'none' : '';
+        syncSlefModus();
+    }
+    // SLEF-Unterfelder (individuelle SLEF je SL-Form/-Kategorie) nur bei slef_modus="je_form" zeigen.
+    function syncSlefModus() {
+        var jeForm = !!slefModusSelect && slefModusSelect.value === 'je_form';
+        document.querySelectorAll('[data-slef-feld]').forEach(function (el) {
+            el.style.display = jeForm ? '' : 'none';
+        });
     }
     if (lmModusSelect) {
         lmModusSelect.addEventListener('change', syncLmModus);
         syncLmModus();
+    }
+    if (slefModusSelect) {
+        slefModusSelect.addEventListener('change', syncSlefModus);
+        syncSlefModus();
     }
 
     // SVG-Knoten hervorheben, sobald man in ein Feld eines Knotens klickt.

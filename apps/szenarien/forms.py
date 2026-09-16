@@ -11,7 +11,16 @@ from django import forms
 
 from . import fair_tree
 from .fair_confidence import UNSICHERHEIT_MAX, UNSICHERHEIT_MIN
-from .models import Cluster, FaktorEingabe, Szenario, Vergleich, VerlustFormEingabe, VerlustMamEingabe
+from .models import (
+    Cluster,
+    FaktorEingabe,
+    Szenario,
+    Vergleich,
+    VerlustFormEingabe,
+    VerlustFormSlef,
+    VerlustMamEingabe,
+    VerlustMamSlef,
+)
 
 
 class ClusterForm(forms.ModelForm):
@@ -36,7 +45,8 @@ class RangeInput(forms.NumberInput):
 class SzenarioForm(forms.ModelForm):
     class Meta:
         model = Szenario
-        fields = ("name", "beschreibung", "n_simulations", "random_seed", "lm_modus", "aggregations_modus")
+        fields = ("name", "beschreibung", "n_simulations", "random_seed", "lm_modus",
+                  "aggregations_modus", "slef_modus")
         localized_fields = ("n_simulations", "random_seed")
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
@@ -45,15 +55,17 @@ class SzenarioForm(forms.ModelForm):
             "random_seed": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
             "lm_modus": forms.Select(attrs={"class": "form-select", "id": "id_lm_modus"}),
             "aggregations_modus": forms.Select(attrs={"class": "form-select", "id": "id_aggregations_modus"}),
+            "slef_modus": forms.Select(attrs={"class": "form-select", "id": "id_slef_modus"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Nicht zwingend erforderlich: alte Formular-Posts (Tests, ältere Clients) kennen
-        # das Feld ggf. nicht - fehlt es, greift der Modell-Default ("klassisch"/"elementweise")
-        # statt eines Validierungsfehlers (siehe clean_lm_modus()/clean_aggregations_modus()).
+        # das Feld ggf. nicht - fehlt es, greift der Modell-Default ("klassisch"/"elementweise"/
+        # "gemeinsam") statt eines Validierungsfehlers (siehe clean_*()).
         self.fields["lm_modus"].required = False
         self.fields["aggregations_modus"].required = False
+        self.fields["slef_modus"].required = False
         # Global vorgegebene Werte: Feld deaktivieren + globalen Wert vorbelegen.
         from apps.admin_bereich.models import AppKonfiguration
         konfig = AppKonfiguration.load()
@@ -69,6 +81,9 @@ class SzenarioForm(forms.ModelForm):
 
     def clean_aggregations_modus(self):
         return self.cleaned_data.get("aggregations_modus") or Szenario.AggregationsModus.ELEMENTWEISE
+
+    def clean_slef_modus(self):
+        return self.cleaned_data.get("slef_modus") or Szenario.SlefModus.GEMEINSAM
 
 
 class VergleichForm(forms.ModelForm):
@@ -219,6 +234,82 @@ class VerlustMamEingabeForm(_VerlustEingabeFormBasis):
 
     class Meta(_VerlustEingabeFormBasis.Meta):
         model = VerlustMamEingabe
+
+
+class _VerlustSlefFormBasis(forms.ModelForm):
+    """Gemeinsame Basis für individuelle SLEF-Eingabeformulare (Slice 4,
+    ``Szenario.slef_modus == "je_form"``): ``VerlustFormSlefForm``/``VerlustMamSlefForm`` -
+    identische Felder/Validierung, nur ``Meta.model`` unterscheidet sich.
+
+    Anders als ``_VerlustEingabeFormBasis`` (Geldbeträge) ist SLEF eine Frequenz wie der
+    Baum-eigene SLEF-Knoten - Verteilungsauswahl daher wie dort eingeschränkt
+    (``fair_tree.erlaubte_verteilungen("SLEF")``, inkl. Poisson) statt magnitude-typisch.
+    """
+
+    low = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    mode = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    high = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    mean = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    stdev = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    constant = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+    rate = forms.FloatField(required=False, localize=True, widget=forms.TextInput(attrs={"class": "form-control form-control-sm", "inputmode": "decimal"}))
+
+    class Meta:
+        fields = ("verteilung", "unsicherheit", "annahmen", "quellentext")
+        widgets = {
+            "verteilung": forms.Select(attrs={"class": "form-select form-select-sm verteilung-select"}),
+            "unsicherheit": RangeInput(attrs={
+                "class": "form-range unsicherheit-slider",
+                "min": UNSICHERHEIT_MIN, "max": UNSICHERHEIT_MAX, "step": 1,
+            }),
+            "annahmen": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 2,
+                                              "placeholder": "Annahmen / Begründung …"}),
+            "quellentext": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 2,
+                                                 "placeholder": "Quelle / Beleg …"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        erlaubt = set(fair_tree.erlaubte_verteilungen("SLEF"))
+        self.fields["verteilung"].choices = [
+            (w, label) for w, label in self._meta.model.Verteilung.choices if w in erlaubt
+        ]
+        for key, label in _PARAM_LABELS["frequency"].items():
+            if key in self.fields:
+                self.fields[key].label = label
+        if not (self.instance and self.instance.pk):
+            self.initial.setdefault("verteilung", self._meta.model.Verteilung.PERT)
+        if self.instance and self.instance.pk:
+            vorhandene = self.instance.params or {}
+            for feld, key in FELD_MAP.get(self.instance.verteilung, []):
+                if key in vorhandene:
+                    self.fields[feld].initial = vorhandene[key]
+
+    def clean(self):
+        cleaned = super().clean()
+        verteilung = cleaned.get("verteilung")
+        if not verteilung:
+            return cleaned
+        params = {}
+        for feld, key in FELD_MAP.get(verteilung, []):
+            if cleaned.get(feld) is not None:
+                params[key] = cleaned[feld]
+        self.instance.params = params
+        return cleaned
+
+
+class VerlustFormSlefForm(_VerlustSlefFormBasis):
+    """ModelForm für die individuelle SLEF einer einzelnen Loss-Form."""
+
+    class Meta(_VerlustSlefFormBasis.Meta):
+        model = VerlustFormSlef
+
+
+class VerlustMamSlefForm(_VerlustSlefFormBasis):
+    """ModelForm für die individuelle SLEF einer einzelnen FAIR-MAM-Kategorie."""
+
+    class Meta(_VerlustSlefFormBasis.Meta):
+        model = VerlustMamSlef
 
 
 class FaktorEingabeForm(forms.ModelForm):

@@ -1,0 +1,47 @@
+{% comment %}
+Eingabefelder einer individuellen SLEF (Secondary Loss Event Frequency, Slice 4).
+Erwartet `form` (VerlustFormSlefForm/VerlustMamSlefForm). Analog _verlustform_felder.html,
+aber Frequenz- statt Magnitude-Typ (wie der Baum-eigene SLEF-Knoten): Poisson statt Lognormal.
+{% endcomment %}
+{% if form.non_field_errors %}<div class="alert alert-danger py-1 small mb-2">{{ form.non_field_errors }}</div>{% endif %}
+
+<label class="form-label mb-1 small">Verteilung</label>
+{{ form.verteilung }}
+
+<div class="dist-params mt-2" data-dist="pert">
+    <div class="row g-1">
+        <div class="col"><label class="form-label mb-0 small">{{ form.low.label }}</label>{{ form.low }}</div>
+        <div class="col"><label class="form-label mb-0 small">{{ form.mode.label }}</label>{{ form.mode }}</div>
+        <div class="col"><label class="form-label mb-0 small">{{ form.high.label }}</label>{{ form.high }}</div>
+    </div>
+</div>
+<div class="dist-params mt-2" data-dist="normal">
+    <div class="row g-1">
+        <div class="col"><label class="form-label mb-0 small">{{ form.mean.label }}</label>{{ form.mean }}</div>
+        <div class="col"><label class="form-label mb-0 small">{{ form.stdev.label }}</label>{{ form.stdev }}</div>
+    </div>
+</div>
+<div class="dist-params mt-2" data-dist="constant">
+    <label class="form-label mb-0 small">{{ form.constant.label }}</label>{{ form.constant }}
+</div>
+<div class="dist-params mt-2" data-dist="poisson">
+    <label class="form-label mb-0 small">{{ form.rate.label }}</label>{{ form.rate }}
+</div>
+
+<div class="confidence-group mt-2">
+    <label class="form-label d-flex justify-content-between mb-1">
+        <span class="small">Unsicherheit</span>
+        <span class="confidence-readout small text-info"></span>
+    </label>
+    {{ form.unsicherheit }}
+    <div class="d-flex justify-content-between small text-body-secondary"><span>niedrig</span><span>hoch</span></div>
+</div>
+
+<div class="mt-2">
+    <label class="form-label mb-0 small">Annahmen</label>
+    {{ form.annahmen }}
+</div>
+<div class="mt-2">
+    <label class="form-label mb-0 small">Quellentext</label>
+    {{ form.quellentext }}
+</div>

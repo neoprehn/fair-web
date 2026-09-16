@@ -4,7 +4,13 @@ import pytest
 
 from apps.berechnung import services
 from apps.berechnung.models import Simulationslauf
-from apps.szenarien.models import FaktorEingabe, Szenario, VerlustFormEingabe, VerlustMamEingabe
+from apps.szenarien.models import (
+    FaktorEingabe,
+    Szenario,
+    VerlustFormEingabe,
+    VerlustFormSlef,
+    VerlustMamEingabe,
+)
 
 
 def _szenario_mit_faktoren():
@@ -198,6 +204,79 @@ def test_simuliere_elementweise_und_kennwerte_liefern_gleichen_mittelwert():
     erwartet = (1000 + 4 * 2000 + 4000) / 6 + 3000
     assert erg_element["knoten"]["PL"]["mittelwert"] == pytest.approx(erwartet, rel=0.05)
     assert erg_kennwerte["knoten"]["PL"]["mittelwert"] == pytest.approx(erwartet, rel=0.05)
+
+
+def _sl_formen_szenario(aggregations_modus, slef_modus):
+    s = Szenario.objects.create(
+        name=f"SLEF-Test-{slef_modus}-{aggregations_modus}", n_simulations=200,
+        lm_modus=Szenario.LMModus.FORMEN, aggregations_modus=aggregations_modus, slef_modus=slef_modus,
+    )
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="LEF", verteilung="pert", params={"low": 1, "mode": 3, "high": 6},
+    )
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="PL", verteilung="constant", params={"constant": 0},
+    )
+    vf1 = VerlustFormEingabe.objects.create(
+        szenario=s, seite="SL", form="response", verteilung="constant", params={"constant": 2000},
+    )
+    vf2 = VerlustFormEingabe.objects.create(
+        szenario=s, seite="SL", form="replacement", verteilung="constant", params={"constant": 3000},
+    )
+    return s, vf1, vf2
+
+
+@pytest.mark.parametrize("aggregations_modus", ["elementweise", "kennwerte"])
+@pytest.mark.django_db
+def test_simuliere_slef_gemeinsam_multipliziert_formen_summe(aggregations_modus):
+    """slef_modus='gemeinsam': die im Baum-Knoten SLEF hinterlegte Verteilung (wiederverwendete
+    FaktorEingabe) muss die gesamte SL-Formen-Summe multiplizieren."""
+    pytest.importorskip("pyfair")
+    s, _vf1, _vf2 = _sl_formen_szenario(aggregations_modus, Szenario.SlefModus.GEMEINSAM)
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="SLEF", verteilung="constant", params={"constant": 0.5},
+    )
+
+    ergebnis = services.simuliere(s, n_simulations=200, random_seed=42, batches=4)
+
+    sl = ergebnis["knoten"]["SL"]
+    assert sl["mittelwert"] == pytest.approx(2500, rel=1e-4)
+    assert sl["stdev"] == pytest.approx(0, abs=1e-2)
+
+
+@pytest.mark.parametrize("aggregations_modus", ["elementweise", "kennwerte"])
+@pytest.mark.django_db
+def test_simuliere_slef_je_form_multipliziert_jede_form_einzeln(aggregations_modus):
+    """slef_modus='je_form': jede SL-Form bekommt ihre eigene SLEF, SL = Summe der Produkte."""
+    pytest.importorskip("pyfair")
+    s, vf1, vf2 = _sl_formen_szenario(aggregations_modus, Szenario.SlefModus.JE_FORM)
+    VerlustFormSlef.objects.create(
+        verlustform=vf1, verteilung="constant", params={"constant": 0.3},
+    )
+    VerlustFormSlef.objects.create(
+        verlustform=vf2, verteilung="constant", params={"constant": 0.8},
+    )
+
+    ergebnis = services.simuliere(s, n_simulations=200, random_seed=42, batches=4)
+
+    sl = ergebnis["knoten"]["SL"]
+    erwartet = 0.3 * 2000 + 0.8 * 3000
+    assert sl["mittelwert"] == pytest.approx(erwartet, rel=1e-4)
+    assert sl["stdev"] == pytest.approx(0, abs=1e-2)
+
+
+@pytest.mark.django_db
+def test_simuliere_ohne_slef_verhaelt_sich_wie_slice_1_3():
+    """Regression: kein SLEF-Faktor vorhanden, slef_modus Default 'gemeinsam' -> SLEF wirkt wie 1,
+    Verhalten bleibt exakt wie vor Slice 4."""
+    pytest.importorskip("pyfair")
+    s, _vf1, _vf2 = _sl_formen_szenario(Szenario.AggregationsModus.ELEMENTWEISE, Szenario.SlefModus.GEMEINSAM)
+
+    ergebnis = services.simuliere(s, n_simulations=200, random_seed=42, batches=4)
+
+    sl = ergebnis["knoten"]["SL"]
+    assert sl["mittelwert"] == pytest.approx(5000)
+    assert sl["stdev"] == pytest.approx(0, abs=1e-6)
 
 
 @pytest.mark.django_db
