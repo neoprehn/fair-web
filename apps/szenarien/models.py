@@ -6,6 +6,8 @@ Ein ``Szenario`` bündelt die Metadaten einer Monte-Carlo-Simulation
 sich direkt ein pyfair-``FairModel`` füttern (Phase 4).
 """
 
+import math
+
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -53,6 +55,10 @@ class Szenario(models.Model):
         FORMEN = "formen", "6 Forms of Loss"
         FAIR_MAM = "fair_mam", "FAIR-MAM-Fragebogen"
 
+    class AggregationsModus(models.TextChoices):
+        ELEMENTWEISE = "elementweise", "Elementweise (Monte-Carlo-Faltung)"
+        KENNWERTE = "kennwerte", "Kennwerte (Momente addieren, Lognormal-Näherung)"
+
     name = models.CharField("Name", max_length=200)
     beschreibung = models.TextField("Beschreibung", blank=True)
     n_simulations = models.PositiveIntegerField("Anzahl Simulationen", default=10_000)
@@ -63,6 +69,13 @@ class Szenario(models.Model):
     # (6 Forms of Loss) aggregiert werden - siehe apps/berechnung/services.py::simuliere.
     lm_modus = models.CharField(
         "LM-Modus", max_length=20, choices=LMModus.choices, default=LMModus.KLASSISCH,
+    )
+    # Nur relevant, wenn lm_modus != "klassisch" - steuert, wie die Loss-Form-/FAIR-MAM-
+    # Komponenten je Seite zu PL/SL zusammengefasst werden (siehe verlust_komponenten() vs.
+    # verlust_kennwerte_kwargs() und apps/berechnung/services.py::simuliere).
+    aggregations_modus = models.CharField(
+        "Aggregationsmodus", max_length=20,
+        choices=AggregationsModus.choices, default=AggregationsModus.ELEMENTWEISE,
     )
     erstellt_am = models.DateTimeField("Erstellt am", auto_now_add=True)
     geaendert_am = models.DateTimeField("Geändert am", auto_now=True)
@@ -123,6 +136,22 @@ class Szenario(models.Model):
                 key=lambda k: k.kategorie,
             )
         return []
+
+    def verlust_kennwerte_kwargs(self, seite):
+        """"Kennwerte"-Aggregationsmodus (Slice 3): Momente (Mittelwert+Varianz) der aktiven
+        Verlust-Komponenten einer Seite exakt aufsummieren (Unabhängigkeitsannahme - Momente
+        addieren sich immer, unabhängig von der Verteilungsfamilie) und per Moment-Matching in
+        eine einzelne Lognormalverteilung übersetzen. Näherung an die echte Faltung
+        (``verlust_komponenten()``/elementweiser Modus): legt Mittelwert+Varianz exakt fest,
+        aber nicht die tatsächliche Form/Schiefe der Summenverteilung.
+        """
+        komponenten = self.verlust_komponenten(seite)
+        mittelwert = sum(k.momente()[0] for k in komponenten)
+        varianz = sum(k.momente()[1] for k in komponenten)
+        if mittelwert <= 0:  # Lognormal erfordert mean > 0 (pyfair) - degenerierter Fall
+            return {"distribution": "constant", "params": {"constant": mittelwert}}
+        sigma = math.sqrt(math.log(1 + varianz / mittelwert ** 2)) if varianz > 0 else 0.0
+        return {"distribution": "lognormal", "params": {"mean": mittelwert, "sigma": sigma}}
 
     def schnitt_codes(self):
         """Die angegebenen Faktor-Codes (der Schnitt durch den FAIR-Baum).
@@ -292,6 +321,33 @@ class _VerteilungsEingabe(models.Model):
             if shape:
                 params.update(shape)
         return kwargs
+
+    def momente(self):
+        """(Mittelwert, Varianz) dieser Verteilung - für den "Kennwerte"-Aggregationsmodus
+        (Slice 3, ``Szenario.verlust_kennwerte_kwargs()``), ohne Sampling. Nur für die bei
+        Loss-Formen/FAIR-MAM erlaubten Verteilungen definiert (pert/normal/constant/lognormal,
+        siehe ``fair_tree.DISTS_BY_TYP["magnitude"]``).
+
+        PERT-Momente werden über pyfairs eigene ``FairBetaPert`` berechnet statt über die
+        Lehrbuch-PERT-Varianzformel - pyfairs interne Ableitung weicht davon ab (nachgerechnet:
+        low=1000/mode=3000/high=8000/gamma=4 ergibt Lehrbuchformel ≈1.607.143, pyfairs tatsächliche
+        Beta-Kurve ≈1.361.111) und nur so bleibt dies konsistent mit dem, was tatsächlich gesampelt wird.
+        """
+        kwargs = self.to_fair_kwargs()
+        dist, p = kwargs["distribution"], kwargs["params"]
+        if dist == self.Verteilung.CONSTANT:
+            return float(p["constant"]), 0.0
+        if dist == self.Verteilung.NORMAL:
+            return float(p["mean"]), float(p["stdev"]) ** 2
+        if dist == self.Verteilung.LOGNORMAL:
+            mean = float(p["mean"])
+            return mean, (math.exp(float(p["sigma"]) ** 2) - 1) * mean ** 2
+        if dist == self.Verteilung.PERT:
+            from pyfair.utility.beta_pert import FairBetaPert
+
+            pert = FairBetaPert(low=p["low"], mode=p["mode"], high=p["high"], gamma=p.get("gamma", 4))
+            return float(pert._beta_curve.mean()), float(pert._beta_curve.var())
+        raise ValueError(f"Momente für Verteilung '{dist}' nicht definiert.")
 
     def _validiere_verteilung(self):
         """Prüft, dass ``params`` zur gewählten Verteilung passt. Wirft ``ValidationError``."""

@@ -62,6 +62,47 @@ def test_clean_akzeptiert_gueltige_pert():
 
 
 # ---------------------------------------------------------------------------
+# momente() - Grundlage für den "Kennwerte"-Aggregationsmodus (Slice 3)
+# ---------------------------------------------------------------------------
+
+def test_momente_constant():
+    faktor = FaktorEingabe(faktor="LM", verteilung="constant", params={"constant": 4000})
+    assert faktor.momente() == (4000.0, 0.0)
+
+
+def test_momente_normal():
+    faktor = FaktorEingabe(faktor="LM", verteilung="normal", params={"mean": 5000, "stdev": 200})
+    mean, var = faktor.momente()
+    assert mean == pytest.approx(5000)
+    assert var == pytest.approx(200 ** 2)
+
+
+def test_momente_lognormal():
+    # Ohne Konfidenz-Override: sigma kommt aus der (moderate = Default-Unsicherheit) Konfidenztabelle.
+    faktor = FaktorEingabe(faktor="LM", verteilung="lognormal", params={"mean": 5000})
+    mean, var = faktor.momente()
+    kwargs = faktor.to_fair_kwargs()
+    sigma = kwargs["params"]["sigma"]
+    assert mean == pytest.approx(5000)
+    import math
+    assert var == pytest.approx((math.exp(sigma ** 2) - 1) * 5000 ** 2)
+
+
+def test_momente_pert_gegen_pyfair_nachgerechnet():
+    """Regressionswert: pyfairs FairBetaPert weicht von der Lehrbuch-PERT-Varianzformel ab
+    (nachgerechnet: (mean-low)(high-mean)/(gamma+3) ergibt 1.607.143, pyfairs tatsächliche
+    Beta-Kurve 1.361.111 für dieselben Parameter) - momente() muss der tatsächlichen
+    pyfair-Kurve folgen, nicht der Lehrbuchformel."""
+    pytest.importorskip("pyfair")
+    faktor = FaktorEingabe(
+        faktor="LM", verteilung="pert", params={"low": 1000, "mode": 3000, "high": 8000, "gamma": 4},
+    )
+    mean, var = faktor.momente()
+    assert mean == pytest.approx(3500.0)
+    assert var == pytest.approx(1_361_111.11, rel=1e-4)
+
+
+# ---------------------------------------------------------------------------
 # Mit Datenbank
 # ---------------------------------------------------------------------------
 

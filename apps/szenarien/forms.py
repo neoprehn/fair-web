@@ -36,7 +36,7 @@ class RangeInput(forms.NumberInput):
 class SzenarioForm(forms.ModelForm):
     class Meta:
         model = Szenario
-        fields = ("name", "beschreibung", "n_simulations", "random_seed", "lm_modus")
+        fields = ("name", "beschreibung", "n_simulations", "random_seed", "lm_modus", "aggregations_modus")
         localized_fields = ("n_simulations", "random_seed")
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
@@ -44,14 +44,16 @@ class SzenarioForm(forms.ModelForm):
             "n_simulations": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
             "random_seed": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
             "lm_modus": forms.Select(attrs={"class": "form-select", "id": "id_lm_modus"}),
+            "aggregations_modus": forms.Select(attrs={"class": "form-select", "id": "id_aggregations_modus"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Nicht zwingend erforderlich: alte Formular-Posts (Tests, ältere Clients) kennen
-        # das Feld ggf. nicht - fehlt es, greift der Modell-Default ("klassisch") statt
-        # eines Validierungsfehlers (siehe clean_lm_modus()).
+        # das Feld ggf. nicht - fehlt es, greift der Modell-Default ("klassisch"/"elementweise")
+        # statt eines Validierungsfehlers (siehe clean_lm_modus()/clean_aggregations_modus()).
         self.fields["lm_modus"].required = False
+        self.fields["aggregations_modus"].required = False
         # Global vorgegebene Werte: Feld deaktivieren + globalen Wert vorbelegen.
         from apps.admin_bereich.models import AppKonfiguration
         konfig = AppKonfiguration.load()
@@ -64,6 +66,9 @@ class SzenarioForm(forms.ModelForm):
 
     def clean_lm_modus(self):
         return self.cleaned_data.get("lm_modus") or Szenario.LMModus.KLASSISCH
+
+    def clean_aggregations_modus(self):
+        return self.cleaned_data.get("aggregations_modus") or Szenario.AggregationsModus.ELEMENTWEISE
 
 
 class VergleichForm(forms.ModelForm):

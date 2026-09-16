@@ -161,6 +161,24 @@ def test_create_lm_modus_fair_mam_speichert_kategorien_statt_pl(client):
 
 
 @pytest.mark.django_db
+def test_create_aggregations_modus_kennwerte_wird_gespeichert(client):
+    data = {
+        "name": "Kennwerte-View-Test", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,
+        "lm_modus": "formen", "aggregations_modus": "kennwerte",
+        "LEF-verteilung": "pert", "LEF-low": "1", "LEF-mode": "3", "LEF-high": "6", "LEF-unsicherheit": "2",
+        "modus-LM": "aufschluesseln",
+        "SL-verteilung": "constant", "SL-constant": "0", "SL-unsicherheit": "2",
+        "vf-PL-response-verteilung": "constant", "vf-PL-response-constant": "2000",
+        "vf-PL-response-unsicherheit": "2",
+    }
+    resp = client.post(reverse("szenarien:create"), data=data)
+    assert resp.status_code == 302, resp.context["verlustform_forms"] if resp.status_code == 200 else None
+    s = Szenario.objects.get(name="Kennwerte-View-Test")
+
+    assert s.aggregations_modus == Szenario.AggregationsModus.KENNWERTE
+
+
+@pytest.mark.django_db
 def test_create_wahrscheinlichkeit_ueber_eins_fehler(client):
     data = {
         "name": "Ungueltig", "beschreibung": "", "n_simulations": 1000, "random_seed": 42,

@@ -130,6 +130,77 @@ def test_simuliere_aggregiert_fair_mam_elementweise():
 
 
 @pytest.mark.django_db
+def test_simuliere_aggregiert_kennwerte_bei_varianz_null_deterministisch():
+    """aggregations_modus='kennwerte' mit zwei konstanten Formen (Varianz 0) muss wie im
+    elementweisen Modus exakt auf die Summe kollabieren (Lognormal mit sigma=0 degeneriert
+    auf einen festen Wert)."""
+    pytest.importorskip("pyfair")
+    s = Szenario.objects.create(
+        name="Kennwerte-Test", n_simulations=200, lm_modus=Szenario.LMModus.FORMEN,
+        aggregations_modus=Szenario.AggregationsModus.KENNWERTE,
+    )
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="LEF", verteilung="pert",
+        params={"low": 1, "mode": 3, "high": 6},
+    )
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="SL", verteilung="constant", params={"constant": 0},
+    )
+    VerlustFormEingabe.objects.create(
+        szenario=s, seite="PL", form="response", verteilung="constant", params={"constant": 2000},
+    )
+    VerlustFormEingabe.objects.create(
+        szenario=s, seite="PL", form="replacement", verteilung="constant", params={"constant": 3000},
+    )
+
+    ergebnis = services.simuliere(s, n_simulations=200, random_seed=42, batches=4)
+
+    pl = ergebnis["knoten"]["PL"]
+    assert pl["mittelwert"] == pytest.approx(5000)
+    assert pl["stdev"] == pytest.approx(0, abs=1e-6)
+
+
+@pytest.mark.django_db
+def test_simuliere_elementweise_und_kennwerte_liefern_gleichen_mittelwert():
+    """Beide Aggregationsmodi müssen denselben PL-Mittelwert liefern (Momente addieren sich
+    immer exakt, unabhängig vom Modus) - nur Varianz/Form der Summe dürfen abweichen."""
+    pytest.importorskip("pyfair")
+
+    def _szenario(modus):
+        s = Szenario.objects.create(
+            name=f"Vergleich-{modus}", n_simulations=4000, lm_modus=Szenario.LMModus.FORMEN,
+            aggregations_modus=modus,
+        )
+        FaktorEingabe.objects.create(
+            szenario=s, faktor="LEF", verteilung="pert",
+            params={"low": 1, "mode": 3, "high": 6},
+        )
+        FaktorEingabe.objects.create(
+            szenario=s, faktor="SL", verteilung="constant", params={"constant": 0},
+        )
+        VerlustFormEingabe.objects.create(
+            szenario=s, seite="PL", form="response", verteilung="pert",
+            params={"low": 1000, "mode": 2000, "high": 4000},
+        )
+        VerlustFormEingabe.objects.create(
+            szenario=s, seite="PL", form="replacement", verteilung="normal",
+            params={"mean": 3000, "stdev": 300},
+        )
+        return s
+
+    s_element = _szenario(Szenario.AggregationsModus.ELEMENTWEISE)
+    s_kennwerte = _szenario(Szenario.AggregationsModus.KENNWERTE)
+
+    erg_element = services.simuliere(s_element, n_simulations=4000, random_seed=42, batches=8)
+    erg_kennwerte = services.simuliere(s_kennwerte, n_simulations=4000, random_seed=42, batches=8)
+
+    # Erwarteter PL-Mittelwert: PERT-Erwartungswert (low+gamma*mode+high)/(gamma+2, gamma=4) + Normal-Mittelwert.
+    erwartet = (1000 + 4 * 2000 + 4000) / 6 + 3000
+    assert erg_element["knoten"]["PL"]["mittelwert"] == pytest.approx(erwartet, rel=0.05)
+    assert erg_kennwerte["knoten"]["PL"]["mittelwert"] == pytest.approx(erwartet, rel=0.05)
+
+
+@pytest.mark.django_db
 def test_run_simulation_faengt_fehler_ab():
     # Szenario ohne Faktoren -> pyfair kann nicht rechnen -> Status FEHLER.
     pytest.importorskip("pyfair")

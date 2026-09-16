@@ -83,8 +83,9 @@
 {% if szenario.lm_modus == "formen" %}
 <h2 class="h5 mt-4">6 Forms of Loss</h2>
 <p class="text-body-secondary small">
-    Primary Loss (PL) und Secondary Loss (SL) werden elementweise aus diesen Verlustarten
-    aufsummiert (statt eines direkten PL/SL-Werts im FAIR-Baum).
+    Primary Loss (PL) und Secondary Loss (SL) werden aus diesen Verlustarten aufsummiert (statt
+    eines direkten PL/SL-Werts im FAIR-Baum). Aggregationsmodus:
+    <strong>{{ szenario.get_aggregations_modus_display }}</strong>.
 </p>
 <table class="table">
     <thead>
@@ -128,9 +129,9 @@
 {% if szenario.lm_modus == "fair_mam" %}
 <h2 class="h5 mt-4">FAIR-MAM</h2>
 <p class="text-body-secondary small">
-    Primary Loss (PL) und Secondary Loss (SL) werden elementweise aus diesen FAIR-MAM-
-    Kostenkategorien aufsummiert. Kategorien nach FAIR-MAM™ (FAIR Institute) –
-    nicht-kommerzielle Nutzung, siehe
+    Primary Loss (PL) und Secondary Loss (SL) werden aus diesen FAIR-MAM-Kostenkategorien
+    aufsummiert. Aggregationsmodus: <strong>{{ szenario.get_aggregations_modus_display }}</strong>.
+    Kategorien nach FAIR-MAM™ (FAIR Institute) – nicht-kommerzielle Nutzung, siehe
     <a href="https://www.fairinstitute.org/resources/FAIR-MAM" target="_blank" rel="noopener">fairinstitute.org/resources/FAIR-MAM</a>.
 </p>
 <table class="table">

@@ -148,8 +148,10 @@ Monte-Carlo-Aggregation in `apps/berechnung/services.py::simuliere`, taxonomie-a
 - [x] Slice 1: Grundgerüst + **6 Forms of Loss** (`VerlustFormEingabe`, Modus `formen`)
 - [x] Slice 2: **FAIR-MAM-Fragebogen** (`VerlustMamEingabe`, Modus `fair_mam`) – 10 Module/26
       Kategorien, Primary/Secondary je Kategorie fest vorgegeben (→ PL/SL)
-- [ ] Slice 3 (später): Aggregationsmodus-Umschalter ("nur Kennwerte addieren" als einfachere
-      Alternative zur elementweisen Summe)
+- [x] Slice 3: **Aggregationsmodus-Umschalter** (`aggregations_modus`) – "Elementweise" (echte
+      Monte-Carlo-Faltung, bisheriges Verhalten) vs. "Kennwerte" (Mittelwert+Varianz je Form/
+      Kategorie exakt addieren, per Moment-Matching in eine Lognormalverteilung für PL/SL
+      übersetzt – schneller, aber Näherung an die Form der Summenverteilung)
 - [ ] Slice 4 (später): SLEF-Granularität je Form/Kategorie statt nur gemeinsam für alle SL-Formen
 
 ### Später — Geführter Szenario-Dialog (Name noch offen)

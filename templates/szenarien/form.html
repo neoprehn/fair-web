@@ -43,6 +43,11 @@
                         <label class="form-label mt-3">Loss-Magnitude-Eingabe</label>
                         {{ form.lm_modus }}{{ form.lm_modus.errors }}
                         <div class="form-text">"6 Forms of Loss" bzw. "FAIR-MAM-Fragebogen" blenden unten Karten für PL/SL ein.</div>
+                        <div id="aggregations-modus-feld" class="mt-3" style="display:none;">
+                            <label class="form-label">Aggregationsmodus</label>
+                            {{ form.aggregations_modus }}{{ form.aggregations_modus.errors }}
+                            <div class="form-text">"Elementweise" faltet die Formen/Kategorien exakt per Monte-Carlo; "Kennwerte" addiert Mittelwert+Varianz und nähert die Summe über eine Lognormalverteilung an (schneller, ungenauer in der Form).</div>
+                        </div>
                     </div></div>
                 </div>
                 <div class="col-md-8">
@@ -388,14 +393,17 @@ function formatDE(n) {
         if (sl) sl.addEventListener('input', function () { syncDist(card); });
     });
 
-    // LM-Modus-Umschalter: passenden Aufschlüsselungs-Bereich anzeigen ("formen"/"fair_mam").
+    // LM-Modus-Umschalter: passenden Aufschlüsselungs-Bereich anzeigen ("formen"/"fair_mam"),
+    // Aggregationsmodus-Feld nur bei aktiver Aufschlüsselung (nicht bei "klassisch").
     var lmModusSelect = document.getElementById('id_lm_modus');
     var lossFormenBereich = document.getElementById('loss-formen-bereich');
     var mamBereich = document.getElementById('mam-bereich');
+    var aggregationsModusFeld = document.getElementById('aggregations-modus-feld');
     function syncLmModus() {
         if (!lmModusSelect) return;
         if (lossFormenBereich) lossFormenBereich.style.display = (lmModusSelect.value === 'formen') ? '' : 'none';
         if (mamBereich) mamBereich.style.display = (lmModusSelect.value === 'fair_mam') ? '' : 'none';
+        if (aggregationsModusFeld) aggregationsModusFeld.style.display = (lmModusSelect.value === 'klassisch') ? 'none' : '';
     }
     if (lmModusSelect) {
         lmModusSelect.addEventListener('change', syncLmModus);

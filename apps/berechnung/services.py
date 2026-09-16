@@ -130,10 +130,19 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
         raise ValueError("Szenario hat keine FAIR-Faktoren – nichts zu berechnen.")
     pro_batch = max(1, n_simulations // batches)
 
+    ziel_je_seite = {"PL": fair_tree.target("PL"), "SL": fair_tree.target("SL")}
     # Taxonomie-unabhängig: liefert je nach lm_modus VerlustFormEingabe- oder
     # VerlustMamEingabe-Objekte (beide mit .eindeutiger_code/.to_fair_kwargs()).
-    formen_je_seite = {seite: szenario.verlust_komponenten(seite) for seite in formen_seiten}
-    ziel_je_seite = {"PL": fair_tree.target("PL"), "SL": fair_tree.target("SL")}
+    # Im "kennwerte"-Modus wird stattdessen EINMAL (statt je Batch) eine Lognormal-Näherung aus
+    # den aufsummierten Momenten gebaut und direkt in `inputs` eingespeist - der Batch-Loop
+    # unten behandelt PL/SL dann wie jeden anderen Faktor, formen_je_seite bleibt leer.
+    formen_je_seite = {}
+    if formen_seiten:
+        if szenario.aggregations_modus == szenario.AggregationsModus.KENNWERTE:
+            for seite in formen_seiten:
+                inputs[ziel_je_seite[seite]] = szenario.verlust_kennwerte_kwargs(seite)
+        else:
+            formen_je_seite = {seite: szenario.verlust_komponenten(seite) for seite in formen_seiten}
     # Grosser, seitenabhaengiger Offset, damit PL- und SL-Loss-Form-Stichproben
     # (falls beide Seiten im "formen"-Modus sind) unabhaengig voneinander bleiben.
     seiten_offset = {"PL": 10_000_000, "SL": 20_000_000}
