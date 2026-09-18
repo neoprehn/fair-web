@@ -186,8 +186,12 @@ class LaufDetailView(DetailView):
             n["status"] = info["status"] if info else "unused"
             n["wert"] = _formatiere_wert(n["code"], info["mittelwert"]) if info else None
             n["tooltip"] = _node_tooltip(n["code"], info)
-        context["svg_nodes"] = nodes
-        context["svg_edges"] = edges
+        # Nicht verwendete Knoten (z.B. CF/PoA, wenn TEF direkt statt aufgeschlüsselt eingegeben
+        # wurde) komplett ausblenden statt nur abzudunkeln - im Dark-Theme war die Füllfarbe
+        # ungenutzter Boxen bei niedriger Deckkraft kaum von der Seite zu unterscheiden.
+        benutzte_codes = {n["code"] for n in nodes if n["status"] != "unused"}
+        context["svg_nodes"] = [n for n in nodes if n["code"] in benutzte_codes]
+        context["svg_edges"] = [e for e in edges if e["von"] in benutzte_codes and e["nach"] in benutzte_codes]
         ov = toleranz_overlay(self.object.szenario.risikotoleranz)
         context["toleranz_overlay"] = ov
         context["knoten_tabelle"] = _knoten_tabelle(knoten)

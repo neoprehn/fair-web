@@ -133,6 +133,13 @@ def test_szenario_str_und_defaults():
     assert str(s) == "Ransomware"
     assert s.n_simulations == 10_000
     assert s.random_seed == 42
+    assert s.cia == []
+    assert s.cia_labels == []
+
+
+def test_cia_labels():
+    s = Szenario(name="X", cia=["I", "A"])
+    assert s.cia_labels == ["Integrität (I)", "Verfügbarkeit (A)"]
 
 
 @pytest.mark.django_db

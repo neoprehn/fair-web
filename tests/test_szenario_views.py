@@ -4,7 +4,7 @@ import pytest
 from django.urls import reverse
 
 from apps.szenarien.forms import FaktorEingabeForm
-from apps.szenarien.models import Szenario
+from apps.szenarien.models import Cluster, Szenario
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +72,19 @@ def test_dashboard_zeigt_szenarien(client):
     resp = client.get(reverse("szenarien:dashboard"))
     assert resp.status_code == 200
     assert b"Vorhanden" in resp.content
+
+
+@pytest.mark.django_db
+def test_create_speichert_cluster_und_cia(client):
+    cluster = Cluster.objects.create(name="Ransomware-Szenarien")
+    resp = client.post(reverse("szenarien:create"), data=_post_lef_lm(
+        cluster=[cluster.pk], cia=["C", "A"],
+    ))
+    assert resp.status_code == 302
+    s = Szenario.objects.get(name="Phishing")
+    assert list(s.cluster.all()) == [cluster]
+    assert s.cia == ["C", "A"]
+    assert s.cia_labels == ["Vertraulichkeit (C)", "Verfügbarkeit (A)"]
 
 
 @pytest.mark.django_db

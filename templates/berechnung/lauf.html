@@ -13,7 +13,14 @@
     </ol>
 </nav>
 
-<h1 class="h3 mb-3">Monte-Carlo-Simulation</h1>
+<h1 class="h3 mb-1">{{ lauf.szenario.name }}</h1>
+{% if lauf.szenario.beschreibung %}<p class="text-body-secondary mb-2">{{ lauf.szenario.beschreibung }}</p>{% endif %}
+{% if lauf.szenario.cluster.all or lauf.szenario.cia_labels %}
+<div class="mb-2">
+    {% for c in lauf.szenario.cluster.all %}<span class="badge text-bg-light">{{ c.name }}</span> {% endfor %}
+    {% for label in lauf.szenario.cia_labels %}<span class="badge text-bg-info">{{ label }}</span> {% endfor %}
+</div>
+{% endif %}
 
 {% if lauf.status == "fehler" %}
     <div class="alert alert-danger">
@@ -23,7 +30,7 @@
 
 {% elif lauf.status == "fertig" %}
     <p class="text-body-secondary">
-        {{ lauf.ergebnis.n|intcomma }} Iterationen &middot; Seed {{ lauf.random_seed }}
+        Simulation #{{ lauf.pk }} &middot; {{ lauf.ergebnis.n|intcomma }} Iterationen &middot; Seed {{ lauf.random_seed }}
     </p>
 
     <div class="row g-3 mb-3">
@@ -120,12 +127,14 @@
     <div class="row g-3 mb-3">
         <div class="col-lg-6">
             <h2 class="h5 mt-2">Verteilung des Jahresschadens</h2>
+            <p class="text-body-secondary small mb-2">Jeder Balken zeigt, wie viele der simulierten Jahre in diesen Schadensbereich fielen.</p>
             <div class="card h-100"><div class="card-body">
                 <div id="vert-chart" style="height:320px;"></div>
             </div></div>
         </div>
         <div class="col-lg-6">
             <h2 class="h5 mt-2">Häufigkeit der Schadenereignisse</h2>
+            <p class="text-body-secondary small mb-2">Jeder Balken zeigt, wie viele der simulierten Jahre diese Anzahl an Schadenereignissen hatten.</p>
             <div class="card h-100"><div class="card-body">
                 <div id="haeuf-chart" style="height:320px;"></div>
             </div></div>
@@ -133,6 +142,15 @@
     </div>
     {{ lauf.ergebnis.verteilung_hist|json_script:"vert-data" }}
     {{ lauf.ergebnis.haeufigkeit_hist|json_script:"haeuf-data" }}
+
+    {% if lauf.ergebnis.streudiagramm %}
+    <h2 class="h5 mt-2">Primärer vs. sekundärer Verlust</h2>
+    <p class="text-body-secondary small mb-2">Jeder Punkt ist ein simuliertes Jahr: x = Primärverlust, y = Sekundärverlust in diesem Jahr.</p>
+    <div class="card mb-3"><div class="card-body">
+        <div id="streu-chart" style="height:420px;"></div>
+    </div></div>
+    {{ lauf.ergebnis.streudiagramm|json_script:"streu-data" }}
+    {% endif %}
 
     {% if knoten_tabelle %}
     <h2 class="h5 mt-5 pt-3">Knoten-Details</h2>
@@ -257,6 +275,26 @@
     }
     balken('vert-chart', 'vert-data', '#7dd3fc', 'Jahresschaden ({{ waehrung_symbol }})');
     balken('haeuf-chart', 'haeuf-data', '#86efac', 'Schadenereignisse pro Jahr');
+
+    // Streudiagramm: Primärverlust (x) vs. Sekundärverlust (y) je simuliertem Jahr.
+    (function () {
+        var el = document.getElementById('streu-chart');
+        var dataEl = document.getElementById('streu-data');
+        if (!el || !dataEl) return;
+        var d = JSON.parse(dataEl.textContent || 'null');
+        if (!d || !d.pl || !d.pl.length) return;
+        Plotly.newPlot('streu-chart', [{
+            x: d.pl, y: d.sl, mode: 'markers', type: 'scatter',
+            marker: { color: '#7dd3fc', size: 6, opacity: 0.55 },
+            hovertemplate: 'Primärverlust: %{x:,.0f} {{ waehrung_symbol }}<br>Sekundärverlust: %{y:,.0f} {{ waehrung_symbol }}<extra></extra>'
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
+            margin: { l: 70, r: 20, t: 10, b: 50 },
+            xaxis: { title: 'Primärverlust ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid() },
+            yaxis: { title: 'Sekundärverlust ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid() }
+        }, { responsive: true, displayModeBar: false });
+    })();
 })();
 </script>
 {% endif %}

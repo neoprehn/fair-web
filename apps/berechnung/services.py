@@ -65,6 +65,30 @@ def _histogramm(arr, bins=40):
             "breite": breite}
 
 
+def _streudiagramm(df, punkte=3000):
+    """Downgesampelte (PL, SL)-Punktepaare je Trial - für die Punktwolke Primär-/Sekundärverlust.
+
+    Eigener ``default_rng`` statt des globalen ``np.random``-Stroms (den pyfair für die
+    Simulation selbst nutzt) - läuft erst nach allen Batches, beeinflusst also die Berechnung
+    nicht, bleibt aber sauber getrennt/deterministisch reproduzierbar.
+    """
+    import numpy as np
+
+    pl_spalte, sl_spalte = fair_tree.target("PL"), fair_tree.target("SL")
+    if pl_spalte not in df.columns or sl_spalte not in df.columns:
+        return None
+    pl = df[pl_spalte].to_numpy(dtype=float)
+    sl = df[sl_spalte].to_numpy(dtype=float)
+    gueltig = np.isfinite(pl) & np.isfinite(sl)
+    pl, sl = pl[gueltig], sl[gueltig]
+    if pl.size == 0:  # Spalten vorhanden, aber ungenutzt (z.B. LM direkt statt PL+SL) -> NaN
+        return None
+    if pl.size > punkte:
+        idx = np.sort(np.random.default_rng(0).choice(pl.size, punkte, replace=False))
+        pl, sl = pl[idx], sl[idx]
+    return {"pl": pl.tolist(), "sl": sl.tolist()}
+
+
 def _knoten_stats(df, szenario):
     """Statistik je berechnetem FAIR-Knoten (für Ergebnis-Baum + Tabelle).
 
@@ -205,6 +229,7 @@ def simuliere(szenario, n_simulations, random_seed, batches=20, fortschritt=None
     lef_spalte = fair_tree.target("LEF")  # "Loss Event Frequency"
     if lef_spalte in combined.columns:
         ergebnis["haeufigkeit_hist"] = _histogramm(combined[lef_spalte].to_numpy())
+    ergebnis["streudiagramm"] = _streudiagramm(combined)
     return ergebnis
 
 

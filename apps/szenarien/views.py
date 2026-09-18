@@ -465,6 +465,8 @@ class _SzenarioFormMixin:
             form.instance._state.adding = True
         with transaction.atomic():
             self.object = form.save()
+            # Cluster ist reverse M2M (auf Cluster definiert) - form.save() rührt es nicht an.
+            self.object.cluster.set(form.cleaned_data["cluster"])
             if konfig.seed_global:
                 self.object.random_seed = konfig.standard_seed
             if konfig.n_simulations_global:

@@ -12,6 +12,7 @@ from django import forms
 from . import fair_tree
 from .fair_confidence import UNSICHERHEIT_MAX, UNSICHERHEIT_MIN
 from .models import (
+    CIA_LABELS,
     Cluster,
     FaktorEingabe,
     Szenario,
@@ -43,9 +44,23 @@ class RangeInput(forms.NumberInput):
 
 
 class SzenarioForm(forms.ModelForm):
+    # Cluster.szenarien ist ein M2M AUF Cluster (reverse related_name="cluster" auf Szenario) -
+    # kein Modellfeld von Szenario, daher ein eigenständiges Formularfeld statt Meta.fields;
+    # das Setzen übernimmt die View nach dem Speichern (siehe form_valid()).
+    cluster = forms.ModelMultipleChoiceField(
+        queryset=Cluster.objects.all(), required=False, label="Cluster",
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
+    )
+    # cia ist ein echtes JSONField (Liste von Codes) - eigenes Feld statt automatischem
+    # JSONField-Widget, analog zu den anderen Verteilungs-/Modus-Feldern in der App.
+    cia = forms.MultipleChoiceField(
+        required=False, label="C/I/A", choices=list(CIA_LABELS.items()),
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
+    )
+
     class Meta:
         model = Szenario
-        fields = ("name", "beschreibung", "n_simulations", "random_seed", "lm_modus",
+        fields = ("name", "beschreibung", "cia", "n_simulations", "random_seed", "lm_modus",
                   "aggregations_modus", "slef_modus")
         localized_fields = ("n_simulations", "random_seed")
         widgets = {
@@ -60,6 +75,8 @@ class SzenarioForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.initial.setdefault("cluster", self.instance.cluster.all())
         # Nicht zwingend erforderlich: alte Formular-Posts (Tests, ältere Clients) kennen
         # das Feld ggf. nicht - fehlt es, greift der Modell-Default ("klassisch"/"elementweise"/
         # "gemeinsam") statt eines Validierungsfehlers (siehe clean_*()).
@@ -84,6 +101,9 @@ class SzenarioForm(forms.ModelForm):
 
     def clean_slef_modus(self):
         return self.cleaned_data.get("slef_modus") or Szenario.SlefModus.GEMEINSAM
+
+    def clean_cia(self):
+        return self.cleaned_data.get("cia") or []
 
 
 class VergleichForm(forms.ModelForm):

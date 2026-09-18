@@ -49,6 +49,11 @@ class Angreifertyp(models.Model):
         return self.name
 
 
+# C/I/A (Schutzziele Vertraulichkeit/Integrität/Verfügbarkeit) - ein Szenario kann mehrere
+# gleichzeitig betreffen, daher Codes statt TextChoices (siehe Szenario.cia/cia_labels).
+CIA_LABELS = {"C": "Vertraulichkeit (C)", "I": "Integrität (I)", "A": "Verfügbarkeit (A)"}
+
+
 class Szenario(models.Model):
     class LMModus(models.TextChoices):
         KLASSISCH = "klassisch", "Klassisch (PL/SL direkt)"
@@ -65,6 +70,8 @@ class Szenario(models.Model):
 
     name = models.CharField("Name", max_length=200)
     beschreibung = models.TextField("Beschreibung", blank=True)
+    # Schutzziele, die dieses Szenario betrifft - Liste von Codes aus CIA_LABELS, z.B. ["C", "A"].
+    cia = models.JSONField("C/I/A", default=list, blank=True)
     n_simulations = models.PositiveIntegerField("Anzahl Simulationen", default=10_000)
     random_seed = models.PositiveIntegerField("Zufalls-Seed", default=42)
     # Risikotoleranz, kontextbasiert: {"type": "constant"|"curve"|"distribution", ...}
@@ -98,6 +105,11 @@ class Szenario(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def cia_labels(self):
+        """Lesbare Labels der gewählten Schutzziele (für Badges in Templates)."""
+        return [CIA_LABELS[code] for code in self.cia if code in CIA_LABELS]
 
     def fair_inputs(self):
         """Eingaben als Dict ``{FAIR-Target: input_data-kwargs}``.

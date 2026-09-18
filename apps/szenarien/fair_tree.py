@@ -176,7 +176,8 @@ def svg_layout():
 
     Returns (nodes, edges):
       nodes: [{code, label, x, y}]  (label = Kürzel, Risk als 'R')
-      edges: [{x1, y1, x2, y2}]
+      edges: [{x1, y1, x2, y2, von, nach}]  (von/nach = Codes der Endpunkte, z.B. für
+             den Ergebnis-Baum, der Kanten zu nicht verwendeten Knoten herausfiltert)
     """
     nodes = []
     for code, (x, y) in SVG_POS.items():
@@ -192,7 +193,7 @@ def svg_layout():
     for a, b in paare:
         x1, y1 = SVG_POS[a]
         x2, y2 = SVG_POS[b]
-        edges.append({"x1": x1, "y1": y1, "x2": x2, "y2": y2})
+        edges.append({"x1": x1, "y1": y1, "x2": x2, "y2": y2, "von": a, "nach": b})
     return nodes, edges
 
 

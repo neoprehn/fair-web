@@ -63,6 +63,40 @@ def test_ergebnis_enthaelt_knoten_mit_status():
 
 
 @pytest.mark.django_db
+def test_ergebnis_enthaelt_streudiagramm_pl_sl():
+    """PL und SL direkt als Faktoren -> ergebnis['streudiagramm'] enthält Punktepaare je Trial."""
+    pytest.importorskip("pyfair")
+    s = Szenario.objects.create(name="Streu-Test", n_simulations=200)
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="LEF", verteilung="pert", params={"low": 1, "mode": 3, "high": 6},
+    )
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="PL", verteilung="constant", params={"constant": 2000},
+    )
+    FaktorEingabe.objects.create(
+        szenario=s, faktor="SL", verteilung="constant", params={"constant": 3000},
+    )
+
+    ergebnis = services.simuliere(s, n_simulations=200, random_seed=42, batches=4)
+
+    streu = ergebnis["streudiagramm"]
+    assert streu is not None
+    assert len(streu["pl"]) == 200 == len(streu["sl"])
+    # Beide Faktoren sind konstant -> jedes Punktepaar ist exakt (2000, 3000).
+    assert set(streu["pl"]) == {2000.0}
+    assert set(streu["sl"]) == {3000.0}
+
+
+@pytest.mark.django_db
+def test_ergebnis_ohne_pl_sl_hat_kein_streudiagramm():
+    """LM direkt (kein PL/SL) -> streudiagramm ist None statt eines Fehlers."""
+    pytest.importorskip("pyfair")
+    s = _szenario_mit_faktoren()  # LEF (pert) + LM (constant), kein PL/SL
+    ergebnis = services.simuliere(s, n_simulations=200, random_seed=42, batches=2)
+    assert ergebnis["streudiagramm"] is None
+
+
+@pytest.mark.django_db
 def test_run_simulation_setzt_lauf_auf_fertig():
     pytest.importorskip("pyfair")
     s = _szenario_mit_faktoren()

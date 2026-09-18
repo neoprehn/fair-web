@@ -136,7 +136,14 @@ Offen ist nur noch:
 - [ ] Historie der Simulationen (aufklappbar, Verzeichnis-artig, neueste oben)
 - [ ] Schnittpunkte LEC×Toleranz bzw. mehrere LECs×Toleranz als Tabelle
       (Vorbild: `fair/results/Laptop_neu.html`)
-- [ ] Punkte-Streudiagramm primäre/sekundäre Verluste (rot/blau, wie Laptop_neu)
+- [x] Punkte-Streudiagramm primäre/sekundäre Verluste (Ergebnisseite, `apps/berechnung/services.py::_streudiagramm`)
+- [x] Szenario-Kategorie (Cluster) direkt im Szenario-Formular zuordenbar (bisher nur andersherum)
+- [x] C/I/A-Kennzeichnung je Szenario (Mehrfachauswahl, `Szenario.cia`) inkl. Anzeige in
+      Detail-/Ergebnisseite
+- [x] Szenario-Name/-Beschreibung als Header über den Ergebnissen (`berechnung/lauf.html`,
+      bisher nur Breadcrumb)
+- [x] Ergebnis-Baum: nicht verwendete Knoten (z. B. CF/PoA bei direkt eingegebenem TEF) komplett
+      ausgeblendet statt nur abgedunkelt (war im Dark-Theme praktisch unsichtbar)
 - [ ] Lokaler Test · Commit & Push → `feature-…` mergen in `main`
 
 ### LM-Seite – Aufschlüsselung von PL/SL (Slices, @neoprehn)

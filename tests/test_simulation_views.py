@@ -73,3 +73,25 @@ def test_detail_zeigt_berechnen_button(client, szenario):
     resp = client.get(reverse("szenarien:detail", kwargs={"pk": szenario.pk}))
     assert resp.status_code == 200
     assert b"Berechnen" in resp.content
+
+
+@pytest.mark.django_db
+def test_lauf_baum_blendet_nicht_verwendete_knoten_aus(client, szenario):
+    """LEF direkt (nicht aufgeschlüsselt) -> TEF/VULN/CF/PoA/TC/CS dürfen im Ergebnis-Baum
+    nicht mehr auftauchen (weder als Knoten noch als Kante dorthin)."""
+    from apps.berechnung import services
+
+    pytest.importorskip("pyfair")
+    ergebnis = services.simuliere(szenario, n_simulations=500, random_seed=7, batches=2)
+    lauf = Simulationslauf.objects.create(
+        szenario=szenario, n_simulations=500, random_seed=7,
+        status=Simulationslauf.Status.FERTIG, fortschritt=100, ergebnis=ergebnis,
+    )
+
+    resp = client.get(reverse("berechnung:lauf", kwargs={"pk": lauf.pk}))
+
+    assert resp.status_code == 200
+    codes = {n["code"] for n in resp.context["svg_nodes"]}
+    assert codes == {"Risk", "LEF", "LM"}
+    for e in resp.context["svg_edges"]:
+        assert e["von"] in codes and e["nach"] in codes
