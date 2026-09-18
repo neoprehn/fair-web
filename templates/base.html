@@ -109,6 +109,12 @@
         .svg-node.zweig-sl rect { fill: var(--zweig-sl); stroke: var(--zweig-sl); }
         .svg-node.zweig-tef .svg-node-label, .svg-node.zweig-vuln .svg-node-label,
         .svg-node.zweig-pl .svg-node-label, .svg-node.zweig-sl .svg-node-label { fill: #04223a; font-weight: 700; }
+        /* Dieselbe Zweig-Einfärbung auch außerhalb des Baums (Tabellenzeilen: FAIR-Faktoren,
+           6 Forms of Loss, FAIR-MAM) - linker Rahmen auf der ersten Zelle der Zeile. */
+        td.zweig-tef { border-left: 3px solid var(--zweig-tef); }
+        td.zweig-vuln { border-left: 3px solid var(--zweig-vuln); }
+        td.zweig-pl { border-left: 3px solid var(--zweig-pl); }
+        td.zweig-sl { border-left: 3px solid var(--zweig-sl); }
         .svg-node.eingabe .svg-node-label,
         .svg-node.berechnet .svg-node-label { fill: #04223a; font-weight: 700; }
         .svg-node-wert { fill: var(--txt-muted); font-size: 10px; font-family: Bahnschrift, "Segoe UI", sans-serif; }

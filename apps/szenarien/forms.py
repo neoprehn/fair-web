@@ -44,15 +44,10 @@ class RangeInput(forms.NumberInput):
 
 
 class SzenarioForm(forms.ModelForm):
-    # Cluster.szenarien ist ein M2M AUF Cluster (reverse related_name="cluster" auf Szenario) -
-    # kein Modellfeld von Szenario, daher ein eigenständiges Formularfeld statt Meta.fields;
-    # das Setzen übernimmt die View nach dem Speichern (siehe form_valid()).
-    cluster = forms.ModelMultipleChoiceField(
-        queryset=Cluster.objects.all(), required=False, label="Cluster",
-        widget=forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
-    )
     # cia ist ein echtes JSONField (Liste von Codes) - eigenes Feld statt automatischem
     # JSONField-Widget, analog zu den anderen Verteilungs-/Modus-Feldern in der App.
+    # Cluster-Zuordnung bewusst NICHT hier (nur auf der Cluster-Seite selbst pflegen -
+    # Nutzerentscheidung, um die Pflegewege nicht zu duplizieren).
     cia = forms.MultipleChoiceField(
         required=False, label="C/I/A", choices=list(CIA_LABELS.items()),
         widget=forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
@@ -65,7 +60,7 @@ class SzenarioForm(forms.ModelForm):
         localized_fields = ("n_simulations", "random_seed")
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
-            "beschreibung": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "beschreibung": forms.Textarea(attrs={"class": "form-control", "rows": 7}),
             "n_simulations": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
             "random_seed": forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
             "lm_modus": forms.Select(attrs={"class": "form-select", "id": "id_lm_modus"}),
@@ -75,8 +70,6 @@ class SzenarioForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk:
-            self.initial.setdefault("cluster", self.instance.cluster.all())
         # Nicht zwingend erforderlich: alte Formular-Posts (Tests, ältere Clients) kennen
         # das Feld ggf. nicht - fehlt es, greift der Modell-Default ("klassisch"/"elementweise"/
         # "gemeinsam") statt eines Validierungsfehlers (siehe clean_*()).

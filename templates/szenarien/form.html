@@ -28,34 +28,15 @@
                 </label>
                 {{ form.beschreibung }}
 
-                <div class="row mt-3">
-                    <div class="col-sm-6">
-                        <label class="form-label">Cluster</label>
-                        {% if form.cluster.field.queryset %}
-                        <div class="d-flex flex-column gap-1">
-                            {% for cb in form.cluster %}
-                            <div class="form-check">{{ cb.tag }}
-                                <label class="form-check-label" for="{{ cb.id_for_label }}">{{ cb.choice_label }}</label>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <p class="text-body-secondary small mb-0">Noch keine Cluster angelegt.</p>
-                        {% endif %}
-                        {{ form.cluster.errors }}
+                <label class="form-label mt-3">C/I/A</label>
+                <div class="d-flex flex-wrap gap-3">
+                    {% for cb in form.cia %}
+                    <div class="form-check">{{ cb.tag }}
+                        <label class="form-check-label" for="{{ cb.id_for_label }}">{{ cb.choice_label }}</label>
                     </div>
-                    <div class="col-sm-6">
-                        <label class="form-label">C/I/A</label>
-                        <div class="d-flex flex-column gap-1">
-                            {% for cb in form.cia %}
-                            <div class="form-check">{{ cb.tag }}
-                                <label class="form-check-label" for="{{ cb.id_for_label }}">{{ cb.choice_label }}</label>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {{ form.cia.errors }}
-                    </div>
+                    {% endfor %}
                 </div>
+                {{ form.cia.errors }}
             </div></div>
 
             <div class="row g-3">

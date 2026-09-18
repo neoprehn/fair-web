@@ -51,7 +51,7 @@ class Angreifertyp(models.Model):
 
 # C/I/A (Schutzziele Vertraulichkeit/Integrität/Verfügbarkeit) - ein Szenario kann mehrere
 # gleichzeitig betreffen, daher Codes statt TextChoices (siehe Szenario.cia/cia_labels).
-CIA_LABELS = {"C": "Vertraulichkeit (C)", "I": "Integrität (I)", "A": "Verfügbarkeit (A)"}
+CIA_LABELS = {"C": "Confidentiality (C)", "I": "Integrity (I)", "A": "Availability (A)"}
 
 
 class Szenario(models.Model):
@@ -478,6 +478,12 @@ class FaktorEingabe(_VerteilungsEingabe):
     @property
     def faktor_abbr(self):
         return fair_tree.abbr(self.faktor)
+
+    @property
+    def zweig_css(self):
+        """CSS-Klasse der Baum-Zweigfarbe (TEF/VULN/PL/SL), sonst leer - siehe
+        fair_tree.ZWEIG_CSS, dieselbe Einfärbung wie im FAIR-Baum (Slice-Farbgestaltung)."""
+        return fair_tree.ZWEIG_CSS.get(self.faktor, "")
 
     def clean(self):
         self._validiere_verteilung()

@@ -12,16 +12,14 @@
     </ol>
 </nav>
 
-<div class="d-flex justify-content-between align-items-start mb-3">
-    <div>
-        <h1 class="h3 mb-1">{{ szenario.name }}</h1>
-        {% if szenario.beschreibung %}<p class="text-body-secondary mb-0">{{ szenario.beschreibung }}</p>{% endif %}
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-1">
+    <h1 class="h3 mb-0">{{ szenario.name }}</h1>
     <div>
         {% if perms.szenarien.change_szenario %}<a class="btn btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>{% endif %}
         {% if perms.szenarien.delete_szenario %}<a class="btn btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>{% endif %}
     </div>
 </div>
+{% if szenario.beschreibung %}<p class="text-body-secondary mb-3">{{ szenario.beschreibung }}</p>{% endif %}
 
 <dl class="row">
     <dt class="col-sm-3">ID</dt><dd class="col-sm-9">{{ szenario.pk }}</dd>
@@ -41,7 +39,7 @@
     <tbody>
     {% for faktor in szenario.faktoren.all %}
         <tr>
-            <td>
+            <td class="{{ faktor.zweig_css }}">
                 {{ faktor.get_faktor_display }}
                 {% if faktor.angreifertyp %}<span class="text-info small d-block">{{ faktor.angreifertyp }}</span>{% endif %}
             </td>
@@ -100,7 +98,7 @@
     <tbody>
     {% for vf in szenario.verlustformen.all %}
         <tr>
-            <td>{{ vf.get_seite_display }}</td>
+            <td class="{% if vf.seite == 'PL' %}zweig-pl{% else %}zweig-sl{% endif %}">{{ vf.get_seite_display }}</td>
             <td>{{ vf.get_form_display }}</td>
             <td>{{ vf.get_verteilung_display }}</td>
             <td>
@@ -156,7 +154,7 @@
     <tbody>
     {% for m in szenario.mam_kategorien.all %}
         <tr>
-            <td>{{ m.seite }}</td>
+            <td class="{% if m.seite == 'PL' %}zweig-pl{% else %}zweig-sl{% endif %}">{{ m.seite }}</td>
             <td>{{ m.modul }}</td>
             <td>{{ m.get_kategorie_display }}</td>
             <td>{{ m.get_verteilung_display }}</td>

@@ -139,7 +139,7 @@ def test_szenario_str_und_defaults():
 
 def test_cia_labels():
     s = Szenario(name="X", cia=["I", "A"])
-    assert s.cia_labels == ["Integrität (I)", "Verfügbarkeit (A)"]
+    assert s.cia_labels == ["Integrity (I)", "Availability (A)"]
 
 
 @pytest.mark.django_db
