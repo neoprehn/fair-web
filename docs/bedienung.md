@@ -110,8 +110,11 @@ Eigener Reiter **„Vergleiche"** in der Navbar: listet alle Vergleiche mit dem
 gespeicherten **Gesamtrisiko (Ø)** des letzten Laufs und Link zum Lauf.
 
 - **+ Neuer Vergleich** – mehrere Szenarien gruppieren und gemeinsam berechnen.
-- Im Ergebnis umschaltbar zwischen **Compare** (LECs überlagert) und **Add**
-  (Gesamtrisiko-Summe).
+- Im Ergebnis umschaltbar zwischen **Compare** und **Add** – der Schalter steuert
+  nicht nur die LEC-Kurve, sondern die ganze Seite: **Compare** zeigt die
+  Szenarien einzeln (LECs überlagert, Beitrag- und Schnittpunkt-Tabelle je
+  Zeile); **Add** zeigt ausschließlich das Gesamtrisiko (Summenkurve, Gesamt-
+  Kennzahlen-Karten, Summenzeile in beiden Tabellen).
 - Optional ein **Referenz-Szenario**, dessen Risikotoleranz im Compare-Chart rot
   gezeichnet wird (mit Schnittpunkten je Szenario-LEC).
 

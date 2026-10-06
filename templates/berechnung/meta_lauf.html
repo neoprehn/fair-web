@@ -2,7 +2,7 @@
 {% load humanize %}
 
 {% block title %}{% if lauf.vergleich %}{{ lauf.vergleich.name }}{% else %}Gesamt-Simulation{% endif %} &middot; fair-web{% endblock %}
-{% block extra_head %}{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
+{% block extra_head %}{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script><style>.mode-add { display: none; }</style>{% endif %}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -23,7 +23,7 @@
         {{ lauf.szenarien.count }} Szenarien &middot; {{ lauf.ergebnis.gesamt.n|intcomma }} Iterationen &middot; Summenrisiko
     </p>
 
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 mode-add">
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
                 <div class="text-body-secondary small">Erwartetes Gesamtrisiko (Mittelwert)</div>
@@ -45,7 +45,7 @@
     </div>
 
     <h2 class="h5">Beitrag je Szenario</h2>
-    <p class="text-body-secondary small mb-2">
+    <p class="text-body-secondary small mb-2 mode-add">
         Die <strong>Summe</strong> ist nicht die naive Addition der einzelnen P90/P95/Max-Werte
         (Perzentile addieren sich nicht), sondern die tatsächlich simulierten Kennzahlen des
         gemeinsam berechneten Gesamtrisikos (oben als Karten zusammengefasst).
@@ -56,7 +56,7 @@
         </thead>
         <tbody>
         {% for s in szenarien_ergebnis %}
-            <tr>
+            <tr class="mode-compare">
                 <td><a href="{% url 'szenarien:detail' s.pk %}">{{ s.name }}</a></td>
                 <td class="text-end">{{ s.stats.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
                 <td class="text-end">{{ s.stats.p90|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
@@ -66,7 +66,7 @@
         {% endfor %}
         </tbody>
         <tfoot>
-            <tr class="fw-semibold" style="border-top:2px solid var(--border);">
+            <tr class="fw-semibold mode-add" style="border-top:2px solid var(--border);">
                 <td>Summe (Gesamtrisiko)</td>
                 <td class="text-end text-info">{{ lauf.ergebnis.gesamt.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
                 <td class="text-end">{{ lauf.ergebnis.gesamt.p90|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
@@ -103,7 +103,7 @@
             <thead><tr><th>Szenario</th><th class="text-end">Schnittpunkt (Loss)</th><th class="text-end">Toleranz dort</th></tr></thead>
             <tbody>
             {% for z in vergleich_schnittpunkte %}
-                <tr>
+                <tr class="mode-compare">
                     <td>{{ z.name }}</td>
                     {% if z.schnittpunkt %}
                     <td class="text-end">{{ z.schnittpunkt.loss|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
@@ -115,7 +115,7 @@
             {% endfor %}
             </tbody>
             <tfoot>
-                <tr class="fw-semibold" style="border-top:2px solid var(--border);">
+                <tr class="fw-semibold mode-add" style="border-top:2px solid var(--border);">
                     <td>Summe (Gesamtrisiko)</td>
                     {% if gesamt_schnittpunkt %}
                     <td class="text-end">{{ gesamt_schnittpunkt.loss|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
@@ -228,14 +228,20 @@
     var bC = document.getElementById('btn-compare'), bA = document.getElementById('btn-add');
     var hint = document.getElementById('lec-modus-hinweis');
     var tolHinweis = ov ? ' <span class="text-danger">Rot: Risikotoleranz.</span>' : '';
+    function zeigeModusBereiche(modus) {
+        document.querySelectorAll('.mode-compare').forEach(function (el) { el.style.display = modus === 'compare' ? '' : 'none'; });
+        document.querySelectorAll('.mode-add').forEach(function (el) { el.style.display = modus === 'add' ? '' : 'none'; });
+    }
     function setCompare() {
         bC.classList.add('active'); bA.classList.remove('active');
         hint.innerHTML = '<strong>Compare:</strong> jede Szenario-LEC einzeln übereinander.' + tolHinweis;
+        zeigeModusBereiche('compare');
         zeichne(compareTraces());
     }
     function setAdd() {
         bA.classList.add('active'); bC.classList.remove('active');
         hint.innerHTML = '<strong>Add:</strong> Gesamtrisiko als Summe der Szenarien.' + tolHinweis;
+        zeigeModusBereiche('add');
         zeichne(addTraces());
     }
     bC.addEventListener('click', setCompare);
