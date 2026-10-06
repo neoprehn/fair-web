@@ -72,3 +72,50 @@ def test_meta_starten_ohne_auswahl_zurueck_zum_dashboard(client):
     assert resp.status_code == 302
     assert resp.url == reverse("szenarien:dashboard")
     assert not MetaLauf.objects.exists()
+
+
+@pytest.mark.django_db
+def test_meta_lauf_zeigt_aktuellen_namen_nach_umbenennen(client):
+    """Bug: ergebnis-JSON friert den Szenario-Namen zum Berechnungszeitpunkt ein - nach einem
+    Umbenennen muss die Ergebnisseite trotzdem den aktuellen (nicht den alten) Namen zeigen."""
+    pytest.importorskip("pyfair")
+    a, b = _szenario("Alter Name A", 1000), _szenario("B", 2000)
+    ergebnis = services.simuliere_meta([a, b], n_simulations=300, random_seed=42)
+    lauf = MetaLauf.objects.create(
+        n_simulations=300, random_seed=42,
+        status=Simulationslauf.Status.FERTIG, fortschritt=100, ergebnis=ergebnis,
+    )
+    lauf.szenarien.set([a, b])
+    # Das gespeicherte ergebnis-JSON hat weiterhin den alten Namen (gewolltes Verhalten -
+    # der Snapshot wird nicht nachträglich umgeschrieben, nur die Anzeige korrigiert).
+    assert {s["name"] for s in lauf.ergebnis["szenarien"]} == {"Alter Name A", "B"}
+
+    a.name = "Neuer Name A"
+    a.save()
+
+    resp = client.get(reverse("berechnung:meta_lauf", kwargs={"pk": lauf.pk}))
+    assert resp.status_code == 200
+    namen = {s["name"] for s in resp.context["szenarien_ergebnis"]}
+    assert namen == {"Neuer Name A", "B"}
+    assert b"Alter Name A" not in resp.content
+    assert b"Neuer Name A" in resp.content
+
+
+@pytest.mark.django_db
+def test_meta_lauf_faellt_bei_geloeschtem_szenario_auf_gespeicherten_namen_zurueck(client):
+    pytest.importorskip("pyfair")
+    a, b = _szenario("A", 1000), _szenario("B", 2000)
+    ergebnis = services.simuliere_meta([a, b], n_simulations=300, random_seed=42)
+    lauf = MetaLauf.objects.create(
+        n_simulations=300, random_seed=42,
+        status=Simulationslauf.Status.FERTIG, fortschritt=100, ergebnis=ergebnis,
+    )
+    lauf.szenarien.set([a, b])
+    a_pk = a.pk
+    a.delete()
+
+    resp = client.get(reverse("berechnung:meta_lauf", kwargs={"pk": lauf.pk}))
+    assert resp.status_code == 200
+    eintraege = {s["pk"]: s["name"] for s in resp.context["szenarien_ergebnis"]}
+    assert eintraege[a_pk] == "A"  # gespeicherter Name als Fallback, kein Fehler
+    assert eintraege[b.pk] == "B"

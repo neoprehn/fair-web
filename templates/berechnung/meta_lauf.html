@@ -50,7 +50,7 @@
             <tr><th>Szenario</th><th class="text-end">Mittelwert</th><th class="text-end">P95</th><th class="text-end">Maximum</th></tr>
         </thead>
         <tbody>
-        {% for s in lauf.ergebnis.szenarien %}
+        {% for s in szenarien_ergebnis %}
             <tr>
                 <td><a href="{% url 'szenarien:detail' s.pk %}">{{ s.name }}</a></td>
                 <td class="text-end">{{ s.stats.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
@@ -76,7 +76,7 @@
     </div></div>
 
     {{ lauf.ergebnis.gesamt.lec|json_script:"gesamt-lec" }}
-    {{ lauf.ergebnis.szenarien|json_script:"szenarien-data" }}
+    {{ szenarien_ergebnis|json_script:"szenarien-data" }}
     {{ lauf.ergebnis.gesamt.p90|json_script:"gesamt-p90" }}
     {{ referenz_overlay|json_script:"referenz-overlay" }}
     {{ vergleich_schnittpunkte|json_script:"schnittpunkte-data" }}

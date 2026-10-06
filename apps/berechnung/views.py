@@ -254,14 +254,25 @@ class MetaLaufDetailView(DetailView):
         overlay = None
         schnittpunkte = []
         ref = lauf.vergleich.referenz_szenario if lauf.vergleich else None
+        szenarien_ergebnis = []
+        if lauf.ist_fertig and lauf.ergebnis:
+            # Lebende Szenario-Namen statt der im ergebnis-JSON zum Berechnungszeitpunkt
+            # eingefrorenen Kopie (sonst zeigt die Seite nach einem Umbenennen weiter den
+            # alten Namen) - Fallback auf den gespeicherten Namen, falls inzwischen gelöscht.
+            aktuelle_namen = {s.pk: s.name for s in lauf.szenarien.all()}
+            for s in lauf.ergebnis.get("szenarien", []):
+                eintrag = dict(s)
+                eintrag["name"] = aktuelle_namen.get(s.get("pk"), s.get("name"))
+                szenarien_ergebnis.append(eintrag)
         if lauf.ist_fertig and lauf.ergebnis and ref:
             overlay = toleranz_overlay(ref.risikotoleranz)
-            for s in lauf.ergebnis.get("szenarien", []):
+            for s in szenarien_ergebnis:
                 sp = schnittpunkt(s.get("stats", {}).get("lec"), overlay)
                 schnittpunkte.append({"name": s.get("name"), "schnittpunkt": sp})
         context["referenz_overlay"] = overlay
         context["referenz_name"] = ref.name if ref else None
         context["vergleich_schnittpunkte"] = schnittpunkte
+        context["szenarien_ergebnis"] = szenarien_ergebnis
         return context
 
 
