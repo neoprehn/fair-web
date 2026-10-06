@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from apps.berechnung import services, views
 from apps.berechnung.models import MetaLauf, Simulationslauf
-from apps.szenarien.models import FaktorEingabe, Szenario
+from apps.szenarien.models import FaktorEingabe, Szenario, Vergleich
 
 
 def _szenario(name, lm_konstant):
@@ -119,3 +119,32 @@ def test_meta_lauf_faellt_bei_geloeschtem_szenario_auf_gespeicherten_namen_zurue
     eintraege = {s["pk"]: s["name"] for s in resp.context["szenarien_ergebnis"]}
     assert eintraege[a_pk] == "A"  # gespeicherter Name als Fallback, kein Fehler
     assert eintraege[b.pk] == "B"
+
+
+@pytest.mark.django_db
+def test_meta_lauf_zeigt_summenzeile_mit_kennzahlen_und_schnittpunkt(client):
+    """Beitrag-je-Szenario-Tabelle bekommt eine Summe-Zeile (echte Gesamt-Kennzahlen, nicht
+    naiv addierte Perzentile) und die Schnittpunkte-Tabelle eine Summe-Zeile mit dem
+    Schnittpunkt der aufsummierten (Gesamt-)LEC gegen die Referenz-Risikotoleranz."""
+    pytest.importorskip("pyfair")
+    a, b = _szenario("A", 1000), _szenario("B", 2000)
+    a.risikotoleranz = {"type": "constant", "value": 2000}
+    a.save()
+    vergleich = Vergleich.objects.create(name="Mit Referenz", referenz_szenario=a)
+    vergleich.szenarien.set([a, b])
+
+    ergebnis = services.simuliere_meta([a, b], n_simulations=2000, random_seed=42)
+    lauf = MetaLauf.objects.create(
+        vergleich=vergleich, n_simulations=2000, random_seed=42,
+        status=Simulationslauf.Status.FERTIG, fortschritt=100, ergebnis=ergebnis,
+    )
+    lauf.szenarien.set([a, b])
+
+    resp = client.get(reverse("berechnung:meta_lauf", kwargs={"pk": lauf.pk}))
+
+    assert resp.status_code == 200
+    html = resp.content.decode()
+    assert html.count("Summe (Gesamtrisiko)") == 2  # eine Summe-Zeile je Tabelle
+    assert ">P90<" in html  # neue Spalte in der Beitrag-je-Szenario-Tabelle
+    assert resp.context["gesamt_schnittpunkt"] is not None
+    assert resp.context["gesamt_schnittpunkt"]["loss"] > 0

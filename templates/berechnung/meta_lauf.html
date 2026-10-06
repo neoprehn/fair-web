@@ -45,20 +45,35 @@
     </div>
 
     <h2 class="h5">Beitrag je Szenario</h2>
+    <p class="text-body-secondary small mb-2">
+        Die <strong>Summe</strong> ist nicht die naive Addition der einzelnen P90/P95/Max-Werte
+        (Perzentile addieren sich nicht), sondern die tatsächlich simulierten Kennzahlen des
+        gemeinsam berechneten Gesamtrisikos (oben als Karten zusammengefasst).
+    </p>
     <table class="table">
         <thead>
-            <tr><th>Szenario</th><th class="text-end">Mittelwert</th><th class="text-end">P95</th><th class="text-end">Maximum</th></tr>
+            <tr><th>Szenario</th><th class="text-end">Mittelwert</th><th class="text-end">P90</th><th class="text-end">P95</th><th class="text-end">Maximum</th></tr>
         </thead>
         <tbody>
         {% for s in szenarien_ergebnis %}
             <tr>
                 <td><a href="{% url 'szenarien:detail' s.pk %}">{{ s.name }}</a></td>
                 <td class="text-end">{{ s.stats.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
+                <td class="text-end">{{ s.stats.p90|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
                 <td class="text-end">{{ s.stats.p95|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
                 <td class="text-end">{{ s.stats.max|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
             </tr>
         {% endfor %}
         </tbody>
+        <tfoot>
+            <tr class="fw-semibold" style="border-top:2px solid var(--border);">
+                <td>Summe (Gesamtrisiko)</td>
+                <td class="text-end text-info">{{ lauf.ergebnis.gesamt.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
+                <td class="text-end">{{ lauf.ergebnis.gesamt.p90|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
+                <td class="text-end">{{ lauf.ergebnis.gesamt.p95|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
+                <td class="text-end">{{ lauf.ergebnis.gesamt.max|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
+            </tr>
+        </tfoot>
     </table>
 
     <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
@@ -99,6 +114,17 @@
                 </tr>
             {% endfor %}
             </tbody>
+            <tfoot>
+                <tr class="fw-semibold" style="border-top:2px solid var(--border);">
+                    <td>Summe (Gesamtrisiko)</td>
+                    {% if gesamt_schnittpunkt %}
+                    <td class="text-end">{{ gesamt_schnittpunkt.loss|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
+                    <td class="text-end">{% widthratio gesamt_schnittpunkt.tolerance 1 100 %} %</td>
+                    {% else %}
+                    <td class="text-end text-body-secondary" colspan="2">kein Schnittpunkt im Bereich</td>
+                    {% endif %}
+                </tr>
+            </tfoot>
         </table>
     </div></div>
     {% endif %}

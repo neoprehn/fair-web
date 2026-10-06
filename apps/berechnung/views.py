@@ -280,6 +280,12 @@ class MetaLaufDetailView(DetailView):
         context["referenz_name"] = ref.name if ref else None
         context["vergleich_schnittpunkte"] = schnittpunkte
         context["szenarien_ergebnis"] = szenarien_ergebnis
+        # Schnittpunkt der AUFSUMMIERTEN (Gesamt-)LEC mit der Referenz-Risikotoleranz - ergänzt
+        # die bisher nur pro Einzelszenario gezeigten Schnittpunkte um die Summenzeile.
+        context["gesamt_schnittpunkt"] = (
+            schnittpunkt(lauf.ergebnis.get("gesamt", {}).get("lec"), overlay)
+            if (overlay and lauf.ist_fertig and lauf.ergebnis) else None
+        )
         return context
 
 
