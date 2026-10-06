@@ -2,7 +2,7 @@
 {% load humanize %}
 
 {% block title %}{% if lauf.vergleich %}{{ lauf.vergleich.name }}{% else %}Gesamt-Simulation{% endif %} &middot; fair-web{% endblock %}
-{% block extra_head %}{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script><style>.mode-add { display: none; }</style>{% endif %}{% endblock %}
+{% block extra_head %}{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -23,7 +23,7 @@
         {{ lauf.szenarien.count }} Szenarien &middot; {{ lauf.ergebnis.gesamt.n|intcomma }} Iterationen &middot; Summenrisiko
     </p>
 
-    <div class="row g-3 mb-4 mode-add">
+    <div class="row g-3 mb-4 mode-add" style="display:none;">
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
                 <div class="text-body-secondary small">Erwartetes Gesamtrisiko (Mittelwert)</div>
@@ -45,7 +45,7 @@
     </div>
 
     <h2 class="h5">Beitrag je Szenario</h2>
-    <p class="text-body-secondary small mb-2 mode-add">
+    <p class="text-body-secondary small mb-2 mode-add" style="display:none;">
         Die <strong>Summe</strong> ist nicht die naive Addition der einzelnen P90/P95/Max-Werte
         (Perzentile addieren sich nicht), sondern die tatsächlich simulierten Kennzahlen des
         gemeinsam berechneten Gesamtrisikos (oben als Karten zusammengefasst).
@@ -66,7 +66,7 @@
         {% endfor %}
         </tbody>
         <tfoot>
-            <tr class="fw-semibold mode-add" style="border-top:2px solid var(--border);">
+            <tr class="fw-semibold mode-add" style="border-top:2px solid var(--border); display:none;">
                 <td>Summe (Gesamtrisiko)</td>
                 <td class="text-end text-info">{{ lauf.ergebnis.gesamt.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
                 <td class="text-end">{{ lauf.ergebnis.gesamt.p90|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
@@ -115,7 +115,7 @@
             {% endfor %}
             </tbody>
             <tfoot>
-                <tr class="fw-semibold mode-add" style="border-top:2px solid var(--border);">
+                <tr class="fw-semibold mode-add" style="border-top:2px solid var(--border); display:none;">
                     <td>Summe (Gesamtrisiko)</td>
                     {% if gesamt_schnittpunkt %}
                     <td class="text-end">{{ gesamt_schnittpunkt.loss|floatformat:0|intcomma }} {{ waehrung_symbol }}</td>
