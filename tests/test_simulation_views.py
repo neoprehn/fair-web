@@ -76,6 +76,37 @@ def test_detail_zeigt_berechnen_button(client, szenario):
 
 
 @pytest.mark.django_db
+def test_detail_und_form_laden_i18n_schalter(client, szenario):
+    """Leitplanke gegen versehentliches Entfernen des DE/EN-Umschalters auf den Kernseiten."""
+    resp = client.get(reverse("szenarien:detail", kwargs={"pk": szenario.pk}))
+    html = resp.content.decode()
+    assert 'id="lang-toggle"' in html
+    assert "js/i18n-szenario-detail.js" in html
+    assert 'data-i18n="det_fair_faktoren"' in html
+
+    resp = client.get(reverse("szenarien:update", kwargs={"pk": szenario.pk}))
+    html = resp.content.decode()
+    assert "js/i18n-szenario-form.js" in html
+    assert 'data-i18n="form_fair_baum"' in html
+
+
+@pytest.mark.django_db
+def test_lauf_laedt_i18n_schalter(client, szenario):
+    pytest.importorskip("pyfair")
+    from apps.berechnung import services
+
+    ergebnis = services.simuliere(szenario, n_simulations=500, random_seed=7, batches=2)
+    lauf = Simulationslauf.objects.create(
+        szenario=szenario, n_simulations=500, random_seed=7,
+        status=Simulationslauf.Status.FERTIG, fortschritt=100, ergebnis=ergebnis,
+    )
+    resp = client.get(reverse("berechnung:lauf", kwargs={"pk": lauf.pk}))
+    html = resp.content.decode()
+    assert "js/i18n-lauf.js" in html
+    assert 'data-i18n="lauf_fair_baum"' in html
+
+
+@pytest.mark.django_db
 def test_lauf_baum_blendet_nicht_verwendete_knoten_aus(client, szenario):
     """LEF direkt (nicht aufgeschlüsselt) -> TEF/VULN/CF/PoA/TC/CS dürfen im Ergebnis-Baum
     nicht mehr auftauchen (weder als Knoten noch als Kante dorthin)."""

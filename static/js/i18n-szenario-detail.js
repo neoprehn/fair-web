@@ -1,0 +1,36 @@
+/* Seitenspezifisches DE/EN-Wörterbuch für templates/szenarien/detail.html - extern statt
+ * inline, siehe static/js/i18n.js für die Begründung. */
+Object.assign(window.FAIR_I18N.de, {
+    det_anzahl_sim: "Anzahl Simulationen", det_seed: "Zufalls-Seed", det_cluster: "Cluster",
+    det_th_faktor: "Faktor",
+    det_eigene_eingabeart: "eigene Eingabeart",
+    det_annahmen_zeigen: "Annahmen & Quellentext anzeigen", det_verteilung_zeigen: "Verteilungskurve anzeigen",
+    det_keine_faktoren: "Noch keine Faktoren erfasst.",
+    det_th_seite: "Seite", det_th_lossform: "Loss-Form", det_keine_lossformen: "Noch keine Loss-Formen erfasst.",
+    det_th_modul: "Modul", det_th_kategorie: "Kategorie", det_keine_mam: "Noch keine FAIR-MAM-Kategorien erfasst.",
+    det_verteilung_vorschau: "Verteilungs-Vorschau",
+    det_keine_vorschau: "Keine Vorschau möglich.",
+    det_th_schaden: "Schaden", det_th_akzeptierte_wahrsch: "akzeptierte Wahrscheinlichkeit",
+    det_keine_risikotoleranz: "Keine Risikotoleranz definiert.",
+    det_simulation: "Simulation", det_berechnen: "Berechnen",
+    det_th_status: "Status", det_th_erwarteter_schaden: "Erwarteter Schaden", det_th_wann: "Wann",
+    det_keine_berechnung: "Noch keine Berechnung. Klicke auf „Berechnen“, um die Monte-Carlo-Simulation zu starten.",
+    det_median: "Median", det_achse_wert: "Wert", det_achse_dichte: "Dichte",
+});
+Object.assign(window.FAIR_I18N.en, {
+    det_anzahl_sim: "Number of simulations", det_seed: "Random seed", det_cluster: "Cluster",
+    det_th_faktor: "Factor",
+    det_eigene_eingabeart: "custom input mode",
+    det_annahmen_zeigen: "Show assumptions & source", det_verteilung_zeigen: "Show distribution curve",
+    det_keine_faktoren: "No factors entered yet.",
+    det_th_seite: "Side", det_th_lossform: "Loss form", det_keine_lossformen: "No loss forms entered yet.",
+    det_th_modul: "Module", det_th_kategorie: "Category", det_keine_mam: "No FAIR-MAM categories entered yet.",
+    det_verteilung_vorschau: "Distribution preview",
+    det_keine_vorschau: "No preview available.",
+    det_th_schaden: "Loss", det_th_akzeptierte_wahrsch: "accepted probability",
+    det_keine_risikotoleranz: "No risk tolerance defined.",
+    det_simulation: "Simulation", det_berechnen: "Calculate",
+    det_th_status: "Status", det_th_erwarteter_schaden: "Expected loss", det_th_wann: "When",
+    det_keine_berechnung: "No calculation yet. Click \"Calculate\" to start the Monte Carlo simulation.",
+    det_median: "Median", det_achse_wert: "Value", det_achse_dichte: "Density",
+});

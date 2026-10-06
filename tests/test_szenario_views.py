@@ -75,6 +75,18 @@ def test_dashboard_zeigt_szenarien(client):
 
 
 @pytest.mark.django_db
+def test_dashboard_laedt_i18n_schalter(client):
+    """Leitplanke gegen versehentliches Entfernen des DE/EN-Umschalters (data-i18n-Attribute
+    + externes Wörterbuch) - siehe static/js/i18n.js/i18n-dashboard.js."""
+    resp = client.get(reverse("szenarien:dashboard"))
+    html = resp.content.decode()
+    assert 'id="lang-toggle"' in html
+    assert "js/i18n.js" in html
+    assert "js/i18n-dashboard.js" in html
+    assert 'data-i18n="dash_titel"' in html
+
+
+@pytest.mark.django_db
 def test_create_speichert_cia(client):
     # Cluster-Zuordnung bewusst NICHT über das Szenario-Formular (nur auf der Cluster-Seite).
     resp = client.post(reverse("szenarien:create"), data=_post_lef_lm(cia=["C", "A"]))

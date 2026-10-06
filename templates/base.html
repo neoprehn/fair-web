@@ -168,9 +168,9 @@
         </button>
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="{% url 'start' %}">Start</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'szenarien:dashboard' %}">Szenarien</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'szenarien:vergleich_list' %}">Vergleiche</a></li>
+                <li class="nav-item"><a class="nav-link" data-i18n="nav_start" href="{% url 'start' %}">Start</a></li>
+                <li class="nav-item"><a class="nav-link" data-i18n="nav_szenarien" href="{% url 'szenarien:dashboard' %}">Szenarien</a></li>
+                <li class="nav-item"><a class="nav-link" data-i18n="nav_vergleiche" href="{% url 'szenarien:vergleich_list' %}">Vergleiche</a></li>
                 <li class="nav-item"><a class="nav-link" href="{% url 'cam:dashboard' %}">FAIR-CAM</a></li>
             </ul>
             <button type="button" id="theme-toggle" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 me-2"
@@ -183,6 +183,10 @@
                 </svg>
                 <span class="theme-label"></span>
             </button>
+            <button type="button" id="lang-toggle" class="btn btn-outline-secondary btn-sm me-2"
+                    title="Sprache umschalten / Switch language">
+                <span class="lang-label">EN</span>
+            </button>
             {% if user.is_authenticated %}
             <div class="dropdown">
                 <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2"
@@ -192,15 +196,15 @@
                         <rect x="2" y="6.9" width="12" height="2.2" rx="1"/>
                         <rect x="2" y="11.2" width="12" height="2.2" rx="1"/>
                     </svg>
-                    Menü
+                    <span data-i18n="menu_label">Menü</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="{% url 'hilfe' %}">Hilfe &amp; Bedienung</a></li>
+                    <li><a class="dropdown-item" data-i18n="menu_hilfe" href="{% url 'hilfe' %}">Hilfe &amp; Bedienung</a></li>
                     {% if user.is_staff %}
                         <li><hr class="dropdown-divider"></li>
-                        {% if perms.admin_bereich.change_appkonfiguration %}<li><a class="dropdown-item" href="{% url 'admin:admin_bereich_appkonfiguration_changelist' %}">App-Konfiguration</a></li>{% endif %}
-                        {% if perms.szenarien.change_angreifertyp %}<li><a class="dropdown-item" href="{% url 'admin:szenarien_angreifertyp_changelist' %}">Angreifertypen</a></li>{% endif %}
-                        <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin-Bereich</a></li>
+                        {% if perms.admin_bereich.change_appkonfiguration %}<li><a class="dropdown-item" data-i18n="menu_appkonfig" href="{% url 'admin:admin_bereich_appkonfiguration_changelist' %}">App-Konfiguration</a></li>{% endif %}
+                        {% if perms.szenarien.change_angreifertyp %}<li><a class="dropdown-item" data-i18n="menu_angreifertypen" href="{% url 'admin:szenarien_angreifertyp_changelist' %}">Angreifertypen</a></li>{% endif %}
+                        <li><a class="dropdown-item" data-i18n="menu_admin" href="{% url 'admin:index' %}">Admin-Bereich</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -211,14 +215,14 @@
                     {{ user.first_name|default:user.get_username }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><span class="dropdown-item-text small text-body-secondary">Angemeldet als <strong>{{ user.get_full_name|default:user.get_username }}</strong></span></li>
-                    <li><a class="dropdown-item" href="{% url 'konten:ki_einstellungen' %}">KI-Einstellungen</a></li>
-                    {% if user.is_staff %}<li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin-Bereich</a></li>{% endif %}
+                    <li><span class="dropdown-item-text small text-body-secondary"><span data-i18n="menu_angemeldet_als">Angemeldet als</span> <strong>{{ user.get_full_name|default:user.get_username }}</strong></span></li>
+                    <li><a class="dropdown-item" data-i18n="menu_ki_einstellungen" href="{% url 'konten:ki_einstellungen' %}">KI-Einstellungen</a></li>
+                    {% if user.is_staff %}<li><a class="dropdown-item" data-i18n="menu_admin" href="{% url 'admin:index' %}">Admin-Bereich</a></li>{% endif %}
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form method="post" action="{% url 'logout' %}" class="px-3 py-1">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">Abmelden</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger w-100" data-i18n="menu_abmelden">Abmelden</button>
                         </form>
                     </li>
                 </ul>
@@ -234,8 +238,8 @@
 
 <footer class="bg-body-tertiary border-top py-3 mt-auto">
     <div class="container small text-body-secondary">
-        fair-web &middot; FAIR Monte Carlo mit PyFair &middot;
-        <a href="https://fair-web.readthedocs.io/de/latest/" target="_blank" rel="noopener">Dokumentation</a>
+        fair-web &middot; <span data-i18n="footer_claim">FAIR Monte Carlo mit PyFair</span> &middot;
+        <a href="https://fair-web.readthedocs.io/de/latest/" target="_blank" rel="noopener" data-i18n="footer_doku">Dokumentation</a>
     </div>
 </footer>
 
@@ -263,6 +267,9 @@
     window.fairLocale = '{{ waehrung_locale }}';
     window.fairWaehrung = '{{ waehrung_symbol }}';
 </script>
+<script src="{% static 'js/i18n.js' %}"></script>
 {% block extra_js %}{% endblock %}
+<script>window.fairApplyLang();</script>
+
 </body>
 </html>

@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %} &middot; fair-web{% endblock %}
 {% block container_class %}container-fluid px-4{% endblock %}
 {% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-3">{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %}</h1>
+<h1 class="h3 mb-3" data-i18n="{% if object %}form_titel_bearbeiten{% else %}form_titel_neu{% endif %}">{% if object %}Szenario bearbeiten{% else %}Neues Szenario{% endif %}</h1>
 
 <form method="post" novalidate id="szenario-form">
     {% csrf_token %}
@@ -17,14 +18,14 @@
         <div class="col-xl-8 col-lg-12">
             <div class="card card-meta mb-3"><div class="card-body">
                 <div class="mb-3">
-                    <label class="form-label">Name</label>
+                    <label class="form-label" data-i18n="feld_name">Name</label>
                     {{ form.name }}{{ form.name.errors }}
                 </div>
                 <label class="form-label d-flex justify-content-between align-items-center">
-                    <span>Beschreibung</span>
+                    <span data-i18n="feld_beschreibung">Beschreibung</span>
                     <button type="button" class="btn btn-sm btn-outline-info ki-btn py-0 px-1"
                             data-ki-feld="beschreibung" data-ki-typ="beschreibung"
-                            title="KI-Unterstützung">✨</button>
+                            data-i18n-title="form_ki_unterstuetzung" title="KI-Unterstützung">✨</button>
                 </label>
                 {{ form.beschreibung }}
 
@@ -43,39 +44,39 @@
                 <div class="col-md-4">
                     <div class="card card-config h-100"><div class="card-body">
                         <div class="mb-3">
-                            <label class="form-label">Anzahl Simulationen</label>
+                            <label class="form-label" data-i18n="form_anzahl_sim">Anzahl Simulationen</label>
                             {{ form.n_simulations }}{{ form.n_simulations.errors }}
-                            {% if konfig.n_simulations_global %}<div class="form-text text-info">Global vorgegeben (nur lesend).</div>{% endif %}
+                            {% if konfig.n_simulations_global %}<div class="form-text text-info" data-i18n="form_global_vorgegeben">Global vorgegeben (nur lesend).</div>{% endif %}
                         </div>
-                        <label class="form-label">Zufalls-Seed</label>
+                        <label class="form-label" data-i18n="form_seed">Zufalls-Seed</label>
                         {{ form.random_seed }}{{ form.random_seed.errors }}
-                        {% if konfig.seed_global %}<div class="form-text text-info">Global vorgegeben (nur lesend).</div>{% endif %}
-                        <label class="form-label mt-3">Loss-Magnitude-Eingabe</label>
+                        {% if konfig.seed_global %}<div class="form-text text-info" data-i18n="form_global_vorgegeben">Global vorgegeben (nur lesend).</div>{% endif %}
+                        <label class="form-label mt-3" data-i18n="form_lm_eingabe">Loss-Magnitude-Eingabe</label>
                         {{ form.lm_modus }}{{ form.lm_modus.errors }}
-                        <div class="form-text">"6 Forms of Loss" bzw. "FAIR-MAM-Fragebogen" blenden unten Karten für PL/SL ein.</div>
+                        <div class="form-text" data-i18n="form_lm_eingabe_hilfe">"6 Forms of Loss" bzw. "FAIR-MAM-Fragebogen" blenden unten Karten für PL/SL ein.</div>
                         <div id="aggregations-modus-feld" class="mt-3" style="display:none;">
-                            <label class="form-label">Aggregationsmodus</label>
+                            <label class="form-label" data-i18n="form_aggregationsmodus">Aggregationsmodus</label>
                             {{ form.aggregations_modus }}{{ form.aggregations_modus.errors }}
-                            <div class="form-text">"Elementweise" faltet die Formen/Kategorien exakt per Monte-Carlo; "Kennwerte" addiert Mittelwert+Varianz und nähert die Summe über eine Lognormalverteilung an (schneller, ungenauer in der Form).</div>
+                            <div class="form-text" data-i18n="form_aggregationsmodus_hilfe">"Elementweise" faltet die Formen/Kategorien exakt per Monte-Carlo; "Kennwerte" addiert Mittelwert+Varianz und nähert die Summe über eine Lognormalverteilung an (schneller, ungenauer in der Form).</div>
                         </div>
                         <div id="slef-modus-feld" class="mt-3" style="display:none;">
-                            <label class="form-label">SLEF-Modus (nur SL)</label>
+                            <label class="form-label" data-i18n="form_slef_modus">SLEF-Modus (nur SL)</label>
                             {{ form.slef_modus }}{{ form.slef_modus.errors }}
-                            <div class="form-text">"Gemeinsam": SL im Baum rechts auf "aufschlüsseln" stellen und dort SLEF eintragen – wirkt als ein Multiplikator auf die gesamte SL-Formen-Summe (SLEM wird dann nicht benötigt). Ohne Eingabe gilt SLEF=1. "Individuell": je SL-Form/-Kategorie ein eigenes SLEF-Unterfeld unten.</div>
+                            <div class="form-text" data-i18n="form_slef_modus_hilfe">"Gemeinsam": SL im Baum rechts auf "aufschlüsseln" stellen und dort SLEF eintragen – wirkt als ein Multiplikator auf die gesamte SL-Formen-Summe (SLEM wird dann nicht benötigt). Ohne Eingabe gilt SLEF=1. "Individuell": je SL-Form/-Kategorie ein eigenes SLEF-Unterfeld unten.</div>
                         </div>
                     </div></div>
                 </div>
                 <div class="col-md-8">
                     {% if konfig.risikotoleranz_global %}
-                    <label class="form-label">Risikotoleranz</label>
+                    <label class="form-label" data-i18n="det_risikotoleranz">Risikotoleranz</label>
                     <div class="card" style="border:1px solid var(--danger); background:rgba(239,68,68,0.10);"><div class="card-body py-2">
-                        <p class="text-info small mb-2">Unternehmensweit vorgegeben (nur lesend).</p>
+                        <p class="text-info small mb-2" data-i18n="form_unternehmensweit">Unternehmensweit vorgegeben (nur lesend).</p>
                         {% with rt=konfig.unternehmens_risikotoleranz %}
                         {% if rt %}
-                            {% if rt.type == "constant" %}<p class="mb-0">Konstante Schwelle: <strong>{{ rt.value }} {{ waehrung_symbol }}</strong></p>
-                            {% elif rt.type == "curve" %}<p class="mb-0">Kurve mit {{ rt.points|length }} Punkt(en)</p>
-                            {% elif rt.type == "distribution" %}<p class="mb-0">Verteilung: <strong>{{ rt.distribution }}</strong></p>{% endif %}
-                        {% else %}<p class="text-body-secondary mb-0">Keine definiert.</p>{% endif %}
+                            {% if rt.type == "constant" %}<p class="mb-0"><span data-i18n="det_konstante_schwelle">Konstante Schwelle</span>: <strong>{{ rt.value }} {{ waehrung_symbol }}</strong></p>
+                            {% elif rt.type == "curve" %}<p class="mb-0"><span data-i18n="form_kurve_mit">Kurve mit</span> {{ rt.points|length }} <span data-i18n="form_punkten">Punkt(en)</span></p>
+                            {% elif rt.type == "distribution" %}<p class="mb-0"><span data-i18n="feld_verteilung">Verteilung</span>: <strong>{{ rt.distribution }}</strong></p>{% endif %}
+                        {% else %}<p class="text-body-secondary mb-0" data-i18n="form_keine_definiert">Keine definiert.</p>{% endif %}
                         {% endwith %}
                     </div></div>
                     {% else %}
@@ -85,7 +86,7 @@
             </div>
         </div>
         <div class="col-xl-4 col-lg-12">
-            <label class="form-label">FAIR-Baum</label>
+            <label class="form-label" data-i18n="form_fair_baum">FAIR-Baum</label>
             <div class="card"><div class="card-body py-2 svg-flaeche" style="overflow-x:auto;">
                 <svg id="fair-svg" viewBox="0 0 900 250" style="width:100%; min-width:520px; height:auto;">
                     {% for e in svg_edges %}
@@ -101,18 +102,18 @@
             </div></div>
 
             <div class="card mt-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
-                <label class="form-label mb-1 text-info">Live-Vorschau (LEC)</label>
+                <label class="form-label mb-1 text-info" data-i18n="form_live_vorschau">Live-Vorschau (LEC)</label>
                 <div id="lec-vorschau" style="height:230px;"></div>
-                <div id="lec-vorschau-info" class="small text-body-secondary mt-1">Werte ändern → Kurve aktualisiert sich.</div>
+                <div id="lec-vorschau-info" class="small text-body-secondary mt-1" data-i18n="form_live_vorschau_hinweis">Werte ändern → Kurve aktualisiert sich.</div>
             </div></div>
         </div>
     </div>
 
-    <h2 class="h5">FAIR-Faktoren</h2>
+    <h2 class="h5" data-i18n="det_fair_faktoren">FAIR-Faktoren</h2>
     <p class="text-body-secondary small">
-        Risk = <strong>Häufigkeit</strong> × <strong>Schaden</strong>.
-        <strong>Klick auf einen Faktor</strong> faltet ihn in seine Teilfaktoren auf (erneuter Klick: zurück).
-        Beim Reinklicken in ein Feld zeigt der Baum oben, wo du bist.
+        Risk = <strong data-i18n="form_haeufigkeit">Häufigkeit</strong> × <strong data-i18n="form_schaden">Schaden</strong>.
+        <strong data-i18n="form_klick_faktor">Klick auf einen Faktor</strong> <span data-i18n="form_klick_faktor_rest">faltet ihn in seine Teilfaktoren auf (erneuter Klick: zurück).</span>
+        <span data-i18n="form_klick_feld_hinweis">Beim Reinklicken in ein Feld zeigt der Baum oben, wo du bist.</span>
     </p>
 
     <div style="overflow-x:auto;">
@@ -124,7 +125,7 @@
 
     <div id="loss-formen-bereich" style="display:none;">
         <h2 class="h5 mt-4">6 Forms of Loss</h2>
-        <p class="text-body-secondary small">
+        <p class="text-body-secondary small" data-i18n="form_lossformen_erklaerung">
             Primary Loss (PL) und Secondary Loss (SL) je Verlustart einzeln modellieren – wird pro
             Simulations-Trial elementweise zu PL/SL aufsummiert (statt nur Kennwerte zu addieren).
             Leer gelassene Formen werden nicht verwendet; ohne mindestens eine ausgefüllte Form je
@@ -181,7 +182,7 @@
                             </div>
                             {% if vf_form.slef_form %}
                             <div class="slef-unterfeld mt-2 pt-2 border-top" data-slef-feld style="display:none;">
-                                <strong class="small d-block mb-1">Individuelle SLEF</strong>
+                                <strong class="small d-block mb-1" data-i18n="form_individuelle_slef">Individuelle SLEF</strong>
                                 <div class="node-input">
                                     {% include "szenarien/_slef_felder.html" with form=vf_form.slef_form %}
                                 </div>
@@ -197,7 +198,7 @@
     </div>
 
     <div id="mam-bereich" style="display:none;">
-        <h2 class="h5 mt-4">FAIR-MAM-Fragebogen</h2>
+        <h2 class="h5 mt-4" data-i18n="form_mam_titel">FAIR-MAM-Fragebogen</h2>
         <p class="text-body-secondary small">
             Feinere Aufschlüsselung von PL/SL nach FAIR-MAM-Kostenkategorien (10 Module, 26
             Kategorien) statt der 6 klassischen Loss-Formen – Primary/Secondary (und damit PL/SL)
@@ -234,7 +235,7 @@
                                     </div>
                                     {% if kat_form.slef_form %}
                                     <div class="slef-unterfeld mt-2 pt-2 border-top" data-slef-feld style="display:none;">
-                                        <strong class="small d-block mb-1">Individuelle SLEF</strong>
+                                        <strong class="small d-block mb-1" data-i18n="form_individuelle_slef">Individuelle SLEF</strong>
                                         <div class="node-input">
                                             {% include "szenarien/_slef_felder.html" with form=kat_form.slef_form %}
                                         </div>
@@ -253,12 +254,12 @@
     </div>
 
     <div class="mt-4 d-flex flex-wrap gap-2 align-items-center">
-        <button type="submit" class="btn btn-primary">Speichern</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_speichern">Speichern</button>
         {% if object and perms.szenarien.add_szenario %}
         <button type="submit" name="speichern_als_neu" value="1" class="btn btn-outline-info"
-                title="Den aktuellen Stand als neues Szenario (neue ID) anlegen">Als neues Szenario speichern</button>
+                data-i18n-title="form_als_neu_title" title="Den aktuellen Stand als neues Szenario (neue ID) anlegen" data-i18n="form_als_neu_speichern">Als neues Szenario speichern</button>
         {% endif %}
-        <a class="btn btn-link" href="{% url 'szenarien:dashboard' %}">Abbrechen</a>
+        <a class="btn btn-link" data-i18n="btn_abbrechen" href="{% url 'szenarien:dashboard' %}">Abbrechen</a>
     </div>
 </form>
 
@@ -266,7 +267,7 @@
     <div class="modal-dialog"><div class="modal-content">
         <div class="modal-header">
             <h5 class="modal-title" id="verlustform-info-titel"></h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="det_schliessen" aria-label="Schließen"></button>
         </div>
         <div class="modal-body">
             <p id="verlustform-info-text" class="mb-0"></p>
@@ -276,23 +277,24 @@
 
 <div class="offcanvas offcanvas-end" tabindex="-1" id="ki-offcanvas" aria-labelledby="ki-offcanvas-label">
     <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="ki-offcanvas-label">KI-Unterstützung</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Schließen"></button>
+        <h5 class="offcanvas-title" id="ki-offcanvas-label" data-i18n="form_ki_unterstuetzung">KI-Unterstützung</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-i18n-aria-label="det_schliessen" aria-label="Schließen"></button>
     </div>
     <div class="offcanvas-body d-flex flex-column">
         <p class="small text-body-secondary" id="ki-feld-label"></p>
-        <label class="form-label small">Was soll die KI tun?</label>
+        <label class="form-label small" data-i18n="form_ki_was_tun">Was soll die KI tun?</label>
         <textarea class="form-control mb-2" id="ki-frage" rows="3"></textarea>
-        <button type="button" class="btn btn-info mb-2" id="ki-senden">Anfrage senden</button>
+        <button type="button" class="btn btn-info mb-2" id="ki-senden" data-i18n="form_ki_senden">Anfrage senden</button>
         <div id="ki-status" class="small text-body-secondary mb-2"></div>
-        <label class="form-label small">Antwort</label>
+        <label class="form-label small" data-i18n="form_ki_antwort">Antwort</label>
         <textarea class="form-control mb-2" id="ki-antwort" rows="6" readonly></textarea>
-        <button type="button" class="btn btn-primary" id="ki-uebernehmen" disabled>Übernehmen</button>
+        <button type="button" class="btn btn-primary" id="ki-uebernehmen" disabled data-i18n="form_ki_uebernehmen">Übernehmen</button>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/i18n-szenario-form.js' %}"></script>
 <script>
 // Zahl ins deutsche Format (Komma-Dezimal, Punkt-Tausender) – fürs Vorbefüllen.
 function formatDE(n) {
@@ -597,7 +599,7 @@ function formatDE(n) {
         var vx = function (v) { return xType === 'log' ? Math.log10(v) : v; };
         var shapes = [], ov = d.overlay;
         if (ov && ov.kind === 'curve') {
-            traces.push({ x: ov.x, y: ov.y, mode: 'lines', name: 'Toleranz',
+            traces.push({ x: ov.x, y: ov.y, mode: 'lines', name: window.fairT('form_toleranz'),
                           line: { color: '#f87171', dash: 'dash', width: 2 } });
         } else if (ov && ov.kind === 'vline' && ov.value > 0) {
             shapes.push({ type: 'line', x0: vx(ov.value), x1: vx(ov.value), y0: 0, y1: 1, yref: 'paper',
@@ -605,13 +607,13 @@ function formatDE(n) {
         }
         if (d.schnittpunkt && d.schnittpunkt.loss != null) {
             traces.push({ x: [d.schnittpunkt.loss], y: [d.schnittpunkt.tolerance], mode: 'markers',
-                          name: 'Schnittpunkt', marker: { color: '#fbbf24', size: 9, line: { color: '#fff', width: 1 } } });
+                          name: window.fairT('form_schnittpunkt'), marker: { color: '#fbbf24', size: 9, line: { color: '#fff', width: 1 } } });
         }
         Plotly.react(ziel, traces, {
             paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
             font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif', size: 11 },
             margin: { l: 55, r: 10, t: 6, b: 38 }, showlegend: false, shapes: shapes,
-            xaxis: { title: 'Schaden ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid(), type: xType, range: xRange },
+            xaxis: { title: window.fairT('form_achse_schaden') + ' (' + window.fairWaehrung + ')', gridcolor: window.fairChartGrid(), type: xType, range: xRange },
             yaxis: { title: 'P(≥x)', gridcolor: window.fairChartGrid(), range: [0, 1], tickformat: '.0%' }
         }, { responsive: true, displayModeBar: false });
     }

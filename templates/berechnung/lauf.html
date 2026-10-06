@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load humanize static %}
 
 {% block title %}Simulation &middot; {{ lauf.szenario.name }}{% endblock %}
 {% block extra_head %}{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
@@ -24,31 +24,31 @@
 
 {% if lauf.status == "fehler" %}
     <div class="alert alert-danger">
-        <strong>Fehler bei der Berechnung:</strong> {{ lauf.fehler_text }}
+        <strong data-i18n="lauf_fehler_titel">Fehler bei der Berechnung:</strong> {{ lauf.fehler_text }}
     </div>
-    <a class="btn btn-outline-secondary" href="{% url 'szenarien:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
+    <a class="btn btn-outline-secondary" data-i18n="lauf_zurueck_szenario" href="{% url 'szenarien:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
 
 {% elif lauf.status == "fertig" %}
     <p class="text-body-secondary">
-        Simulation #{{ lauf.pk }} &middot; {{ lauf.ergebnis.n|intcomma }} Iterationen &middot; Seed {{ lauf.random_seed }}
+        <span data-i18n="lauf_simulation">Simulation</span> #{{ lauf.pk }} &middot; {{ lauf.ergebnis.n|intcomma }} <span data-i18n="lauf_iterationen">Iterationen</span> &middot; Seed {{ lauf.random_seed }}
     </p>
 
     <div class="row g-3 mb-3">
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
-                <div class="text-body-secondary small">Erwarteter Jahresschaden (Mittelwert)</div>
+                <div class="text-body-secondary small" data-i18n="lauf_erwarteter_schaden">Erwarteter Jahresschaden (Mittelwert)</div>
                 <div class="h4 mb-0 text-info">{{ lauf.ergebnis.mittelwert|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div></div>
         </div>
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
-                <div class="text-body-secondary small">Median</div>
+                <div class="text-body-secondary small" data-i18n="lauf_median">Median</div>
                 <div class="h4 mb-0">{{ lauf.ergebnis.median|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div></div>
         </div>
         <div class="col-md-4">
             <div class="card h-100"><div class="card-body">
-                <div class="text-body-secondary small">Maximum (Worst Case P95)</div>
+                <div class="text-body-secondary small" data-i18n="lauf_maximum">Maximum (Worst Case P95)</div>
                 <div class="h4 mb-0">{{ lauf.ergebnis.p95|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div></div>
         </div>
@@ -67,31 +67,31 @@
     </div></div>
 
     <div class="card mb-3" style="border:1px solid var(--danger); background:rgba(239,68,68,0.10);"><div class="card-body py-2">
-        <h2 class="h6 text-danger mb-2">Risikotoleranz-Betrachtung</h2>
+        <h2 class="h6 text-danger mb-2" data-i18n="lauf_risikotoleranz_betrachtung">Risikotoleranz-Betrachtung</h2>
         {% if schnittpunkt %}
         <div class="d-flex flex-wrap gap-4 align-items-end">
             <div class="text-center px-3 py-1">
-                <div class="text-body-secondary small">Schnittpunkt (Loss)</div>
+                <div class="text-body-secondary small" data-i18n="lauf_schnittpunkt_loss">Schnittpunkt (Loss)</div>
                 <div class="fw-semibold text-nowrap">{{ schnittpunkt.loss|floatformat:0|intcomma }} {{ waehrung_symbol }}</div>
             </div>
             <div class="text-center px-3 py-1">
-                <div class="text-body-secondary small">Toleranz dort</div>
+                <div class="text-body-secondary small" data-i18n="lauf_toleranz_dort">Toleranz dort</div>
                 <div class="fw-semibold">{% widthratio schnittpunkt.tolerance 1 100 %} %</div>
             </div>
-            <div class="text-body-secondary small py-1">Wo LEC und Risikotoleranz sich schneiden.</div>
+            <div class="text-body-secondary small py-1" data-i18n="lauf_wo_lec_toleranz">Wo LEC und Risikotoleranz sich schneiden.</div>
         </div>
         {% else %}
         <p class="text-body-secondary small mb-0">
-            {% if toleranz_overlay %}Kein Schnittpunkt im betrachteten Bereich.{% else %}Keine Risikotoleranz definiert.{% endif %}
+            {% if toleranz_overlay %}<span data-i18n="lauf_kein_schnittpunkt">Kein Schnittpunkt im betrachteten Bereich.</span>{% else %}<span data-i18n="lauf_keine_risikotoleranz">Keine Risikotoleranz definiert.</span>{% endif %}
         </p>
         {% endif %}
     </div></div>
 
-    <h2 class="h5 mt-4">FAIR-Baum</h2>
+    <h2 class="h5 mt-4" data-i18n="lauf_fair_baum">FAIR-Baum</h2>
     <p class="text-body-secondary small mb-2">
-        <span class="badge" style="background:var(--accent); color:#04223a;">Eingabe</span>
-        <span class="badge" style="background:var(--ok); color:#04223a;">simuliert / berechnet</span>
-        – Mittelwert je Knoten.
+        <span class="badge" style="background:var(--accent); color:#04223a;" data-i18n="lauf_legende_eingabe">Eingabe</span>
+        <span class="badge" style="background:var(--ok); color:#04223a;" data-i18n="lauf_legende_berechnet">simuliert / berechnet</span>
+        – <span data-i18n="lauf_mittelwert_je_knoten">Mittelwert je Knoten.</span>
     </p>
     <div class="row mb-3"><div class="col-12 col-xl-9">
     <div class="card h-100"><div class="card-body py-2" style="overflow-x:auto; text-align:center;">
@@ -113,8 +113,8 @@
 
     <h2 class="h5 mt-4">Loss Exceedance Curve (LEC)</h2>
     <p class="text-body-secondary small mb-2">
-        Wahrscheinlichkeit, dass der Jahresschaden einen Wert überschreitet.
-        {% if toleranz_overlay %}<span class="text-danger">Rot durchgezogen: Risikotoleranz.</span>{% endif %}
+        <span data-i18n="lauf_lec_erklaerung">Wahrscheinlichkeit, dass der Jahresschaden einen Wert überschreitet.</span>
+        {% if toleranz_overlay %}<span class="text-danger" data-i18n="lauf_rot_toleranz">Rot durchgezogen: Risikotoleranz.</span>{% endif %}
     </p>
     <div class="card mb-3"><div class="card-body">
         <div id="lec-chart" style="height: 420px;"></div>
@@ -126,15 +126,15 @@
 
     <div class="row g-3 mb-3">
         <div class="col-lg-6">
-            <h2 class="h5 mt-2">Verteilung des Jahresschadens</h2>
-            <p class="text-body-secondary small mb-2">Jeder Balken zeigt, wie viele der simulierten Jahre in diesen Schadensbereich fielen.</p>
+            <h2 class="h5 mt-2" data-i18n="lauf_verteilung_jahresschaden">Verteilung des Jahresschadens</h2>
+            <p class="text-body-secondary small mb-2" data-i18n="lauf_verteilung_erklaerung">Jeder Balken zeigt, wie viele der simulierten Jahre in diesen Schadensbereich fielen.</p>
             <div class="card h-100"><div class="card-body">
                 <div id="vert-chart" style="height:320px;"></div>
             </div></div>
         </div>
         <div class="col-lg-6">
-            <h2 class="h5 mt-2">Häufigkeit der Schadenereignisse</h2>
-            <p class="text-body-secondary small mb-2">Jeder Balken zeigt, wie viele der simulierten Jahre diese Anzahl an Schadenereignissen hatten.</p>
+            <h2 class="h5 mt-2" data-i18n="lauf_haeufigkeit_titel">Häufigkeit der Schadenereignisse</h2>
+            <p class="text-body-secondary small mb-2" data-i18n="lauf_haeufigkeit_erklaerung">Jeder Balken zeigt, wie viele der simulierten Jahre diese Anzahl an Schadenereignissen hatten.</p>
             <div class="card h-100"><div class="card-body">
                 <div id="haeuf-chart" style="height:320px;"></div>
             </div></div>
@@ -144,8 +144,8 @@
     {{ lauf.ergebnis.haeufigkeit_hist|json_script:"haeuf-data" }}
 
     {% if lauf.ergebnis.streudiagramm %}
-    <h2 class="h5 mt-2">Primärer vs. sekundärer Verlust</h2>
-    <p class="text-body-secondary small mb-2">Jeder Punkt ist ein simuliertes Jahr: x = Primärverlust, y = Sekundärverlust in diesem Jahr.</p>
+    <h2 class="h5 mt-2" data-i18n="lauf_streudiagramm_titel">Primärer vs. sekundärer Verlust</h2>
+    <p class="text-body-secondary small mb-2" data-i18n="lauf_streudiagramm_erklaerung">Jeder Punkt ist ein simuliertes Jahr: x = Primärverlust, y = Sekundärverlust in diesem Jahr.</p>
     <div class="card mb-3"><div class="card-body">
         <div id="streu-chart" style="height:420px;"></div>
     </div></div>
@@ -153,14 +153,14 @@
     {% endif %}
 
     {% if knoten_tabelle %}
-    <h2 class="h5 mt-5 pt-3">Knoten-Details</h2>
+    <h2 class="h5 mt-5 pt-3" data-i18n="lauf_knoten_details">Knoten-Details</h2>
     <div class="card mb-3"><div class="card-body" style="overflow-x:auto;">
         <table class="table table-sm align-top mb-0">
             <thead>
                 <tr>
-                    <th>Target</th><th>Verteilung</th><th>Parameter</th><th>Konfidenz</th>
-                    <th class="text-end">Mittelwert</th><th class="text-end">Std.-Abw.</th>
-                    <th class="text-end">P90</th><th class="text-end">P95</th><th class="text-end">Max</th>
+                    <th>Target</th><th data-i18n="feld_verteilung">Verteilung</th><th data-i18n="feld_parameter">Parameter</th><th data-i18n="lauf_konfidenz">Konfidenz</th>
+                    <th class="text-end" data-i18n="lauf_mittelwert">Mittelwert</th><th class="text-end" data-i18n="lauf_stdabw">Std.-Abw.</th>
+                    <th class="text-end">P90</th><th class="text-end">P95</th><th class="text-end" data-i18n="lauf_max">Max</th>
                 </tr>
             </thead>
             <tbody>
@@ -177,12 +177,12 @@
     </div></div>
     {% endif %}
 
-    {% if perms.szenarien.change_szenario %}<a class="btn btn-primary" href="{% url 'szenarien:update' lauf.szenario.pk %}">Szenario bearbeiten</a>{% endif %}
-    <a class="btn btn-link" href="{% url 'szenarien:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
+    {% if perms.szenarien.change_szenario %}<a class="btn btn-primary" data-i18n="lauf_szenario_bearbeiten" href="{% url 'szenarien:update' lauf.szenario.pk %}">Szenario bearbeiten</a>{% endif %}
+    <a class="btn btn-link" data-i18n="lauf_zurueck_szenario" href="{% url 'szenarien:detail' lauf.szenario.pk %}">Zurück zum Szenario</a>
 
 {% else %}
     {# angelegt / laeuft -> Fortschritt #}
-    <p class="text-body-secondary">Die Simulation läuft – {{ lauf.n_simulations|intcomma }} Iterationen.</p>
+    <p class="text-body-secondary"><span data-i18n="lauf_laeuft">Die Simulation läuft</span> – {{ lauf.n_simulations|intcomma }} <span data-i18n="lauf_iterationen">Iterationen</span>.</p>
     <div class="progress" style="height:1.5rem;">
         <div id="fortschritt-bar" class="progress-bar progress-bar-striped progress-bar-animated"
              role="progressbar" style="width: {{ lauf.fortschritt }}%;">{{ lauf.fortschritt }}%</div>
@@ -191,10 +191,12 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/i18n-lauf.js' %}"></script>
 {% if lauf.status == "fertig" %}
 <script>
 (function () {
     if (typeof Plotly === 'undefined') return;
+    var t = window.fairT;
     var lec = JSON.parse(document.getElementById('lec-data').textContent) || [];
     var ov = JSON.parse(document.getElementById('toleranz-data').textContent);
     var fullX = lec.map(function (p) { return p.verlust; });
@@ -221,7 +223,7 @@
 
     var shapes = [];
     if (ov && ov.kind === 'curve') {
-        traces.push({ x: ov.x, y: ov.y, mode: 'lines', name: 'Risikotoleranz',
+        traces.push({ x: ov.x, y: ov.y, mode: 'lines', name: t('lauf_trace_risikotoleranz'),
                       line: { color: '#ef4444', width: 2.5 } });
     } else if (ov && ov.kind === 'vline' && ov.value > 0) {
         shapes.push({ type: 'line', x0: vx(ov.value), x1: vx(ov.value), y0: 0, y1: 1, yref: 'paper',
@@ -231,9 +233,9 @@
         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
         margin: { l: 70, r: 20, t: 10, b: 50 },
-        xaxis: { title: 'Jahresschaden ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid(), zerolinecolor: window.fairChartGrid(),
+        xaxis: { title: t('lauf_achse_jahresschaden') + ' (' + window.fairWaehrung + ')', gridcolor: window.fairChartGrid(), zerolinecolor: window.fairChartGrid(),
                  type: xType, range: xRange },
-        yaxis: { title: 'P(Schaden ≥ x)', gridcolor: window.fairChartGrid(), range: [0, 1], tickformat: '.0%' },
+        yaxis: { title: 'P(' + t('lauf_achse_schaden_kurz') + ' ≥ x)', gridcolor: window.fairChartGrid(), range: [0, 1], tickformat: '.0%' },
         legend: { orientation: 'h', y: 1.1 }, shapes: shapes
     };
     Plotly.newPlot('lec-chart', traces, layout, { responsive: true, displayModeBar: false })
@@ -248,7 +250,7 @@
                 } else if (sp && sp.loss != null) {
                     // Schnittpunkt LEC × Risikotoleranz markieren.
                     Plotly.addTraces('lec-chart', {
-                        x: [sp.loss], y: [sp.tolerance], mode: 'markers', name: 'Schnittpunkt',
+                        x: [sp.loss], y: [sp.tolerance], mode: 'markers', name: t('lauf_trace_schnittpunkt'),
                         marker: { color: '#fbbf24', size: 12, line: { color: '#fff', width: 1.5 } }
                     });
                 }
@@ -270,11 +272,11 @@
             font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
             margin: { l: 60, r: 15, t: 10, b: 45 }, bargap: 0.02,
             xaxis: { title: xtitel, gridcolor: window.fairChartGrid() },
-            yaxis: { title: 'Häufigkeit', gridcolor: window.fairChartGrid() }
+            yaxis: { title: t('lauf_achse_haeufigkeit'), gridcolor: window.fairChartGrid() }
         }, { responsive: true, displayModeBar: false });
     }
-    balken('vert-chart', 'vert-data', '#7dd3fc', 'Jahresschaden ({{ waehrung_symbol }})');
-    balken('haeuf-chart', 'haeuf-data', '#86efac', 'Schadenereignisse pro Jahr');
+    balken('vert-chart', 'vert-data', '#7dd3fc', t('lauf_achse_jahresschaden') + ' (' + window.fairWaehrung + ')');
+    balken('haeuf-chart', 'haeuf-data', '#86efac', t('lauf_achse_schadenereignisse'));
 
     // Streudiagramm: Primärverlust (x) vs. Sekundärverlust (y) je simuliertem Jahr.
     (function () {
@@ -286,13 +288,13 @@
         Plotly.newPlot('streu-chart', [{
             x: d.pl, y: d.sl, mode: 'markers', type: 'scatter',
             marker: { color: '#7dd3fc', size: 6, opacity: 0.55 },
-            hovertemplate: 'Primärverlust: %{x:,.0f} {{ waehrung_symbol }}<br>Sekundärverlust: %{y:,.0f} {{ waehrung_symbol }}<extra></extra>'
+            hovertemplate: t('lauf_hover_primaer') + ': %{x:,.0f} ' + window.fairWaehrung + '<br>' + t('lauf_hover_sekundaer') + ': %{y:,.0f} ' + window.fairWaehrung + '<extra></extra>'
         }], {
             paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
             font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
             margin: { l: 70, r: 20, t: 10, b: 50 },
-            xaxis: { title: 'Primärverlust ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid() },
-            yaxis: { title: 'Sekundärverlust ({{ waehrung_symbol }})', gridcolor: window.fairChartGrid() }
+            xaxis: { title: t('lauf_achse_primaerverlust') + ' (' + window.fairWaehrung + ')', gridcolor: window.fairChartGrid() },
+            yaxis: { title: t('lauf_achse_sekundaerverlust') + ' (' + window.fairWaehrung + ')', gridcolor: window.fairChartGrid() }
         }, { responsive: true, displayModeBar: false });
     })();
 })();

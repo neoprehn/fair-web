@@ -1,26 +1,27 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Szenarien &middot; fair-web{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Szenarien</h1>
+    <h1 class="h3 mb-0" data-i18n="dash_titel">Szenarien</h1>
     <div class="d-flex gap-2">
-        {% if perms.szenarien.add_cluster %}<a class="btn btn-outline-secondary" href="{% url 'szenarien:cluster_create' %}">+ Neuer Cluster</a>{% endif %}
-        {% if perms.szenarien.add_szenario %}<a class="btn btn-primary" href="{% url 'szenarien:create' %}">+ Neues Szenario</a>{% endif %}
+        {% if perms.szenarien.add_cluster %}<a class="btn btn-outline-secondary" data-i18n="dash_neuer_cluster" href="{% url 'szenarien:cluster_create' %}">+ Neuer Cluster</a>{% endif %}
+        {% if perms.szenarien.add_szenario %}<a class="btn btn-primary" data-i18n="dash_neues_szenario" href="{% url 'szenarien:create' %}">+ Neues Szenario</a>{% endif %}
     </div>
 </div>
 
 {% if cluster_liste %}
 <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
-    <span class="text-body-secondary small">Cluster:</span>
-    <a class="btn btn-sm {% if not aktiver_cluster %}btn-info{% else %}btn-outline-secondary{% endif %}" href="{% url 'szenarien:dashboard' %}">Alle</a>
+    <span class="text-body-secondary small" data-i18n="dash_cluster_label">Cluster:</span>
+    <a class="btn btn-sm {% if not aktiver_cluster %}btn-info{% else %}btn-outline-secondary{% endif %}" data-i18n="dash_alle" href="{% url 'szenarien:dashboard' %}">Alle</a>
     {% for c in cluster_liste %}
     <a class="btn btn-sm {% if aktiver_cluster.pk == c.pk %}btn-info{% else %}btn-outline-secondary{% endif %}" href="?cluster={{ c.pk }}">{{ c.name }} <span class="opacity-75">({{ c.szenarien.count }})</span></a>
     {% endfor %}
     {% if aktiver_cluster %}
-        {% if perms.szenarien.change_cluster %}<a class="btn btn-sm btn-link" href="{% url 'szenarien:cluster_update' aktiver_cluster.pk %}">Cluster bearbeiten</a>{% endif %}
-        {% if perms.szenarien.delete_cluster %}<a class="btn btn-sm btn-link text-danger" href="{% url 'szenarien:cluster_delete' aktiver_cluster.pk %}">löschen</a>{% endif %}
+        {% if perms.szenarien.change_cluster %}<a class="btn btn-sm btn-link" data-i18n="dash_cluster_bearbeiten" href="{% url 'szenarien:cluster_update' aktiver_cluster.pk %}">Cluster bearbeiten</a>{% endif %}
+        {% if perms.szenarien.delete_cluster %}<a class="btn btn-sm btn-link text-danger" data-i18n="dash_cluster_loeschen" href="{% url 'szenarien:cluster_delete' aktiver_cluster.pk %}">löschen</a>{% endif %}
     {% endif %}
 </div>
 {% endif %}
@@ -31,7 +32,7 @@
     {% if perms.berechnung.add_metalauf %}
     <div class="d-flex justify-content-end mb-2">
         <button type="submit" id="meta-btn" class="btn btn-primary btn-sm" disabled>
-            ▶ Ausgewählte gemeinsam berechnen (<span id="meta-count">0</span>)
+            ▶ <span data-i18n="dash_gemeinsam_berechnen">Ausgewählte gemeinsam berechnen</span> (<span id="meta-count">0</span>)
         </button>
     </div>
     {% endif %}
@@ -41,11 +42,11 @@
                 <tr>
                     {% if perms.berechnung.add_metalauf %}<th style="width:2.5rem;"></th>{% endif %}
                     <th class="text-end" style="width:3rem;">ID</th>
-                    <th>Name</th>
-                    <th class="text-end">Simulationen</th>
-                    <th>Faktoren</th>
-                    <th>Geändert</th>
-                    {% if perms.szenarien.change_szenario or perms.szenarien.delete_szenario or perms.szenarien.add_szenario %}<th class="text-end">Aktionen</th>{% endif %}
+                    <th data-i18n="feld_name">Name</th>
+                    <th class="text-end" data-i18n="dash_th_simulationen">Simulationen</th>
+                    <th data-i18n="dash_th_faktoren">Faktoren</th>
+                    <th data-i18n="dash_th_geaendert">Geändert</th>
+                    {% if perms.szenarien.change_szenario or perms.szenarien.delete_szenario or perms.szenarien.add_szenario %}<th class="text-end" data-i18n="dash_th_aktionen">Aktionen</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -55,13 +56,13 @@
                     <td>
                         <input class="form-check-input meta-check" type="checkbox"
                                name="szenarien" value="{{ szenario.pk }}"
-                               {% if not szenario.faktoren.count %}disabled title="Keine Faktoren"{% endif %}>
+                               {% if not szenario.faktoren.count %}disabled data-i18n-title="dash_keine_faktoren" title="Keine Faktoren"{% endif %}>
                     </td>
                     {% endif %}
                     <td class="text-end text-body-secondary">{{ szenario.pk }}</td>
                     <td>
                         <a href="{% url 'szenarien:detail' szenario.pk %}">{{ szenario.name }}</a>
-                        {% for c in szenario.cluster.all %}<a href="?cluster={{ c.pk }}" class="badge text-bg-light text-decoration-none ms-1" title="Cluster">{{ c.name }}</a>{% endfor %}
+                        {% for c in szenario.cluster.all %}<a href="?cluster={{ c.pk }}" class="badge text-bg-light text-decoration-none ms-1" data-i18n-title="dash_cluster_badge_title" title="Cluster">{{ c.name }}</a>{% endfor %}
                     </td>
                     <td class="text-end">{{ szenario.n_simulations }}</td>
                     <td>{{ szenario.faktoren.count }} / 2</td>
@@ -71,10 +72,10 @@
                         {% if perms.szenarien.add_szenario %}
                         {# Kein verschachteltes <form> (liegt im Meta-Formular) -> formaction am Submit-Button. #}
                         <button type="submit" formaction="{% url 'szenarien:clone' szenario.pk %}" formmethod="post"
-                                class="btn btn-sm btn-outline-info" title="Als neues Szenario duplizieren">Klonen</button>
+                                class="btn btn-sm btn-outline-info" data-i18n-title="dash_klonen_title" title="Als neues Szenario duplizieren" data-i18n="dash_btn_klonen">Klonen</button>
                         {% endif %}
-                        {% if perms.szenarien.change_szenario %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>{% endif %}
-                        {% if perms.szenarien.delete_szenario %}<a class="btn btn-sm btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>{% endif %}
+                        {% if perms.szenarien.change_szenario %}<a class="btn btn-sm btn-outline-secondary" data-i18n="btn_bearbeiten" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>{% endif %}
+                        {% if perms.szenarien.delete_szenario %}<a class="btn btn-sm btn-outline-danger" data-i18n="btn_loeschen" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>{% endif %}
                     </td>
                     {% endif %}
                 </tr>
@@ -85,14 +86,15 @@
 </form>
 {% else %}
 <div class="text-center text-body-secondary py-5">
-    <p class="lead">Noch keine Szenarien angelegt.</p>
-    {% if perms.szenarien.add_szenario %}<a class="btn btn-primary" href="{% url 'szenarien:create' %}">Erstes Szenario anlegen</a>{% endif %}
+    <p class="lead" data-i18n="dash_leer">Noch keine Szenarien angelegt.</p>
+    {% if perms.szenarien.add_szenario %}<a class="btn btn-primary" data-i18n="dash_erstes_anlegen" href="{% url 'szenarien:create' %}">Erstes Szenario anlegen</a>{% endif %}
 </div>
 {% endif %}
 
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/i18n-dashboard.js' %}"></script>
 <script>
 // "Gemeinsam berechnen" erst ab 2 ausgewählten Szenarien aktivieren.
 (function () {

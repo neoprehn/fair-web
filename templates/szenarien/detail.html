@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load humanize static %}
 
 {% block title %}{{ szenario.name }} &middot; fair-web{% endblock %}
 {% block extra_head %}{% if szenario.faktoren.all or szenario.verlustformen.all or szenario.mam_kategorien.all %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
@@ -15,26 +15,26 @@
 <div class="d-flex justify-content-between align-items-center mb-1">
     <h1 class="h3 mb-0">{{ szenario.name }}</h1>
     <div>
-        {% if perms.szenarien.change_szenario %}<a class="btn btn-outline-secondary" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>{% endif %}
-        {% if perms.szenarien.delete_szenario %}<a class="btn btn-outline-danger" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>{% endif %}
+        {% if perms.szenarien.change_szenario %}<a class="btn btn-outline-secondary" data-i18n="btn_bearbeiten" href="{% url 'szenarien:update' szenario.pk %}">Bearbeiten</a>{% endif %}
+        {% if perms.szenarien.delete_szenario %}<a class="btn btn-outline-danger" data-i18n="btn_loeschen" href="{% url 'szenarien:delete' szenario.pk %}">Löschen</a>{% endif %}
     </div>
 </div>
 {% if szenario.beschreibung %}<p class="text-body-secondary mb-3">{{ szenario.beschreibung }}</p>{% endif %}
 
 <dl class="row">
     <dt class="col-sm-3">ID</dt><dd class="col-sm-9">{{ szenario.pk }}</dd>
-    <dt class="col-sm-3">Anzahl Simulationen</dt><dd class="col-sm-9">{{ szenario.n_simulations }}</dd>
-    <dt class="col-sm-3">Zufalls-Seed</dt><dd class="col-sm-9">{{ szenario.random_seed }}</dd>
-    <dt class="col-sm-3">Cluster</dt><dd class="col-sm-9">{% for c in szenario.cluster.all %}<span class="badge text-bg-light">{{ c.name }}</span> {% empty %}<span class="text-body-secondary">–</span>{% endfor %}</dd>
+    <dt class="col-sm-3" data-i18n="det_anzahl_sim">Anzahl Simulationen</dt><dd class="col-sm-9">{{ szenario.n_simulations }}</dd>
+    <dt class="col-sm-3" data-i18n="det_seed">Zufalls-Seed</dt><dd class="col-sm-9">{{ szenario.random_seed }}</dd>
+    <dt class="col-sm-3" data-i18n="det_cluster">Cluster</dt><dd class="col-sm-9">{% for c in szenario.cluster.all %}<span class="badge text-bg-light">{{ c.name }}</span> {% empty %}<span class="text-body-secondary">–</span>{% endfor %}</dd>
     <dt class="col-sm-3">C/I/A</dt><dd class="col-sm-9">{% for label in szenario.cia_labels %}<span class="badge text-bg-info">{{ label }}</span> {% empty %}<span class="text-body-secondary">–</span>{% endfor %}</dd>
 </dl>
 
-<h2 class="h5 mt-4">FAIR-Faktoren</h2>
+<h2 class="h5 mt-4" data-i18n="det_fair_faktoren">FAIR-Faktoren</h2>
 <table class="table">
     <thead>
-        <tr><th>Faktor</th><th>Verteilung</th><th>Parameter</th><th>Unsicherheit</th>
-            <th class="text-center" style="width:1%; white-space:nowrap;">Annahmen</th>
-            <th class="text-center" style="width:1%; white-space:nowrap;">Vorschau</th></tr>
+        <tr><th data-i18n="det_th_faktor">Faktor</th><th data-i18n="feld_verteilung">Verteilung</th><th data-i18n="feld_parameter">Parameter</th><th data-i18n="feld_unsicherheit">Unsicherheit</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;" data-i18n="feld_annahmen">Annahmen</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;" data-i18n="btn_vorschau">Vorschau</th></tr>
     </thead>
     <tbody>
     {% for faktor in szenario.faktoren.all %}
@@ -50,7 +50,7 @@
                 {% endfor %}
             </td>
             <td>
-                {% if faktor.verteilung == "beta" %}<span class="text-body-secondary small">eigene Eingabeart</span>{% else %}
+                {% if faktor.verteilung == "beta" %}<span class="text-body-secondary small" data-i18n="det_eigene_eingabeart">eigene Eingabeart</span>{% else %}
                 {{ faktor.unsicherheit_label }}
                 {% if faktor.confidence_shape %}
                     {% for key, value in faktor.confidence_shape.items %}
@@ -64,17 +64,17 @@
                         data-annahmen="{{ faktor.annahmen|default:'' }}"
                         data-quellentext="{{ faktor.quellentext|default:'' }}"
                         data-faktor="{{ faktor.get_faktor_display }}"
-                        title="Annahmen &amp; Quellentext anzeigen">📝</button>
+                        data-i18n-title="det_annahmen_zeigen" title="Annahmen &amp; Quellentext anzeigen">📝</button>
             </td>
             <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
                 <button type="button" class="btn btn-sm btn-outline-info vorschau-btn" data-bs-toggle="modal"
                         data-bs-target="#verteilung-modal"
                         data-code="f{{ faktor.pk }}" data-faktor="{{ faktor.get_faktor_display }}"
-                        title="Verteilungskurve anzeigen">📈</button>
+                        data-i18n-title="det_verteilung_zeigen" title="Verteilungskurve anzeigen">📈</button>
             </td>
         </tr>
     {% empty %}
-        <tr><td colspan="6" class="text-body-secondary">Noch keine Faktoren erfasst.</td></tr>
+        <tr><td colspan="6" class="text-body-secondary" data-i18n="det_keine_faktoren">Noch keine Faktoren erfasst.</td></tr>
     {% endfor %}
     </tbody>
 </table>
@@ -90,10 +90,10 @@
 </p>
 <table class="table">
     <thead>
-        <tr><th>Seite</th><th>Loss-Form</th><th>Verteilung</th><th>Parameter</th>
+        <tr><th data-i18n="det_th_seite">Seite</th><th data-i18n="det_th_lossform">Loss-Form</th><th data-i18n="feld_verteilung">Verteilung</th><th data-i18n="feld_parameter">Parameter</th>
             <th>SLEF</th>
-            <th class="text-center" style="width:1%; white-space:nowrap;">Annahmen</th>
-            <th class="text-center" style="width:1%; white-space:nowrap;">Vorschau</th></tr>
+            <th class="text-center" style="width:1%; white-space:nowrap;" data-i18n="feld_annahmen">Annahmen</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;" data-i18n="btn_vorschau">Vorschau</th></tr>
     </thead>
     <tbody>
     {% for vf in szenario.verlustformen.all %}
@@ -118,17 +118,17 @@
                         data-annahmen="{{ vf.annahmen|default:'' }}"
                         data-quellentext="{{ vf.quellentext|default:'' }}"
                         data-faktor="{{ vf.get_seite_display }} – {{ vf.get_form_display }}"
-                        title="Annahmen &amp; Quellentext anzeigen">📝</button>
+                        data-i18n-title="det_annahmen_zeigen" title="Annahmen &amp; Quellentext anzeigen">📝</button>
             </td>
             <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
                 <button type="button" class="btn btn-sm btn-outline-info vorschau-btn" data-bs-toggle="modal"
                         data-bs-target="#verteilung-modal"
                         data-code="vf{{ vf.pk }}" data-faktor="{{ vf.get_seite_display }} – {{ vf.get_form_display }}"
-                        title="Verteilungskurve anzeigen">📈</button>
+                        data-i18n-title="det_verteilung_zeigen" title="Verteilungskurve anzeigen">📈</button>
             </td>
         </tr>
     {% empty %}
-        <tr><td colspan="7" class="text-body-secondary">Noch keine Loss-Formen erfasst.</td></tr>
+        <tr><td colspan="7" class="text-body-secondary" data-i18n="det_keine_lossformen">Noch keine Loss-Formen erfasst.</td></tr>
     {% endfor %}
     </tbody>
 </table>
@@ -146,10 +146,10 @@
 </p>
 <table class="table">
     <thead>
-        <tr><th>Seite</th><th>Modul</th><th>Kategorie</th><th>Verteilung</th><th>Parameter</th>
+        <tr><th data-i18n="det_th_seite">Seite</th><th data-i18n="det_th_modul">Modul</th><th data-i18n="det_th_kategorie">Kategorie</th><th data-i18n="feld_verteilung">Verteilung</th><th data-i18n="feld_parameter">Parameter</th>
             <th>SLEF</th>
-            <th class="text-center" style="width:1%; white-space:nowrap;">Annahmen</th>
-            <th class="text-center" style="width:1%; white-space:nowrap;">Vorschau</th></tr>
+            <th class="text-center" style="width:1%; white-space:nowrap;" data-i18n="feld_annahmen">Annahmen</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;" data-i18n="btn_vorschau">Vorschau</th></tr>
     </thead>
     <tbody>
     {% for m in szenario.mam_kategorien.all %}
@@ -175,17 +175,17 @@
                         data-annahmen="{{ m.annahmen|default:'' }}"
                         data-quellentext="{{ m.quellentext|default:'' }}"
                         data-faktor="{{ m.get_kategorie_display }}"
-                        title="Annahmen &amp; Quellentext anzeigen">📝</button>
+                        data-i18n-title="det_annahmen_zeigen" title="Annahmen &amp; Quellentext anzeigen">📝</button>
             </td>
             <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
                 <button type="button" class="btn btn-sm btn-outline-info vorschau-btn" data-bs-toggle="modal"
                         data-bs-target="#verteilung-modal"
                         data-code="mam{{ m.pk }}" data-faktor="{{ m.get_kategorie_display }}"
-                        title="Verteilungskurve anzeigen">📈</button>
+                        data-i18n-title="det_verteilung_zeigen" title="Verteilungskurve anzeigen">📈</button>
             </td>
         </tr>
     {% empty %}
-        <tr><td colspan="8" class="text-body-secondary">Noch keine FAIR-MAM-Kategorien erfasst.</td></tr>
+        <tr><td colspan="8" class="text-body-secondary" data-i18n="det_keine_mam">Noch keine FAIR-MAM-Kategorien erfasst.</td></tr>
     {% endfor %}
     </tbody>
 </table>
@@ -196,12 +196,12 @@
 <div class="modal fade" id="verteilung-modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg"><div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title">Verteilungs-Vorschau: <span id="verteilung-modal-titel"></span></h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            <h5 class="modal-title"><span data-i18n="det_verteilung_vorschau">Verteilungs-Vorschau</span>: <span id="verteilung-modal-titel"></span></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="det_schliessen" aria-label="Schließen"></button>
         </div>
         <div class="modal-body">
             <div id="verteilung-chart" style="height:340px;"></div>
-            <p id="verteilung-modal-leer" class="text-body-secondary mb-0" style="display:none;">Keine Vorschau möglich.</p>
+            <p id="verteilung-modal-leer" class="text-body-secondary mb-0" style="display:none;" data-i18n="det_keine_vorschau">Keine Vorschau möglich.</p>
         </div>
     </div></div>
 </div>
@@ -211,25 +211,25 @@
     <div class="modal-dialog"><div class="modal-content">
         <div class="modal-header">
             <h5 class="modal-title" id="annahmen-modal-titel"></h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="det_schliessen" aria-label="Schließen"></button>
         </div>
         <div class="modal-body">
-            <label class="form-label small">Annahmen</label>
+            <label class="form-label small" data-i18n="feld_annahmen">Annahmen</label>
             <p id="annahmen-modal-annahmen" class="text-body-secondary"></p>
-            <label class="form-label small">Quellentext</label>
+            <label class="form-label small" data-i18n="feld_quellentext">Quellentext</label>
             <p id="annahmen-modal-quelle" class="text-body-secondary mb-0"></p>
         </div>
     </div></div>
 </div>
 
-<h2 class="h5 mt-4">Risikotoleranz</h2>
+<h2 class="h5 mt-4" data-i18n="det_risikotoleranz">Risikotoleranz</h2>
 {% with rt=szenario.risikotoleranz %}
 {% if rt %}
     {% if rt.type == "constant" %}
-    <p class="mb-3">Konstante Schwelle: <strong>{{ rt.value|floatformat:0|intcomma }} {{ waehrung_symbol }}</strong></p>
+    <p class="mb-3"><span data-i18n="det_konstante_schwelle">Konstante Schwelle</span>: <strong>{{ rt.value|floatformat:0|intcomma }} {{ waehrung_symbol }}</strong></p>
     {% elif rt.type == "curve" %}
     <table class="table table-sm w-auto">
-        <thead><tr><th>Schaden ({{ waehrung_symbol }})</th><th>akzeptierte Wahrscheinlichkeit</th></tr></thead>
+        <thead><tr><th><span data-i18n="det_th_schaden">Schaden</span> ({{ waehrung_symbol }})</th><th data-i18n="det_th_akzeptierte_wahrsch">akzeptierte Wahrscheinlichkeit</th></tr></thead>
         <tbody>
         {% for p in rt.points %}
             <tr><td>{{ p.loss|floatformat:0|intcomma }} {{ waehrung_symbol }}</td><td>{% widthratio p.level 1 100 %} %</td></tr>
@@ -237,22 +237,22 @@
         </tbody>
     </table>
     {% elif rt.type == "distribution" %}
-    <p class="mb-1">Verteilung: <strong>{{ rt.distribution }}</strong></p>
+    <p class="mb-1"><span data-i18n="feld_verteilung">Verteilung</span>: <strong>{{ rt.distribution }}</strong></p>
     <p class="mb-3">
         {% for key, value in rt.params.items %}<span class="badge text-bg-light">{{ key }} = {{ value }}</span> {% endfor %}
     </p>
     {% endif %}
 {% else %}
-    <p class="text-body-secondary mb-3">Keine Risikotoleranz definiert.</p>
+    <p class="text-body-secondary mb-3" data-i18n="det_keine_risikotoleranz">Keine Risikotoleranz definiert.</p>
 {% endif %}
 {% endwith %}
 
 <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
-    <h2 class="h5 mb-0">Simulation</h2>
+    <h2 class="h5 mb-0" data-i18n="det_simulation">Simulation</h2>
     {% if szenario.faktoren.all and perms.berechnung.add_simulationslauf %}
     <form method="post" action="{% url 'berechnung:starten' szenario.pk %}">
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary">▶ Berechnen</button>
+        <button type="submit" class="btn btn-primary">▶ <span data-i18n="det_berechnen">Berechnen</span></button>
     </form>
     {% endif %}
 </div>
@@ -260,7 +260,7 @@
 {% if szenario.laeufe.all %}
 <table class="table">
     <thead>
-        <tr><th>#</th><th>Status</th><th>Erwarteter Schaden</th><th>Wann</th></tr>
+        <tr><th>#</th><th data-i18n="det_th_status">Status</th><th data-i18n="det_th_erwarteter_schaden">Erwarteter Schaden</th><th data-i18n="det_th_wann">Wann</th></tr>
     </thead>
     <tbody>
     {% for lauf in szenario.laeufe.all|slice:":5" %}
@@ -274,11 +274,12 @@
     </tbody>
 </table>
 {% else %}
-<p class="text-body-secondary">Noch keine Berechnung. Klicke auf „Berechnen", um die Monte-Carlo-Simulation zu starten.</p>
+<p class="text-body-secondary" data-i18n="det_keine_berechnung">Noch keine Berechnung. Klicke auf „Berechnen", um die Monte-Carlo-Simulation zu starten.</p>
 {% endif %}
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/i18n-szenario-detail.js' %}"></script>
 <script>
 // Annahmen/Quellentext-Modal: Inhalt aus den data-Attributen des geklickten Knopfs befüllen.
 (function () {
@@ -324,6 +325,7 @@
         function formatDE(n) {
             return Number(n).toLocaleString(window.fairLocale || 'de-DE', { maximumFractionDigits: 3 });
         }
+        var t = window.fairT;
         var shapes = [], annotations = [];
         function linie(x, farbe, label, dash, yshift) {
             if (x === undefined || x === null) return;
@@ -337,7 +339,7 @@
             });
         }
         linie(d.mittelwert, '#fbbf24', 'Ø', 'dash', 16);
-        linie(d.median, '#f87171', 'Median', 'dot', 0);
+        linie(d.median, '#f87171', t('det_median'), 'dot', 0);
 
         Plotly.react('verteilung-chart', [{
             x: d.x, y: d.y, mode: 'lines', line: { shape: 'spline', color: '#7dd3fc', width: 2 },
@@ -347,8 +349,8 @@
             shapes: shapes, annotations: annotations,
             font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
             margin: { l: 60, r: 15, t: 45, b: 40 },
-            xaxis: { title: 'Wert', gridcolor: window.fairChartGrid() },
-            yaxis: { title: 'Dichte', gridcolor: window.fairChartGrid(), zeroline: false }
+            xaxis: { title: t('det_achse_wert'), gridcolor: window.fairChartGrid() },
+            yaxis: { title: t('det_achse_dichte'), gridcolor: window.fairChartGrid(), zeroline: false }
         }, { responsive: true, displayModeBar: false });
     });
 })();

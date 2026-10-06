@@ -166,6 +166,28 @@ Monte-Carlo-Aggregation in `apps/berechnung/services.py::simuliere`, taxonomie-a
       eine eigene SLEF-Verteilung (`VerlustFormSlef`/`VerlustMamSlef`). Damit ist die
       LM-Aufschlüsselungs-Serie (Slices 1–4) vollständig abgeschlossen.
 
+### Deutsch/Englisch-Schalter für UI-Beschriftungen (@neoprehn)
+
+Rein clientseitiger Umschalter (localStorage, `#lang-toggle` in `base.html`, wie der Dark/Light-
+Toggle) – bewusst **getrennt** von Djangos translation/gettext und der bestehenden
+`WaehrungLocaleMiddleware` (steuert nur das Zahlenformat, nicht die Sprache). Wörterbücher als
+externe `static/js/i18n*.js`-Dateien (nicht inline – sonst tauchen berechtigungsabhängig
+ausgeblendete Wörter trotzdem im HTML-Response auf), `data-i18n`/`data-i18n-title`/
+`data-i18n-aria-label`-Attribute im Markup, `window.fairT(key)` für JS-generierten Text
+(Plotly-Achsentitel/Legenden).
+
+- [x] Infrastruktur (`static/js/i18n.js`) + Kernseiten: `base.html` (Navigation/Footer/Menü),
+      `szenarien/dashboard.html`, `szenarien/detail.html`, `szenarien/form.html`,
+      `berechnung/lauf.html`
+- [ ] Vorbereitet, aber noch nicht angebunden: DeepL-API-Key in der Admin-Konfiguration
+      (`AppKonfiguration.deepl_api_key`) für eine künftige Funktion, die Nutzerinhalte
+      (Szenario-Name/-Beschreibung/-Annahmen) dynamisch übersetzt – anderer Mechanismus als
+      dieser statische Label-Schalter
+- [ ] Noch nicht übersetzt (zurückgestellt): Admin-Bereich, `apps.cam`-Templates,
+      `vergleich_*.html`/`cluster_*.html`/`meta_lauf.html`, lange Erklärtexte/Tooltips
+      (6-Forms-/FAIR-MAM-Infomodal-Texte, Risikotoleranz-Hilfetexte), die 32 dynamischen
+      Loss-Form-/FAIR-MAM-Kategorie-Labels, Konten-/Login-Seiten
+
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
 Angefragt 2026-09-15. Ziel: ein Zwischendialog, der ein neues FAIR-Szenario Schritt für
