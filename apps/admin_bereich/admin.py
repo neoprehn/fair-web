@@ -32,6 +32,11 @@ class AppKonfigurationAdmin(admin.ModelAdmin):
             "fields": ("risikotoleranz_global", "geaendert_am"),
             "description": "Den Risikotoleranz-Editor findest du unterhalb der Felder.",
         }),
+        ("Übersetzung (DeepL)", {
+            "fields": ("deepl_api_key",),
+            "description": "Vorbereitung für eine künftige Funktion: automatische Übersetzung "
+                            "von Szenario-Inhalten (Name, Beschreibung, Annahmen) ins Englische.",
+        }),
     )
     readonly_fields = ("geaendert_am",)
 

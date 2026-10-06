@@ -1,5 +1,7 @@
 from django.db import models
 
+from apps.konten import krypto
+
 
 class AppKonfiguration(models.Model):
     """Globale App-Konfiguration (Singleton, pk=1).
@@ -44,6 +46,11 @@ class AppKonfiguration(models.Model):
         "Konfidenz-Vorschlagswerte", null=True, blank=True,
         help_text="Überschreibt die Standard-Konfidenztabelle (gamma/sigma/range/k). Leer = Vorgabe.",
     )
+    # Für eine künftige Übersetzungsfunktion (Szenario-Name/-Beschreibung/-Annahmen ins
+    # Englische) - vorerst nur die Konfiguration, verschlüsselt wie der KI-API-Key
+    # (apps.konten.models.KIEinstellung), aber global statt pro Nutzer (eine Organisations-
+    # Lizenz statt individueller Keys).
+    deepl_api_key_verschluesselt = models.TextField("DeepL-API-Key (verschlüsselt)", blank=True)
     geaendert_am = models.DateTimeField("Geändert am", auto_now=True)
 
     class Meta:
@@ -76,3 +83,14 @@ class AppKonfiguration(models.Model):
     def js_locale(self):
         """BCP-47-Locale für Intl/toLocaleString im Frontend."""
         return "en-US" if self.waehrung == self.Waehrung.USD else "de-DE"
+
+    @property
+    def hat_deepl_api_key(self):
+        return bool(self.deepl_api_key_verschluesselt)
+
+    @property
+    def deepl_api_key(self):
+        return krypto.entschluesseln(self.deepl_api_key_verschluesselt)
+
+    def set_deepl_api_key(self, klartext):
+        self.deepl_api_key_verschluesselt = krypto.verschluesseln(klartext)

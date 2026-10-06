@@ -86,6 +86,42 @@ def test_admin_editor_speichert_risikotoleranz(admin_client):
 
 
 @pytest.mark.django_db
+def test_deepl_api_key_wird_verschluesselt_gespeichert():
+    k = AppKonfiguration.load()
+    assert not k.hat_deepl_api_key
+    k.set_deepl_api_key("geheimer-key-123")
+    k.save()
+    k.refresh_from_db()
+    assert k.hat_deepl_api_key
+    assert k.deepl_api_key_verschluesselt != "geheimer-key-123"  # nicht im Klartext gespeichert
+    assert k.deepl_api_key == "geheimer-key-123"
+
+
+@pytest.mark.django_db
+def test_admin_editor_speichert_deepl_api_key(admin_client):
+    AppKonfiguration.load()
+    url = reverse("admin:admin_bereich_appkonfiguration_change", args=[1])
+    resp = admin_client.post(url, {
+        "waehrung": "EUR",
+        "standard_seed": 42, "standard_n_simulations": 10000,
+        "deepl_api_key": "mein-deepl-key",
+    })
+    assert resp.status_code == 302
+    k = AppKonfiguration.objects.get()
+    assert k.deepl_api_key == "mein-deepl-key"
+
+    # Leer gelassen -> bestehender Key bleibt unveraendert.
+    resp = admin_client.post(url, {
+        "waehrung": "EUR",
+        "standard_seed": 42, "standard_n_simulations": 10000,
+        "deepl_api_key": "",
+    })
+    assert resp.status_code == 302
+    k.refresh_from_db()
+    assert k.deepl_api_key == "mein-deepl-key"
+
+
+@pytest.mark.django_db
 def test_admin_editor_kurve(admin_client):
     import json
     AppKonfiguration.load()
