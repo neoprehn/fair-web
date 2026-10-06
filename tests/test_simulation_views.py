@@ -126,3 +126,23 @@ def test_lauf_baum_blendet_nicht_verwendete_knoten_aus(client, szenario):
     assert codes == {"Risk", "LEF", "LM"}
     for e in resp.context["svg_edges"]:
         assert e["von"] in codes and e["nach"] in codes
+
+
+@pytest.mark.django_db
+def test_lauf_baum_faellt_bei_altem_ergebnis_ohne_knoten_auf_vollen_baum_zurueck(client, szenario):
+    """Regression: sehr alte Läufe (vor Phase 5) haben kein 'knoten' im ergebnis-JSON ->
+    ALLE Knoten wären sonst 'unused' und die ausblenden-Logik würde den kompletten Baum
+    verschwinden lassen (sah aus wie eine leere/kaputte Seite). Fallback: voller Baum."""
+    lauf = Simulationslauf.objects.create(
+        szenario=szenario, n_simulations=500, random_seed=7,
+        status=Simulationslauf.Status.FERTIG, fortschritt=100,
+        ergebnis={"n": 500, "mittelwert": 1000.0, "median": 900.0, "min": 0.0, "max": 5000.0,
+                  "p10": 100.0, "p90": 2000.0, "p95": 2500.0, "p99": 4000.0, "lec": []},
+    )
+
+    resp = client.get(reverse("berechnung:lauf", kwargs={"pk": lauf.pk}))
+
+    assert resp.status_code == 200
+    assert len(resp.context["svg_nodes"]) > 1  # voller Baum, nicht leer
+    codes = {n["code"] for n in resp.context["svg_nodes"]}
+    assert "Risk" in codes and "TEF" in codes  # auch sonst "unused" markierte Knoten sind da

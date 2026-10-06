@@ -189,9 +189,16 @@ class LaufDetailView(DetailView):
         # Nicht verwendete Knoten (z.B. CF/PoA, wenn TEF direkt statt aufgeschlüsselt eingegeben
         # wurde) komplett ausblenden statt nur abzudunkeln - im Dark-Theme war die Füllfarbe
         # ungenutzter Boxen bei niedriger Deckkraft kaum von der Seite zu unterscheiden.
+        # Fallback auf den vollen (ungefilterten) Baum, falls ALLE Knoten "unused" sind (z.B.
+        # sehr alte Läufe von vor Phase 5, deren ergebnis-JSON noch keine "knoten"-Daten
+        # enthält - sonst würde die Baum-Karte komplett leer wirken statt nur undekoriert).
         benutzte_codes = {n["code"] for n in nodes if n["status"] != "unused"}
-        context["svg_nodes"] = [n for n in nodes if n["code"] in benutzte_codes]
-        context["svg_edges"] = [e for e in edges if e["von"] in benutzte_codes and e["nach"] in benutzte_codes]
+        if benutzte_codes:
+            context["svg_nodes"] = [n for n in nodes if n["code"] in benutzte_codes]
+            context["svg_edges"] = [e for e in edges if e["von"] in benutzte_codes and e["nach"] in benutzte_codes]
+        else:
+            context["svg_nodes"] = nodes
+            context["svg_edges"] = edges
         ov = toleranz_overlay(self.object.szenario.risikotoleranz)
         context["toleranz_overlay"] = ov
         context["knoten_tabelle"] = _knoten_tabelle(knoten)
