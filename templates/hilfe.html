@@ -16,9 +16,11 @@
                 <a class="nav-link px-0 py-1" href="#ueberblick">Überblick</a>
                 <a class="nav-link px-0 py-1" href="#szenario">Szenario anlegen</a>
                 <a class="nav-link px-0 py-1" href="#faktoren">FAIR-Faktoren &amp; Baum</a>
+                <a class="nav-link px-0 py-1" href="#lm-aufschluesselung">6 Forms of Loss / FAIR-MAM</a>
                 <a class="nav-link px-0 py-1" href="#verteilungen">Verteilungen &amp; Unsicherheit</a>
                 <a class="nav-link px-0 py-1" href="#toleranz">Risikotoleranz</a>
                 <a class="nav-link px-0 py-1" href="#simulation">Simulation &amp; Ergebnis</a>
+                <a class="nav-link px-0 py-1" href="#cia">C/I/A-Kennzeichnung</a>
                 <a class="nav-link px-0 py-1" href="#cluster">Cluster (Gruppen)</a>
                 <a class="nav-link px-0 py-1" href="#vergleich">Szenarien vergleichen</a>
                 <a class="nav-link px-0 py-1" href="#klonen">Klonen &amp; Kopien</a>
@@ -66,7 +68,43 @@
                 <li>Das <strong>SVG oben</strong> zeigt den Baum; beim Klick in ein Feld leuchtet der
                     zugehörige Knoten auf.</li>
                 <li><strong>Annahmen je Faktor</strong>: optionales Freitextfeld – wird gespeichert und
-                    im Szenario angezeigt.</li>
+                    im Szenario angezeigt (zusätzlich ein <strong>Quellentext</strong>-Feld für Belege).</li>
+                <li>Verzweigungsknoten (<strong>TEF</strong>/<strong>Vulnerability</strong> auf der
+                    Häufigkeits-, <strong>PL</strong>/<strong>SL</strong> auf der Schadensseite) sind im
+                    Baum und in den Tabellen farblich markiert – dieselbe Farbe taucht überall auf, wo
+                    der jeweilige Zweig vorkommt.</li>
+                <li>Im <strong>Ergebnis-Baum</strong> werden nur tatsächlich verwendete Knoten gezeigt
+                    (die deines Schnitts); nicht genutzte Teilfaktoren bleiben ausgeblendet.</li>
+            </ul>
+        </section>
+
+        <section id="lm-aufschluesselung" class="mb-4">
+            <h2 class="h5">6 Forms of Loss / FAIR-MAM</h2>
+            <p>Primary Loss (PL) und Secondary Loss (SL) lassen sich statt als ein direkter Wert auch
+               <strong>feiner aufschlüsseln</strong> – umschaltbar über <em>Loss-Magnitude-Eingabe</em>
+               im Szenario-Formular:</p>
+            <ul>
+                <li><strong>Klassisch</strong> – PL/SL je ein direkter Wert im Baum (Standard).</li>
+                <li><strong>6 Forms of Loss</strong> – PL und SL je Seite in bis zu sechs klassische
+                    Verlustarten zerlegen (Productivity, Response, Replacement, Competitive Advantage,
+                    Fines &amp; Judgements, Reputation), als zwei Reiter dargestellt. Nur ausgefüllte
+                    Formen zählen; sie werden <strong>elementweise pro Simulations-Trial</strong> zu
+                    PL/SL aufsummiert (nicht nur deren Kennwerte).</li>
+                <li><strong>FAIR-MAM-Fragebogen</strong> – feinere Aufschlüsselung nach den 10
+                    FAIR-MAM-Kostenmodulen (26 Kategorien, als aufklappbare Module); Primary/Secondary
+                    (→ PL/SL) ist je Kategorie fest vorgegeben. Nach FAIR-MAM™ (FAIR Institute,
+                    nicht-kommerzielle Nutzung).</li>
+            </ul>
+            <p>Zwei zusätzliche Umschalter erscheinen, sobald eine Aufschlüsselung aktiv ist:</p>
+            <ul>
+                <li><strong>Aggregationsmodus</strong> – <em>Elementweise</em> faltet die Formen/
+                    Kategorien exakt per Monte-Carlo (Standard); <em>Kennwerte</em> addiert nur
+                    Mittelwert+Varianz und nähert die Summe über eine Lognormalverteilung an (schneller,
+                    ungenauer in der Form).</li>
+                <li><strong>SLEF-Modus</strong> (nur Secondary Loss) – <em>Gemeinsam</em> nutzt den
+                    SLEF-Knoten im Baum als einen Multiplikator auf die gesamte SL-Summe (SL im Baum auf
+                    „aufschlüsseln" stellen, dort SLEF eintragen); <em>Individuell</em> gibt jeder
+                    SL-Form/-Kategorie eine eigene SLEF-Verteilung.</li>
             </ul>
         </section>
 
@@ -108,15 +146,26 @@
                 <li><strong>VaR</strong> (Value at Risk) für 10/20/50/80/90/95/99 %.</li>
                 <li><strong>LEC</strong> (Loss Exceedance Curve): Wahrscheinlichkeit, einen Schaden zu überschreiten – log-Achse, animiert.</li>
                 <li><strong>Schnittpunkt</strong> mit der Risikotoleranz (Loss €, Toleranz %).</li>
-                <li><strong>Verteilung &amp; Häufigkeit</strong> als Histogramme; <strong>Knoten-Detailtabelle</strong> je Faktor.</li>
+                <li><strong>Verteilung &amp; Häufigkeit</strong> als Histogramme; ein
+                    <strong>Streudiagramm Primär-/Sekundärverlust</strong> (ein Punkt je simuliertem
+                    Jahr: x = PL, y = SL); <strong>Knoten-Detailtabelle</strong> je Faktor.</li>
             </ul>
+        </section>
+
+        <section id="cia" class="mb-4">
+            <h2 class="h5">C/I/A-Kennzeichnung</h2>
+            <p>Im Szenario-Formular als Mehrfachauswahl: welche Schutzziele
+               (<strong>Confidentiality</strong>/<strong>Integrity</strong>/<strong>Availability</strong>)
+               das Szenario betrifft – ein Szenario kann mehrere gleichzeitig betreffen. Erscheint als
+               Badge auf der Detail- und der Ergebnisseite.</p>
         </section>
 
         <section id="cluster" class="mb-4">
             <h2 class="h5">Cluster (Szenarien gruppieren)</h2>
             <p>Cluster sind <strong>organisatorische Gruppen</strong> (Ordner/Kategorien) – rein zur
                Übersicht, <strong>ohne eigene Berechnung</strong>. Ein Szenario kann in mehreren
-               Clustern liegen.</p>
+               Clustern liegen. Die Zuordnung erfolgt <strong>ausschließlich auf der Cluster-Seite
+               selbst</strong> (nicht im Szenario-Formular).</p>
             <ul>
                 <li><strong>+ Neuer Cluster</strong> (Übersicht) – Name, Beschreibung und Szenarien wählen.</li>
                 <li>Die <strong>Filterleiste</strong> über der Tabelle zeigt nur Szenarien des
@@ -167,6 +216,12 @@
             <h2 class="h5">Anzeige &amp; Einstellungen</h2>
             <ul>
                 <li><strong>Hell/Dunkel</strong> – Umschalter oben rechts (wird im Browser gemerkt).</li>
+                <li><strong>DE/EN</strong> – Umschalter oben rechts für die festen Beschriftungen
+                    (Navigation, Formularlabels, Diagrammtitel), ebenfalls pro Browser gemerkt und ohne
+                    Neuladen. Unabhängig vom Zahlenformat (das weiterhin an die Währung gekoppelt ist)
+                    und übersetzt keine Nutzereingaben (Szenario-Namen/-Beschreibungen/-Annahmen) – dafür
+                    ist eine eigene Funktion in Vorbereitung (der Administrator kann dafür schon einen
+                    DeepL-API-Key in der App-Konfiguration hinterlegen, noch ohne Wirkung).</li>
                 <li><strong>Währung €/$</strong> – global im Admin; tauscht Symbol und Zahlenformat.</li>
                 <li>Globale Vorgaben (Seed, Simulationsanzahl, Unternehmens-Risikotoleranz,
                     Konfidenz-Vorschlagswerte) verwaltet der Konfigurator/Administrator.</li>

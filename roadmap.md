@@ -188,6 +188,19 @@ ausgeblendete Wörter trotzdem im HTML-Response auf), `data-i18n`/`data-i18n-tit
       (6-Forms-/FAIR-MAM-Infomodal-Texte, Risikotoleranz-Hilfetexte), die 32 dynamischen
       Loss-Form-/FAIR-MAM-Kategorie-Labels, Konten-/Login-Seiten
 
+### RTD-Doku nachgezogen (`docs/bedienung.md` + `templates/hilfe.html`)
+
+Nach Nachfrage aufgefallen: die komplette LM-Serie (Slices 1–4), die Zweig-Farben, die
+5-Verbesserungen-Runde (C/I/A, Streudiagramm, Baum-Ausblenden) und der DE/EN-Schalter waren
+nirgends dokumentiert – Roadmap wurde laufend gepflegt, RTD/In-App-Hilfe aber übersprungen
+(Verstoß gegen die eigene "Phase fertig = Roadmap + RTD + Commit/Push"-Regel). Beide Dateien
+(RTD-Quelle und die inhaltsgleiche In-App-Hilfeseite) jetzt nachgezogen:
+**Loss-Magnitude-Aufschlüsselung** (6 Forms of Loss/FAIR-MAM/Aggregations-/SLEF-Modus),
+**Zweig-Farben** + ausgeblendete ungenutzte Knoten, **Streudiagramm**, **C/I/A-Kennzeichnung**,
+Cluster-Korrektur (Zuordnung nur noch auf der Cluster-Seite), **DE/EN-Schalter** +
+**DeepL-Vorbereitung**. pyfair-Engine-Kapitel (`modelle.md`/`eingaben.md`) bewusst nicht
+angefasst – die Session-Arbeit war ausschließlich in fair-web, nicht im pyfair-Fork selbst.
+
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
 Angefragt 2026-09-15. Ziel: ein Zwischendialog, der ein neues FAIR-Szenario Schritt für
