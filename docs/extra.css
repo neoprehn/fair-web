@@ -1,0 +1,33 @@
+/* Lesebereich verbreitern (Standard-Theme beschraenkt .wy-nav-content auf 800px). */
+.wy-nav-content {
+    max-width: 1100px;
+}
+
+/* Sprachumschalter DE/EN (neben der Suche in der Seitenleiste). */
+.i18n-switcher {
+    display: flex;
+    gap: 8px;
+    padding: 0 12px 12px;
+}
+
+.i18n-switcher a {
+    flex: 1;
+    text-align: center;
+    color: #808080;
+    text-decoration: none;
+    font-size: 0.85em;
+    padding: 3px 8px;
+    border: 1px solid #c9c9c9;
+    border-radius: 3px;
+}
+
+.i18n-switcher a:hover {
+    color: #404040;
+    border-color: #808080;
+}
+
+.i18n-switcher a.i18n-lang-active {
+    background: #2980b9;
+    color: #fff;
+    border-color: #2980b9;
+}

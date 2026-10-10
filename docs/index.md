@@ -50,7 +50,9 @@ erweiterten Funktionsumfang des Forks angepasst.
 - **[Bedienung (fair-web)](bedienung.md)** – wie die Web-App benutzt wird.
 
 !!! note "Status"
-    Die Engine-Kapitel beschreiben den **neoprehn-Fork** von pyfair. Eine
-    vollständige zweisprachige (DE/EN) Fassung ist in Arbeit; maßgebliche
-    Referenz bei Unklarheiten ist der
+    Die Engine-Kapitel beschreiben den **neoprehn-Fork** von pyfair.
+    Maßgebliche Referenz bei Unklarheiten ist der
     [Quellcode des Forks](https://github.com/neoprehn/pyfair).
+
+Sprache umschalten: Umschalter **Deutsch/English** oben in der Seitenleiste
+(neben der Suche).

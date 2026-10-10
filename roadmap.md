@@ -201,6 +201,28 @@ Cluster-Korrektur (Zuordnung nur noch auf der Cluster-Seite), **DE/EN-Schalter**
 **DeepL-Vorbereitung**. pyfair-Engine-Kapitel (`modelle.md`/`eingaben.md`) bewusst nicht
 angefasst – die Session-Arbeit war ausschließlich in fair-web, nicht im pyfair-Fork selbst.
 
+### RTD zweisprachig (DE/EN) umgesetzt (@neoprehn)
+
+Angefragt 2026-10-10 – zieht den ursprünglich für "ganz zuletzt" geplanten Big-Bang
+(siehe `ROADMAP-ARCHIV.md`-Historie bzw. den jetzt überholten Punkt unten) bewusst vor.
+Technik: [mkdocs-static-i18n](https://github.com/ultrabug/mkdocs-static-i18n) (`docs_structure:
+suffix`), Deutsch bleibt Default (`index.md` etc.), Englisch als `*.en.md`-Geschwisterdateien.
+
+- [x] Alle 14 bestehenden `docs/*.md`-Seiten ins Englische übersetzt (`*.en.md`), inkl.
+      interner Querverweis-Anker (`modelle.md#faktornamen-abkurzungen` →
+      `#factor-names-abbreviations` usw. – per Skript gegenprüft, keine toten Anker)
+- [x] `mkdocs.yml`: `i18n`-Plugin + `nav_translations` für die Sidebar, Theme-Locale wird pro
+      Sprachbuild automatisch umgeschaltet (`readthedocs`-Theme wird vom Plugin nativ unterstützt)
+- [x] Sprachumschalter (Deutsch/English) oben in der Seitenleiste neben der Suche –
+      eigener `docs/overrides/base.html` (Theme-Template **kopiert statt erweitert**, da
+      `{% extends "base.html" %}` aus einem `custom_dir` auf sich selbst rekursiert), nutzt
+      `page.file.alternates` für die Verlinkung zur übersetzten Version derselben Seite
+- [x] Lesebereich verbreitert: `.wy-nav-content` von 800px auf 1100px (`docs/extra.css`)
+- [x] `docs/requirements.txt`: `mkdocs-static-i18n` ergänzt (für den RTD-Build)
+- **Policy-Änderung:** ab sofort werden **alle künftigen** Doku-Änderungen (RTD + In-App-Hilfe)
+  direkt zweisprachig vorgenommen – ersetzt die alte "DE laufend / EN Big Bang am Ende"-Regel
+  (siehe Hinweis oben bei "Eigene ReadTheDocs-Dokumentationssite").
+
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
 Angefragt 2026-09-15. Ziel: ein Zwischendialog, der ein neues FAIR-Szenario Schritt für
@@ -219,11 +241,12 @@ Sinn.
 Grundausbau + Live-Betrieb bereits erledigt (siehe `ROADMAP-ARCHIV.md`). Offen:
 - [ ] Beispiele/Tutorials ausbauen (optional, laufend)
 
-> **Sprachen-Policy:** Die **deutsche** Doku wird **laufend als DoD** mitgeführt
-> (jeder bedienungs-/engine-relevante Slice aktualisiert `docs/` + In-App-Hilfe
-> im selben Commit). Die **englische Fassung** wird **bewusst aufgeschoben** und
-> erst **ganz am Ende als einmaliger „Big Bang"** erstellt – siehe letzter Punkt
-> der Roadmap.
+> **Sprachen-Policy (aktualisiert 2026-10-10):** Die ursprüngliche Policy ("DE
+> laufend, EN erst ganz am Ende als Big Bang") wurde auf Wunsch vorgezogen und
+> **ersetzt** – siehe [RTD zweisprachig (DE/EN) umgesetzt](#rtd-zweisprachig-deen-umgesetzt-neoprehn)
+> unten. Ab sofort gilt: **jede** Doku-Änderung (RTD + In-App-Hilfe) wird **im
+> selben Commit sowohl deutsch als auch englisch** nachgezogen – kein
+> getrenntes "Big Bang"-Projekt mehr am Ende.
 
 #### Export
 - [ ] Excel-Export (openpyxl)
@@ -243,11 +266,9 @@ Grundausbau + Live-Betrieb bereits erledigt (siehe `ROADMAP-ARCHIV.md`). Offen:
 
 ---
 
-### Allerletzter Schritt — Englische Doku (Big Bang)
+### ~~Allerletzter Schritt — Englische Doku (Big Bang)~~ — erledigt, vorgezogen
 
-Wird **erst ganz zum Schluss** angegangen, wenn keine weiteren Feature-Ideen
-mehr offen sind. Bis dahin bleibt die Doku **deutsch** (laufend als DoD gepflegt).
-
-- [ ] **Englische Fassung der gesamten RTD-Doku** in einem Rutsch: alle
-      `docs/`-Seiten übersetzen, DE/EN-i18n in `mkdocs.yml` (z. B.
-      `mkdocs-static-i18n`), Sprachumschalter, beide Sprachbäume auf RTD bauen.
+Ursprünglich für ganz zum Schluss geplant, auf Wunsch am 2026-10-10 vorgezogen und
+umgesetzt – siehe [RTD zweisprachig (DE/EN) umgesetzt](#rtd-zweisprachig-deen-umgesetzt-neoprehn)
+weiter oben. Offen bleibt nur noch laufende Pflege: jede künftige Doku-Änderung direkt in
+beiden Sprachen.

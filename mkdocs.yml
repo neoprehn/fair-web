@@ -1,10 +1,13 @@
 site_name: fair-web Dokumentation
 site_description: FAIR-Risikomodellierung mit fair-web und pyfair (neoprehn-Fork)
 docs_dir: docs
+extra_css:
+  - extra.css
 
 theme:
   name: readthedocs
   language: de
+  custom_dir: docs/overrides
 
 nav:
   - Start: index.md
@@ -36,3 +39,32 @@ markdown_extensions:
 
 plugins:
   - search
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: de
+          name: Deutsch
+          default: true
+          build: true
+        - locale: en
+          name: English
+          build: true
+          site_name: fair-web Documentation
+          site_description: FAIR risk modeling with fair-web and pyfair (neoprehn fork)
+          nav_translations:
+            Start: Home
+            FAIR-Grundlagen: FAIR Fundamentals
+            FAIR-Taxonomie: FAIR Taxonomy
+            FAIR-CAM-Grundlagen: FAIR-CAM Fundamentals
+            Installation: Installation
+            Schnellstart: Quickstart
+            Modelle erstellen: Building Models
+            Eingaben & Verteilungen: Inputs & Distributions
+            Meta-Modelle (Vergleich & Summe): Meta-Models (Compare & Sum)
+            Berichte: Reports
+            Serialisierung & Datenbank: Serialization & Database
+            Fork-Erweiterungen: Fork Extensions
+            Übersicht & Detection/Response: Overview & Detection/Response
+            Web-App: Web App
+            Bedienung (fair-web): Usage (fair-web)
+            KI-Agent: AI Agent

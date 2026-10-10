@@ -110,6 +110,6 @@ Die API ist in eigenen Kapiteln auf pyfair-Detailgrad beschrieben:
   [Serialisierung & Datenbank](serialisierung.md)
 
 !!! note "Stand"
-    Diese Kapitel beschreiben gezielt den **neoprehn-Fork**. Eine vollständige
-    englische Fassung (DE/EN) ist in Arbeit. Maßgebliche Referenz bei
-    Unklarheiten: der [Quellcode des Forks](https://github.com/neoprehn/pyfair).
+    Diese Kapitel beschreiben gezielt den **neoprehn-Fork**. Maßgebliche
+    Referenz bei Unklarheiten: der
+    [Quellcode des Forks](https://github.com/neoprehn/pyfair).
