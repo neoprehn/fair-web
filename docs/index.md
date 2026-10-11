@@ -1,9 +1,16 @@
 # fair-web Dokumentation
 
-**fair-web** schätzt Informationsrisiken nach dem **FAIR**-Modell (Factor
-Analysis of Information Risk) als **erwarteten Jahresschaden** – per
-Monte-Carlo-Simulation. Rechen-Engine ist der erweiterte **pyfair**-Fork
-([neoprehn/pyfair](https://github.com/neoprehn/pyfair)).
+*Dokumentation zu FAIR und FAIR-CAM in der zentralen Web-Application.*
+
+Die Webapplikation **fair-web** schätzt Informationsrisiken nach dem
+**FAIR**-Modell (Factor Analysis of Information Risk) als **erwarteten
+Jahresschaden** – per Monte-Carlo-Simulation. Rechen-Engine ist der
+erweiterte **pyfair**-Fork
+([neoprehn/pyfair](https://github.com/neoprehn/pyfair)). Als Ausblick
+ergänzt **FAIR-CAM** (Controls Analytics Model) das Modell um eine
+quantitative Bewertung, wie wirksam Sicherheits-Controls das Risiko
+tatsächlich senken – aktuell als eigenständige Engine (**pyfair-cam**), die
+Web-Anbindung in fair-web folgt in einer späteren Ausbaustufe.
 
 Live-App: <https://fair.neoprehn.de>
 
