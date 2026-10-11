@@ -223,6 +223,25 @@ suffix`), Deutsch bleibt Default (`index.md` etc.), Englisch als `*.en.md`-Gesch
   direkt zweisprachig vorgenommen – ersetzt die alte "DE laufend / EN Big Bang am Ende"-Regel
   (siehe Hinweis oben bei "Eigene ReadTheDocs-Dokumentationssite").
 
+**Zweites RTD-Projekt `fair-web-en` (eigene Subdomain, @neoprehn, 2026-10-10):** Nutzer hat
+zusätzlich ein separates RTD-Projekt `fair-web-en` angelegt (eigene Subdomain statt `/en/`-
+Unterpfad). Entscheidung: `fair-web` (Hauptprojekt) bleibt **zweisprachig** wie oben (DE Root +
+`/en/`), `fair-web-en` baut **nur Englisch** (redundant zum `/en/`-Unterpfad, aber bewusst so
+gewählt statt das Hauptprojekt umzubauen).
+
+- [x] GitHub-Webhook für `fair-web-en` manuell angelegt (`gh api repos/.../hooks`) – war beim
+      Anlegen des RTD-Projekts noch nicht verdrahtet, `ping`+Test-Delivery liefen mit 200 OK
+- [x] `mkdocs.en.yml` + `.readthedocs-en.yaml`: zweite, eigenständige MkDocs-Config mit
+      `build_only_locale: en` (zwingt Englisch auf die Root-URL, kein `/de/`-Unterpfad gebaut).
+      MkDocs kennt keine Config-Vererbung – `mkdocs.en.yml` ist aktuell ein manuell
+      synchron zu haltendes Duplikat von `mkdocs.yml` (nav/theme/markdown_extensions)
+- [ ] **Nutzer-Aktion nötig:** im RTD-Projekt-Admin von `fair-web-en` unter Settings →
+      "Configuration file" auf `.readthedocs-en.yaml` umstellen (Standardpfad `.readthedocs.yaml`
+      ist bereits vom `fair-web`-Projekt belegt, beide Projekte zeigen auf dasselbe Repo)
+- [ ] Optional: Cross-Link im Sprachumschalter zwischen den beiden getrennten Subdomains (aktuell
+      zeigt der Umschalter auf `fair-web-en` nur "English" ohne Rücksprung zu `fair-web`) – noch
+      nicht gebaut, da die genaue URL des Hauptprojekts nicht verifiziert ist
+
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
 Angefragt 2026-09-15. Ziel: ein Zwischendialog, der ein neues FAIR-Szenario Schritt für

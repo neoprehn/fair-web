@@ -1,0 +1,79 @@
+# Separate MkDocs config for the dedicated "fair-web-en" Read the Docs project
+# (own subdomain, English-only). The main mkdocs.yml stays bilingual
+# (German at the root + /en/ subpath) for the "fair-web" project; this file
+# just flips the same i18n plugin to build_only_locale: en so English becomes
+# the root here too, with no /de/ subpath built.
+#
+# Keep this file's nav/theme/markdown_extensions in sync with mkdocs.yml by
+# hand (MkDocs has no config-file inheritance) whenever the nav changes.
+site_name: fair-web Documentation
+site_description: FAIR risk modeling with fair-web and pyfair (neoprehn fork)
+docs_dir: docs
+extra_css:
+  - extra.css
+
+theme:
+  name: readthedocs
+  language: en
+  custom_dir: docs/overrides
+
+nav:
+  - Start: index.md
+  - FAIR-Grundlagen:
+      - FAIR-Taxonomie: fair-taxonomie.md
+      - FAIR-CAM-Grundlagen: fair-cam-grundlagen.md
+  - pyfair (Engine):
+      - Installation: installation.md
+      - Schnellstart: schnellstart.md
+      - Modelle erstellen: modelle.md
+      - Eingaben & Verteilungen: eingaben.md
+      - Meta-Modelle (Vergleich & Summe): metamodelle.md
+      - Berichte: berichte.md
+      - Serialisierung & Datenbank: serialisierung.md
+      - Fork-Erweiterungen: pyfair-fork.md
+  - pyfair-cam (Engine):
+      - Übersicht & Detection/Response: pyfair-cam.md
+  - Web-App:
+      - Bedienung (fair-web): bedienung.md
+      - KI-Agent: ki-agent.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      build_only_locale: en
+      languages:
+        - locale: de
+          name: Deutsch
+          default: true
+          build: true
+        - locale: en
+          name: English
+          build: true
+          site_name: fair-web Documentation
+          site_description: FAIR risk modeling with fair-web and pyfair (neoprehn fork)
+          nav_translations:
+            Start: Home
+            FAIR-Grundlagen: FAIR Fundamentals
+            FAIR-Taxonomie: FAIR Taxonomy
+            FAIR-CAM-Grundlagen: FAIR-CAM Fundamentals
+            Installation: Installation
+            Schnellstart: Quickstart
+            Modelle erstellen: Building Models
+            Eingaben & Verteilungen: Inputs & Distributions
+            Meta-Modelle (Vergleich & Summe): Meta-Models (Compare & Sum)
+            Berichte: Reports
+            Serialisierung & Datenbank: Serialization & Database
+            Fork-Erweiterungen: Fork Extensions
+            Übersicht & Detection/Response: Overview & Detection/Response
+            Web-App: Web App
+            Bedienung (fair-web): Usage (fair-web)
+            KI-Agent: AI Agent
