@@ -84,14 +84,18 @@
 
 <h2 class="h5 mt-4">Verlustklassen</h2>
 <table class="table table-sm w-auto">
-    <thead><tr><th>Klasse</th><th class="text-end">min (€)</th><th class="text-end">wahrsch. (€)</th><th class="text-end">max (€)</th></tr></thead>
+    <thead><tr><th>Klasse</th><th>Verteilung</th><th>Parameter</th><th>Annahmen</th></tr></thead>
     <tbody>
     {% for v in verlustklassen %}
         <tr>
             <td>{{ v.get_klasse_display }}</td>
-            <td class="text-end">{{ v.low|floatformat:0 }}</td>
-            <td class="text-end">{{ v.mode|floatformat:0 }}</td>
-            <td class="text-end">{{ v.high|floatformat:0 }}</td>
+            <td>{{ v.get_verteilung_display }}</td>
+            <td>
+                {% for key, value in v.params.items %}
+                    <span class="badge text-bg-light">{{ key }} = {{ value|floatformat:0 }}</span>
+                {% endfor %}
+            </td>
+            <td class="text-body-secondary small">{{ v.annahmen|default:"–" }}</td>
         </tr>
     {% empty %}
         <tr><td colspan="4" class="text-body-secondary">Noch keine Verlustklassen erfasst.</td></tr>

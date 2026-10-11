@@ -131,15 +131,35 @@
             <div class="row g-2 mb-3">
             {% for klasse, k_form in verlustklasse_forms.items %}
                 <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card p-3 h-100">
+                    <div class="card p-3 h-100 verlustklasse-card">
                         {% for hidden in k_form.hidden_fields %}{{ hidden }}{% endfor %}
                         <strong class="mb-2">{{ k_form.instance.get_klasse_display }}</strong>
-                        <div class="row g-2">
-                            {% for field in k_form.visible_fields %}
-                            <div class="col-4">
-                                {% include "cam/_feld.html" with field=field %}
+
+                        {% if k_form.non_field_errors %}<div class="alert alert-danger py-1 small mb-2">{{ k_form.non_field_errors }}</div>{% endif %}
+
+                        <label class="form-label mb-1 small">Verteilung</label>
+                        {{ k_form.verteilung }}
+
+                        <div class="dist-params mt-2" data-dist="pert">
+                            <div class="row g-1">
+                                <div class="col">{% include "cam/_feld.html" with field=k_form.low %}</div>
+                                <div class="col">{% include "cam/_feld.html" with field=k_form.mode %}</div>
+                                <div class="col">{% include "cam/_feld.html" with field=k_form.high %}</div>
                             </div>
-                            {% endfor %}
+                        </div>
+                        <div class="dist-params mt-2" data-dist="mean-stdev">
+                            <div class="row g-1">
+                                <div class="col">{% include "cam/_feld.html" with field=k_form.mean %}</div>
+                                <div class="col">{% include "cam/_feld.html" with field=k_form.stdev %}</div>
+                            </div>
+                        </div>
+                        <div class="dist-params mt-2" data-dist="constant">
+                            {% include "cam/_feld.html" with field=k_form.constant %}
+                        </div>
+
+                        <div class="mt-2">
+                            <label class="form-label mb-0 small">Annahmen</label>
+                            {{ k_form.annahmen }}
                         </div>
                     </div>
                 </div>
@@ -169,6 +189,26 @@
         svg.querySelectorAll('.svg-node').forEach(function (g) {
             g.classList.toggle('aktiv', !!host && g.dataset.code === host.dataset.code);
         });
+    });
+})();
+
+// Verlustklassen: nur die zur gewählten Verteilung passenden Parameterfelder zeigen
+// (dasselbe .dist-params/data-dist-Muster wie bei den FAIR-Faktoren in szenarien/form.html,
+// hier aber ohne Unsicherheits-/Konfidenz-Logik - CAM-Verlustklassen kennen keinen Slider).
+(function () {
+    document.querySelectorAll('.verlustklasse-card').forEach(function (card) {
+        var sel = card.querySelector('.verteilung-select');
+        if (!sel) return;
+        function sync() {
+            var vert = sel.value;
+            card.querySelectorAll('.dist-params').forEach(function (g) {
+                var zeigen = g.dataset.dist === vert
+                    || (g.dataset.dist === 'mean-stdev' && (vert === 'lognormal' || vert === 'normal'));
+                g.style.display = zeigen ? '' : 'none';
+            });
+        }
+        sel.addEventListener('change', sync);
+        sync();
     });
 })();
 </script>

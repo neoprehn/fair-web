@@ -17,7 +17,9 @@ def _post_ransomware(**override):
         data.update({f"stage{n}-{k}": str(v) for k, v in stage.items()})
     for vk in b["verlustklassen"]:
         klasse = vk["klasse"]
-        data.update({f"{klasse}-{k}": str(v) for k, v in vk.items()})
+        data[f"{klasse}-klasse"] = klasse
+        data[f"{klasse}-verteilung"] = vk["verteilung"]
+        data.update({f"{klasse}-{k}": str(v) for k, v in vk["params"].items()})
     data.update(override)
     return data
 
@@ -70,7 +72,23 @@ def test_create_speichert_alle_stufen_klassen_und_control(client):
     assert stufe1.outcome_class == "early"
 
     voller_schaden = s.verlustklassen.get(klasse="full_impact")
-    assert voller_schaden.low == 1_000_000
+    assert voller_schaden.params["low"] == 1_000_000
+
+
+@pytest.mark.django_db
+def test_verlustklasse_akzeptiert_nicht_pert_verteilung(client):
+    """Verlustklassen sind nicht mehr PERT-fest - eine Klasse per Formular auf
+    Normal statt PERT umstellen muss ebenso speichern wie die anderen vier."""
+    resp = client.post(reverse("cam:create"), data=_post_ransomware(
+        name="Normal-Verlustklasse Test",
+        **{"early-verteilung": "normal", "early-mean": "9000", "early-stdev": "2000"},
+    ))
+    assert resp.status_code == 302, resp.context["form"].errors if resp.status_code == 200 else None
+
+    s = CamSzenario.objects.get(name="Normal-Verlustklasse Test")
+    early = s.verlustklassen.get(klasse="early")
+    assert early.verteilung == "normal"
+    assert early.params == {"mean": 9000.0, "stdev": 2000.0}
 
 
 @pytest.mark.django_db

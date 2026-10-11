@@ -1,6 +1,7 @@
 """Tests für das CAM-Szenario-Datenmodell (Phase 5.1)."""
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from apps.cam.models import CamControl, CamSzenario, CamStage, CamVerlustklasse
@@ -53,9 +54,55 @@ def test_verlustklasse_pro_szenario_eindeutig():
         t_resilience_low=1, t_resilience_mode=2, t_resilience_high=3,
         concurrency_low=0.1, concurrency_mode=0.2, concurrency_high=0.3,
     )
-    CamVerlustklasse.objects.create(szenario=s, klasse="early", low=1, mode=2, high=3)
+    CamVerlustklasse.objects.create(
+        szenario=s, klasse="early", verteilung="pert", params={"low": 1, "mode": 2, "high": 3}
+    )
     with pytest.raises(IntegrityError):
-        CamVerlustklasse.objects.create(szenario=s, klasse="early", low=4, mode=5, high=6)
+        CamVerlustklasse.objects.create(
+            szenario=s, klasse="early", verteilung="pert", params={"low": 4, "mode": 5, "high": 6}
+        )
+
+
+@pytest.mark.django_db
+def test_verlustklasse_to_distribution_je_verteilung():
+    """Jede der vier erlaubten Verteilungen (magnitude-Typ, siehe
+    fair_tree.DISTS_BY_TYP["magnitude"]) muss auf das richtige pyfair_cam-
+    Distribution-Objekt mit den richtigen Parametern abbilden."""
+    pytest.importorskip("pyfair_cam")
+    from pyfair_cam import BetaPert, LogNormal, Normal, PointEstimate
+
+    pert = CamVerlustklasse(verteilung="pert", params={"low": 1_000, "mode": 2_000, "high": 5_000})
+    dist = pert.to_distribution()
+    assert isinstance(dist, BetaPert)
+    assert (dist.low, dist.mode, dist.high) == (1_000, 2_000, 5_000)
+
+    lognormal = CamVerlustklasse(verteilung="lognormal", params={"mean": 50_000, "stdev": 10_000})
+    dist = lognormal.to_distribution()
+    assert isinstance(dist, LogNormal)
+    assert (dist.mean, dist.stdev) == (50_000, 10_000)
+
+    normal = CamVerlustklasse(verteilung="normal", params={"mean": 50_000, "stdev": 10_000})
+    dist = normal.to_distribution()
+    assert isinstance(dist, Normal)
+    assert (dist.mean, dist.stdev) == (50_000, 10_000)
+
+    constant = CamVerlustklasse(verteilung="constant", params={"constant": 42_000})
+    dist = constant.to_distribution()
+    assert isinstance(dist, PointEstimate)
+    assert dist.value == 42_000
+
+
+@pytest.mark.django_db
+def test_verlustklasse_clean_meldet_fehlende_pflichtparameter():
+    unvollstaendig = CamVerlustklasse(verteilung="lognormal", params={"mean": 50_000})
+    with pytest.raises(ValidationError):
+        unvollstaendig.clean()
+
+    falsche_pert_reihenfolge = CamVerlustklasse(
+        verteilung="pert", params={"low": 10, "mode": 5, "high": 20}
+    )
+    with pytest.raises(ValidationError):
+        falsche_pert_reihenfolge.clean()
 
 
 @pytest.mark.django_db

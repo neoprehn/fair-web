@@ -84,7 +84,7 @@ def _build_model(szenario):
         for s in stages_qs
     ]
     stage_outcome_map = {s.reihenfolge: s.outcome_class for s in stages_qs}
-    verlust = {v.klasse: BetaPert(v.low, v.mode, v.high) for v in szenario.verlustklassen.all()}
+    verlust = {v.klasse: v.to_distribution() for v in szenario.verlustklassen.all()}
 
     model.set_detection_response(
         DetectionResponseFactor(

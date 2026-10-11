@@ -76,10 +76,10 @@ RANSOMWARE_BEISPIEL = {
         },
     ],
     "verlustklassen": [
-        {"klasse": "early", "low": 2_000, "mode": 8_000, "high": 30_000},
-        {"klasse": "mid", "low": 25_000, "mode": 75_000, "high": 250_000},
-        {"klasse": "late", "low": 200_000, "mode": 500_000, "high": 2_000_000},
-        {"klasse": "full_impact", "low": 1_000_000, "mode": 3_000_000, "high": 5_000_000},
-        {"klasse": "attacker_fails", "low": 2_000, "mode": 5_000, "high": 15_000},
+        {"klasse": "early", "verteilung": "pert", "params": {"low": 2_000, "mode": 8_000, "high": 30_000}},
+        {"klasse": "mid", "verteilung": "pert", "params": {"low": 25_000, "mode": 75_000, "high": 250_000}},
+        {"klasse": "late", "verteilung": "pert", "params": {"low": 200_000, "mode": 500_000, "high": 2_000_000}},
+        {"klasse": "full_impact", "verteilung": "pert", "params": {"low": 1_000_000, "mode": 3_000_000, "high": 5_000_000}},
+        {"klasse": "attacker_fails", "verteilung": "pert", "params": {"low": 2_000, "mode": 5_000, "high": 15_000}},
     ],
 }

@@ -242,6 +242,30 @@ gewählt statt das Hauptprojekt umzubauen).
       zeigt der Umschalter auf `fair-web-en` nur "English" ohne Rücksprung zu `fair-web`) – noch
       nicht gebaut, da die genaue URL des Hauptprojekts nicht verifiziert ist
 
+### CAM-Verlustklassen: Verteilungsauswahl statt PERT-fest (@neoprehn)
+
+Angefragt 2026-10-11. `DetectionResponseFactor.loss_distributions` in pyfair-cam akzeptiert laut
+Bibliothek jede `Distribution`-Unterklasse (BetaPert/LogNormal/Normal/PointEstimate) – `apps.cam`
+hatte das bisher nicht genutzt und jede Verlustklasse hart auf `BetaPert(low, mode, high)` gesetzt.
+
+- [x] `CamVerlustklasse`: `low`/`mode`/`high`-Felder ersetzt durch `verteilung` (PERT/Lognormal/
+      Normal/Konstant – dieselben vier Varianten wie bei magnitude-Faktoren im FAIR-Baum, siehe
+      `apps.szenarien.fair_tree.DISTS_BY_TYP["magnitude"]`) + generisches `params`-JSONField +
+      `annahmen`-Textfeld, `to_distribution()` baut das passende pyfair_cam-Objekt
+- [x] `CamVerlustklasseForm`: eigenständiger Verteilungs-Params-Mechanismus analog
+      `FaktorEingabeForm`/`_VerlustEingabeFormBasis` (bewusst nicht von dort importiert, damit
+      `apps.cam` unabhängig bleibt, siehe `models.py`-Docstring)
+- [x] `cam/form.html`: pro Verlustklassen-Karte ein Verteilung-Dropdown + dynamisch ein-/
+      ausgeblendete Parameterfelder (`.dist-params`/`data-dist`, dasselbe Muster wie bei den
+      FAIR-Faktoren) **und separat davon** ein eigenes Annahmen-Textfeld – zwei getrennte
+      UI-Elemente wie bei FAIR, noch **ohne** den KI-Vorschlag-✨-Button (könnte als Folge-Slice
+      ergänzt werden, wenn gewünscht)
+- [x] `apps/cam/services.py`, `beispiele.py`, Migration, Tests (inkl. neuer Tests für alle vier
+      Verteilungen + Formular-Golden-Path mit Nicht-PERT-Verteilung) aktualisiert – 206/206 Tests grün
+- [ ] **Offene Doku-Lücke (vorbestehend, nicht neu):** FAIR-CAM/`apps.cam` taucht noch gar nicht in
+      `docs/bedienung.md`/`templates/hilfe.html` auf – nicht nur die Verteilungsauswahl, die ganze
+      CAM-Bedienung fehlt dort bisher
+
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
 Angefragt 2026-09-15. Ziel: ein Zwischendialog, der ein neues FAIR-Szenario Schritt für

@@ -6,13 +6,19 @@ genau ein ``CamControl`` (Resistive Control, Frequenz-Seite), genau sechs
 ``CamStage``-Objekte (Kill-Chain, Loss-Magnitude-Seite) und genau fünf
 ``CamVerlustklasse``-Objekte (bedingte Verlustverteilungen je Outcome-Klasse).
 
-Jedes Feld spiegelt bewusst 1:1 einen Parameter der pyfair-cam-API
+Die meisten Felder spiegeln bewusst 1:1 einen Parameter der pyfair-cam-API
 (``ResistiveControl``, ``Stage``, ``DetectionResponseFactor``) – anders als
-bei ``apps.szenarien.FaktorEingabe`` ist hier kein generisches
+bei ``apps.szenarien.FaktorEingabe`` ist dafür kein generisches
 Verteilungs-Params-JSON nötig, weil Typ und Bedeutung jedes Feldes durch die
-CAM-API fix vorgegeben sind.
+CAM-API fix vorgegeben sind. Ausnahme: ``CamVerlustklasse`` – pyfair-cams
+``DetectionResponseFactor.loss_distributions`` akzeptiert jede
+``Distribution``-Unterklasse (BetaPert/LogNormal/Normal/PointEstimate), daher
+bekommt nur diese eine Verteilungsauswahl, analog zu ``FaktorEingabe`` bei
+magnitude-Faktoren (siehe ``apps.szenarien.fair_tree.DISTS_BY_TYP["magnitude"]``:
+dieselben vier Varianten PERT/Lognormal/Normal/Konstant).
 """
 
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -130,7 +136,13 @@ class CamStage(models.Model):
 
 
 class CamVerlustklasse(models.Model):
-    """Bedingte Verlustverteilung (BetaPert) für eine Outcome-Klasse."""
+    """Bedingte Verlustverteilung für eine Outcome-Klasse.
+
+    Frei wählbare Verteilung (PERT/Lognormal/Normal/Konstant) statt fest
+    PERT – siehe Modul-Docstring. ``params`` hält dieselben Keys wie
+    ``pyfair_cam.simulator.distributions``: PERT ``low``/``mode``/``high``,
+    Lognormal/Normal ``mean``/``stdev``, Konstant ``constant``.
+    """
 
     class Klasse(models.TextChoices):
         EARLY = "early", "Früh (early)"
@@ -139,13 +151,29 @@ class CamVerlustklasse(models.Model):
         FULL_IMPACT = "full_impact", "Voller Schaden (full_impact)"
         ATTACKER_FAILS = "attacker_fails", "Angreifer scheitert (attacker_fails)"
 
+    class Verteilung(models.TextChoices):
+        PERT = "pert", "PERT (min / wahrscheinlich / max)"
+        LOGNORMAL = "lognormal", "Lognormal (Mittelwert / Streuung)"
+        NORMAL = "normal", "Normalverteilung (Mittelwert / Streuung)"
+        CONSTANT = "constant", "Konstant (fester Wert)"
+
+    # Pflicht-Parameter je Verteilung (pyfair_cam-Konstruktor-Keys).
+    REQUIRED_PARAMS = {
+        Verteilung.PERT: ("low", "mode", "high"),
+        Verteilung.LOGNORMAL: ("mean", "stdev"),
+        Verteilung.NORMAL: ("mean", "stdev"),
+        Verteilung.CONSTANT: ("constant",),
+    }
+
     szenario = models.ForeignKey(
         CamSzenario, related_name="verlustklassen", on_delete=models.CASCADE, verbose_name="CAM-Szenario"
     )
     klasse = models.CharField("Klasse", max_length=20, choices=Klasse.choices)
-    low = models.FloatField("Verlust min (€)")
-    mode = models.FloatField("Verlust wahrscheinlich (€)")
-    high = models.FloatField("Verlust max (€)")
+    verteilung = models.CharField(
+        "Verteilung", max_length=20, choices=Verteilung.choices, default=Verteilung.PERT,
+    )
+    params = models.JSONField("Parameter", default=dict)
+    annahmen = models.TextField("Annahmen", blank=True)
 
     class Meta:
         verbose_name = "CAM-Verlustklasse"
@@ -158,6 +186,32 @@ class CamVerlustklasse(models.Model):
 
     def __str__(self):
         return f"{self.get_klasse_display()}"
+
+    def clean(self):
+        params = self.params or {}
+        required = self.REQUIRED_PARAMS.get(self.verteilung, ())
+        fehlend = [key for key in required if key not in params]
+        if fehlend:
+            raise ValidationError(
+                f"Verteilung „{self.verteilung}“ benötigt: {', '.join(fehlend)}."
+            )
+        if self.verteilung == self.Verteilung.PERT:
+            low, mode, high = params["low"], params["mode"], params["high"]
+            if not (low <= mode <= high):
+                raise ValidationError("PERT erfordert die Reihenfolge low ≤ mode ≤ high.")
+
+    def to_distribution(self):
+        """Baut das passende ``pyfair_cam``-``Distribution``-Objekt aus Verteilung+Parameter."""
+        from pyfair_cam import BetaPert, LogNormal, Normal, PointEstimate
+
+        p = self.params
+        if self.verteilung == self.Verteilung.PERT:
+            return BetaPert(p["low"], p["mode"], p["high"])
+        if self.verteilung == self.Verteilung.LOGNORMAL:
+            return LogNormal(mean=p["mean"], stdev=p["stdev"])
+        if self.verteilung == self.Verteilung.NORMAL:
+            return Normal(mean=p["mean"], stdev=p["stdev"])
+        return PointEstimate(p["constant"])
 
 
 class CamSimulationslauf(models.Model):
