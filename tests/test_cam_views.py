@@ -102,6 +102,33 @@ def test_detail_zeigt_stufen_und_verlustklassen(client):
 
 
 @pytest.mark.django_db
+def test_detail_zeigt_annahmen_und_vorschau_button_je_verlustklasse(client):
+    """Analog zur FAIR-Szenario-Detailseite: pro Verlustklasse ein Annahmen-Knopf
+    (Modal mit Freitext) UND ein separater Vorschau-Knopf (Modal mit Verteilungskurve) -
+    zwei getrennte UI-Elemente, nicht nur der reine Parameter-Text."""
+    resp = client.post(reverse("cam:create"), data=_post_ransomware(
+        name="Vorschau Test",
+        **{"early-annahmen": "Branchenwert aus Incident-Statistik."},
+    ))
+    assert resp.status_code == 302
+    s = CamSzenario.objects.get(name="Vorschau Test")
+
+    resp = client.get(reverse("cam:detail", kwargs={"pk": s.pk}))
+    html = resp.content.decode()
+    assert resp.status_code == 200
+    assert html.count("annahmen-modal") >= 5  # ein Annahmen-Knopf je Verlustklasse (+ das Modal selbst)
+    assert html.count("vorschau-btn") == 5  # ein Vorschau-Knopf je Verlustklasse
+    assert "Branchenwert aus Incident-Statistik." in html
+    assert "verteilung-chart" in html
+
+    early = s.verlustklassen.get(klasse="early")
+    vorschau = resp.context["verteilung_vorschau"][f"vk{early.pk}"]
+    assert vorschau is not None
+    assert len(vorschau["x"]) > 0
+    assert vorschau["mittelwert"] > 0
+
+
+@pytest.mark.django_db
 def test_update_aendert_bestehende_werte_statt_zu_duplizieren(client):
     client.post(reverse("cam:create"), data=_post_ransomware(name="Update Test"))
     s = CamSzenario.objects.get(name="Update Test")

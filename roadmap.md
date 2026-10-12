@@ -262,7 +262,14 @@ hatte das bisher nicht genutzt und jede Verlustklasse hart auf `BetaPert(low, mo
       ergänzt werden, wenn gewünscht)
 - [x] `apps/cam/services.py`, `beispiele.py`, Migration, Tests (inkl. neuer Tests für alle vier
       Verteilungen + Formular-Golden-Path mit Nicht-PERT-Verteilung) aktualisiert – 206/206 Tests grün
-- [ ] **Offene Doku-Lücke (vorbestehend, nicht neu):** FAIR-CAM/`apps.cam` taucht noch gar nicht in
+- [x] **Nachgezogen:** `cam/detail.html` bekam dieselben Annahmen-/Vorschau-Knöpfe wie die
+      FAIR-Szenario-Detailseite (📝-Modal mit Freitext, 📈-Modal mit KDE-Dichtekurve der
+      konfigurierten Verteilung) – vorher zeigte die Detailseite Annahmen nur als reinen Text,
+      ganz ohne Verteilungs-Vorschau. `CamSzenarioDetailView` bekam dafür eine eigene
+      `_verteilung_kurve()`-Kopie (gleiche KDE-Berechnung wie `apps.szenarien.views`, bewusst
+      dupliziert statt importiert) – 207/207 Tests grün
+- [ ] Rückstand unverändert: KI-Vorschlag-✨-Button für Annahmen (siehe oben) und die
+      **Offene Doku-Lücke (vorbestehend, nicht neu):** FAIR-CAM/`apps.cam` taucht noch gar nicht in
       `docs/bedienung.md`/`templates/hilfe.html` auf – nicht nur die Verteilungsauswahl, die ganze
       CAM-Bedienung fehlt dort bisher
 

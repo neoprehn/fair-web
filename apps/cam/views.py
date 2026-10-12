@@ -7,6 +7,7 @@ nur ohne variablen "Schnitt": die Anzahl der Kind-Objekte steht fest, daher
 Update-in-place statt Löschen+Neuanlegen.
 """
 
+import numpy as np
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import transaction
@@ -24,6 +25,25 @@ from .models import CamControl, CamSimulationslauf, CamStage, CamSzenario, CamVe
 from .services import starte_cam_simulation_async
 
 
+def _verteilung_kurve(samples, punkte=200):
+    """Dichtekurve (Gaussian-KDE) für die Verteilungs-Vorschau auf der Detailseite -
+    eigenständige Kopie von ``apps.szenarien.views._verteilung_kurve`` (dieselbe
+    Berechnung, aber apps.cam bleibt bewusst unabhängig, siehe models.py-Docstring)."""
+    from scipy.stats import gaussian_kde
+
+    arr = np.asarray(samples, dtype=float)
+    arr = arr[np.isfinite(arr)]
+    if arr.size < 2 or np.ptp(arr) == 0:
+        return {"x": [], "y": []}
+    kde = gaussian_kde(arr)
+    x = np.linspace(arr.min(), arr.max(), punkte)
+    y = kde(x)
+    return {
+        "x": x.tolist(), "y": y.tolist(),
+        "mittelwert": float(arr.mean()), "median": float(np.median(arr)),
+    }
+
+
 class CamSzenarioListView(ListView):
     model = CamSzenario
     template_name = "cam/dashboard.html"
@@ -39,7 +59,21 @@ class CamSzenarioDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context["control"] = getattr(self.object, "control", None)
         context["stages"] = self.object.stages.all()
-        context["verlustklassen"] = self.object.verlustklassen.all()
+        verlustklassen = self.object.verlustklassen.all()
+        context["verlustklassen"] = verlustklassen
+
+        # Eigener, fester Generator nur fuer die Vorschau (kosmetisch, keine
+        # Risikoberechnung) - unabhaengig vom Szenario-Seed, analog der
+        # Streudiagramm-Jitter-Konvention in pyfair selbst.
+        rng = np.random.default_rng(42)
+        vorschau = {}
+        for v in verlustklassen:
+            try:
+                samples = v.to_distribution().sample(3000, rng)
+                vorschau[f"vk{v.pk}"] = _verteilung_kurve(samples)
+            except Exception:  # noqa: BLE001 - Vorschau ist optional, darf die Seite nie kippen
+                vorschau[f"vk{v.pk}"] = None
+        context["verteilung_vorschau"] = vorschau
         return context
 
 

@@ -2,6 +2,7 @@
 {% load humanize %}
 
 {% block title %}{{ cam_szenario.name }} &middot; fair-web{% endblock %}
+{% block extra_head %}{% if verlustklassen %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -84,7 +85,11 @@
 
 <h2 class="h5 mt-4">Verlustklassen</h2>
 <table class="table table-sm w-auto">
-    <thead><tr><th>Klasse</th><th>Verteilung</th><th>Parameter</th><th>Annahmen</th></tr></thead>
+    <thead>
+        <tr><th>Klasse</th><th>Verteilung</th><th>Parameter</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;">Annahmen</th>
+            <th class="text-center" style="width:1%; white-space:nowrap;">Vorschau</th></tr>
+    </thead>
     <tbody>
     {% for v in verlustklassen %}
         <tr>
@@ -95,13 +100,54 @@
                     <span class="badge text-bg-light">{{ key }} = {{ value|floatformat:0 }}</span>
                 {% endfor %}
             </td>
-            <td class="text-body-secondary small">{{ v.annahmen|default:"–" }}</td>
+            <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
+                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                        data-bs-target="#annahmen-modal"
+                        data-annahmen="{{ v.annahmen|default:'' }}"
+                        data-faktor="{{ v.get_klasse_display }}"
+                        title="Annahmen anzeigen">📝</button>
+            </td>
+            <td class="text-center align-middle" style="width:1%; white-space:nowrap;">
+                <button type="button" class="btn btn-sm btn-outline-info vorschau-btn" data-bs-toggle="modal"
+                        data-bs-target="#verteilung-modal"
+                        data-code="vk{{ v.pk }}" data-faktor="{{ v.get_klasse_display }}"
+                        title="Verteilungskurve anzeigen">📈</button>
+            </td>
         </tr>
     {% empty %}
-        <tr><td colspan="4" class="text-body-secondary">Noch keine Verlustklassen erfasst.</td></tr>
+        <tr><td colspan="5" class="text-body-secondary">Noch keine Verlustklassen erfasst.</td></tr>
     {% endfor %}
     </tbody>
 </table>
+
+{% if verlustklassen %}
+{{ verteilung_vorschau|json_script:"verteilung-data" }}
+<div class="modal fade" id="verteilung-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Verteilungs-Vorschau: <span id="verteilung-modal-titel"></span></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+            <div id="verteilung-chart" style="height:340px;"></div>
+            <p id="verteilung-modal-leer" class="text-body-secondary mb-0" style="display:none;">Keine Vorschau möglich.</p>
+        </div>
+    </div></div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="annahmen-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="annahmen-modal-titel"></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+            <label class="form-label small">Annahmen</label>
+            <p id="annahmen-modal-annahmen" class="text-body-secondary mb-0"></p>
+        </div>
+    </div></div>
+</div>
 
 <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
     <h2 class="h5 mb-0">Simulation</h2>
@@ -132,4 +178,81 @@
 {% else %}
 <p class="text-body-secondary">Noch keine Berechnung. Klicke auf „Berechnen", um die Monte-Carlo-Simulation zu starten.</p>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Annahmen-Modal: Inhalt aus den data-Attributen des geklickten Knopfs befüllen
+// (dasselbe Muster wie szenarien/detail.html).
+(function () {
+    var modal = document.getElementById('annahmen-modal');
+    if (!modal) return;
+    modal.addEventListener('show.bs.modal', function (e) {
+        var btn = e.relatedTarget;
+        document.getElementById('annahmen-modal-titel').textContent = btn.dataset.faktor || '';
+        document.getElementById('annahmen-modal-annahmen').textContent = btn.dataset.annahmen || '–';
+    });
+})();
+
+// Verteilungs-Vorschau: eigenes Modal, Dichtekurve aus serverseitig vorberechneten
+// KDE-Punkten (dasselbe Muster wie szenarien/detail.html) - erst bei "shown.bs.modal"
+// rendern, da Plotly die tatsächliche sichtbare Containergröße erst dann hat.
+(function () {
+    if (typeof Plotly === 'undefined') return;
+    var modal = document.getElementById('verteilung-modal');
+    var datenEl = document.getElementById('verteilung-data');
+    if (!modal || !datenEl) return;
+    var daten = JSON.parse(datenEl.textContent || '{}');
+    var titel = document.getElementById('verteilung-modal-titel');
+    var leer = document.getElementById('verteilung-modal-leer');
+    var aktuellerCode = null;
+
+    modal.addEventListener('show.bs.modal', function (e) {
+        aktuellerCode = e.relatedTarget.dataset.code;
+        titel.textContent = e.relatedTarget.dataset.faktor || '';
+    });
+
+    modal.addEventListener('shown.bs.modal', function () {
+        var d = daten[aktuellerCode];
+        var chartEl = document.getElementById('verteilung-chart');
+        if (!d || !d.x || !d.x.length) {
+            chartEl.style.display = 'none';
+            leer.style.display = '';
+            return;
+        }
+        chartEl.style.display = '';
+        leer.style.display = 'none';
+
+        function formatDE(n) {
+            return Number(n).toLocaleString('de-DE', { maximumFractionDigits: 3 });
+        }
+        var shapes = [], annotations = [];
+        function linie(x, farbe, label, dash, yshift) {
+            if (x === undefined || x === null) return;
+            shapes.push({
+                type: 'line', x0: x, x1: x, y0: 0, y1: 1, yref: 'paper',
+                line: { color: farbe, width: 2, dash: dash }
+            });
+            annotations.push({
+                x: x, y: 1, yref: 'paper', yanchor: 'bottom', yshift: yshift, showarrow: false,
+                text: label + ' ' + formatDE(x), font: { color: farbe, size: 11 }
+            });
+        }
+        linie(d.mittelwert, '#fbbf24', 'Ø', 'dash', 16);
+        linie(d.median, '#f87171', 'Median', 'dot', 0);
+
+        Plotly.react('verteilung-chart', [{
+            x: d.x, y: d.y, mode: 'lines', line: { shape: 'spline', color: '#7dd3fc', width: 2 },
+            fill: 'tozeroy', fillcolor: 'rgba(125,211,252,0.2)'
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            shapes: shapes, annotations: annotations,
+            font: { color: window.fairChartTxt(), family: 'Bahnschrift, sans-serif' },
+            margin: { l: 60, r: 15, t: 45, b: 40 },
+            xaxis: { title: 'Wert', gridcolor: window.fairChartGrid() },
+            yaxis: { title: 'Dichte', gridcolor: window.fairChartGrid(), zeroline: false }
+        }, { responsive: true, displayModeBar: false });
+    });
+})();
+</script>
 {% endblock %}
