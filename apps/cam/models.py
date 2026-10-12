@@ -183,6 +183,22 @@ class CamVerlustklasse(models.Model):
                 fields=["szenario", "klasse"], name="unique_klasse_pro_szenario"
             )
         ]
+        # Kill-Chain-Reihenfolge (früh -> spät -> Endzustände) statt alphabetisch/Einfüge-
+        # reihenfolge - Klasse ist ein CharField, daher explizit über CASE/WHEN sortiert.
+        # Liste dupliziert bewusst die Werte aus Klasse (gleiche Reihenfolge) statt sie von
+        # dort zu referenzieren - verschachtelte Meta-Klassenkörper sehen Geschwister-Namen
+        # der umgebenden Klasse nicht (kein Closure über CamVerlustklasse).
+        ordering = [
+            models.Case(
+                *[
+                    models.When(klasse=code, then=models.Value(i))
+                    for i, code in enumerate(
+                        ["early", "mid", "late", "full_impact", "attacker_fails"]
+                    )
+                ],
+                output_field=models.IntegerField(),
+            )
+        ]
 
     def __str__(self):
         return f"{self.get_klasse_display()}"

@@ -47,6 +47,26 @@ def test_stufe_reihenfolge_pro_szenario_eindeutig():
 
 
 @pytest.mark.django_db
+def test_verlustklasse_sortierung_folgt_kill_chain_nicht_einfuegereihenfolge():
+    """Reihenfolge ist Früh -> Mittel -> Spät -> Voller Schaden -> Angreifer scheitert,
+    unabhängig davon, in welcher Reihenfolge die Zeilen angelegt wurden."""
+    s = CamSzenario.objects.create(
+        name="X", tef_low=1, tef_mode=2, tef_high=3,
+        t_containment_low=1, t_containment_mode=2, t_containment_high=3,
+        t_resilience_low=1, t_resilience_mode=2, t_resilience_high=3,
+        concurrency_low=0.1, concurrency_mode=0.2, concurrency_high=0.3,
+    )
+    # Bewusst in "falscher" (nicht Kill-Chain-)Reihenfolge angelegt.
+    for klasse in ("attacker_fails", "late", "early", "full_impact", "mid"):
+        CamVerlustklasse.objects.create(
+            szenario=s, klasse=klasse, verteilung="pert", params={"low": 1, "mode": 2, "high": 3}
+        )
+    assert list(s.verlustklassen.values_list("klasse", flat=True)) == [
+        "early", "mid", "late", "full_impact", "attacker_fails",
+    ]
+
+
+@pytest.mark.django_db
 def test_verlustklasse_pro_szenario_eindeutig():
     s = CamSzenario.objects.create(
         name="X", tef_low=1, tef_mode=2, tef_high=3,
