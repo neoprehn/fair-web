@@ -153,6 +153,20 @@ Auf der Detailseite zeigt jede Verlustklasse zusätzlich einen **📝-Knopf**
 (Annahmen anzeigen) und einen **📈-Knopf** (Verteilungs-Vorschau als
 Dichtekurve) – ebenfalls wie bei den FAIR-Faktoren.
 
+### Kill-Chain: interaktiver Graph & MITRE ATT&CK-Ansicht
+
+Die Kill-Chain (Eingabeformular und Ergebnisseite) ist ein interaktiver, per
+Maus verschiebbarer Graph (Cytoscape.js) statt einer statischen Grafik – Kanten
+zeigen ihre Bedeutung direkt als Beschriftung (z. B. welche Outcome-Klasse eine
+Stufe erreicht, oder „scheitert" bei der gestrichelten Fail-Kante).
+
+Jede Stufe kann optional einer **MITRE ATT&CK Tactic** zugeordnet werden. Der
+Umschalter **„Kill-Chain" / „MITRE ATT&CK"** über dem Graph wechselt zwischen
+der Prozesskette (Reihenfolge der Stufen) und einer Spalten-Ansicht nach den 14
+ATT&CK-Tactics (Reconnaissance … Impact, Navigator-Reihenfolge) – Stufen ohne
+Zuordnung werden dabei ausgeblendet. **⛶ Vollansicht** zeigt den Graph im
+Vollbild, nützlich bei vielen Spalten.
+
 ### Berechnen & Ergebnis
 
 **▶ Berechnen** startet die Monte-Carlo-Simulation über pyfair-cam. Das

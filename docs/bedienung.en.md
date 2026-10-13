@@ -156,6 +156,20 @@ On the detail page, each loss class additionally shows a **📝 button**
 (view assumptions) and a **📈 button** (distribution preview as a density
 curve) – also matching the FAIR factors.
 
+### Kill chain: interactive graph & MITRE ATT&CK view
+
+The kill chain (input form and result page) is an interactive, draggable
+graph (Cytoscape.js) instead of a static diagram – edges show their meaning
+directly as a label (e.g. which outcome class a stage leads to, or "scheitert"
+on the dashed fail edge).
+
+Each stage can optionally be assigned a **MITRE ATT&CK Tactic**. The
+**"Kill-Chain" / "MITRE ATT&CK"** toggle above the graph switches between the
+process chain (stage order) and a column view by the 14 ATT&CK Tactics
+(Reconnaissance … Impact, Navigator order) – stages without an assignment are
+hidden in that view. **⛶ Full view** shows the graph in fullscreen, useful
+with many columns.
+
 ### Calculate & results
 
 **▶ Calculate** starts the Monte Carlo simulation via pyfair-cam. The

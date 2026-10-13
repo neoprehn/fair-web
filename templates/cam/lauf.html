@@ -86,9 +86,20 @@
         scheitert der Angreifer.
     </p>
     <div class="row mb-3"><div class="col-12">
-    <div class="card h-100"><div class="card-body py-2">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Ansicht">
+            <button type="button" class="btn btn-outline-info active" id="cam-view-chain">Kill-Chain</button>
+            <button type="button" class="btn btn-outline-info" id="cam-view-attack">MITRE ATT&amp;CK</button>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="cam-chain-fullscreen" title="Vollansicht">⛶ Vollansicht</button>
+    </div>
+    <div id="cam-chain-wrap" class="card h-100"><div class="card-body py-2">
         <div id="cam-chain-graph-ergebnis" style="width:100%; height:300px;"></div>
     </div></div>
+    <style>
+        #cam-chain-wrap:fullscreen { background: var(--bg-1); padding: 20px; }
+        #cam-chain-wrap:fullscreen #cam-chain-graph-ergebnis { height: calc(100vh - 40px) !important; }
+    </style>
     {{ chain_elements|json_script:"chain-elements-data" }}
     </div></div>
 
@@ -153,7 +164,7 @@
     var txtDim = cssVar('--txt-dim'), accent = cssVar('--accent'), ok = cssVar('--ok'),
         border = cssVar('--border'), bg2 = cssVar('--bg-2');
 
-    cytoscape({
+    var cy = cytoscape({
         container: graphEl,
         elements: elements,
         style: [
@@ -177,6 +188,68 @@
         minZoom: 0.5,
         maxZoom: 2,
     });
+
+    // Ansicht umschalten: Kill-Chain vs. MITRE ATT&CK (dasselbe Muster wie
+    // cam/form.html - siehe dortigen Kommentar für die Begründung).
+    var orig = {};
+    elements.forEach(function (el) {
+        if (el.position) orig[el.data.id] = { position: el.position, label: el.data.label };
+    });
+    var btnChain = document.getElementById('cam-view-chain');
+    var btnAttack = document.getElementById('cam-view-attack');
+    function setView(attackModus) {
+        if (btnChain) btnChain.classList.toggle('active', !attackModus);
+        if (btnAttack) btnAttack.classList.toggle('active', attackModus);
+        cy.nodes().forEach(function (n) {
+            var o = orig[n.id()];
+            if (attackModus) {
+                var pos = n.data('attack_position');
+                if (pos) {
+                    n.position(pos);
+                    n.data('label', n.data('attack_label') || o.label);
+                    n.style('display', 'element');
+                } else {
+                    n.style('display', 'none');
+                }
+            } else {
+                n.position(o.position);
+                n.data('label', o.label);
+                n.style('display', 'element');
+            }
+        });
+        cy.edges().forEach(function (e) {
+            var sichtbar = !attackModus
+                || (!!e.source().data('attack_position') && !!e.target().data('attack_position'));
+            e.style('display', sichtbar ? 'element' : 'none');
+        });
+        cy.fit(undefined, 30);
+    }
+    if (btnChain) btnChain.addEventListener('click', function () { setView(false); });
+    if (btnAttack) btnAttack.addEventListener('click', function () { setView(true); });
+
+    // Vollansicht (dasselbe Fullscreen-Muster wie im iam-Projekt).
+    var fsBtn = document.getElementById('cam-chain-fullscreen');
+    var wrapEl = document.getElementById('cam-chain-wrap');
+    if (fsBtn && wrapEl) {
+        fsBtn.addEventListener('click', function () {
+            if (!document.fullscreenElement) {
+                wrapEl.requestFullscreen().catch(function (err) {
+                    console.error('Vollbild fehlgeschlagen:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+        document.addEventListener('fullscreenchange', function () {
+            fsBtn.classList.toggle('active', document.fullscreenElement === wrapEl);
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    cy.resize();
+                    cy.fit(undefined, 30);
+                });
+            });
+        });
+    }
 })();
 </script>
 {% if lauf.status == "fertig" %}

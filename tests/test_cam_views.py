@@ -42,7 +42,12 @@ def test_create_formular_ist_leer(client):
     resp = client.get(reverse("cam:create"))
     assert resp.status_code == 200
     # Kein Auto-Vorbelegen mehr mit dem Ransomware-Beispiel – leeres Formular.
-    assert b"Initial Access" not in resp.content
+    # ("Initial Access" wird hier bewusst nicht geprüft: das ist jetzt auch eine
+    # MITRE-ATT&CK-Tactic-Option im attack_tactic-Dropdown, kollidiert also mit dem
+    # gleichnamigen Stufennamen aus dem Beispiel - "Priv Escalation"/"Data Staging"
+    # sind dagegen eindeutig nur Beispiel-Stufennamen.)
+    assert b"Priv Escalation" not in resp.content
+    assert b"Data Staging" not in resp.content
     assert b"EDR / Anti-Malware" not in resp.content
 
 
@@ -70,6 +75,23 @@ def test_create_formular_zeigt_kill_chain_als_cytoscape_graph(client):
 
 
 @pytest.mark.django_db
+def test_create_formular_zeigt_mitre_attack_ansicht_umschalter(client):
+    """Zweite Ansicht neben der Kill-Chain: Umschalter + Vollansicht-Button, sowie
+    die attack_tactic-Auswahl je Stufe (CamStageForm, siehe models.CamStage.AttackTactic)."""
+    resp = client.get(reverse("cam:create"))
+    html = resp.content.decode()
+    assert resp.status_code == 200
+    assert 'id="cam-view-chain"' in html
+    assert 'id="cam-view-attack"' in html
+    assert 'id="cam-chain-fullscreen"' in html
+    assert 'id="cam-chain-wrap"' in html
+    # Je Stufe eine attack_tactic-Auswahl (6 Stufen -> 6 Select-Felder im Formular).
+    assert html.count('name="stage1-attack_tactic"') == 1
+    assert html.count('name="stage6-attack_tactic"') == 1
+    assert "Lateral Movement" in html  # Tactic-Label, kommt aus CamStage.AttackTactic.choices
+
+
+@pytest.mark.django_db
 def test_create_speichert_alle_stufen_klassen_und_control(client):
     resp = client.post(reverse("cam:create"), data=_post_ransomware(name="Ransomware Test"))
     assert resp.status_code == 302, resp.context["form"].errors if resp.status_code == 200 else None
@@ -83,9 +105,36 @@ def test_create_speichert_alle_stufen_klassen_und_control(client):
     stufe1 = s.stages.get(reihenfolge=1)
     assert stufe1.name == "Initial Access"
     assert stufe1.outcome_class == "early"
+    assert stufe1.attack_tactic == "TA0001"  # MITRE ATT&CK-Zuordnung rundet mit durch
 
     voller_schaden = s.verlustklassen.get(klasse="full_impact")
     assert voller_schaden.params["low"] == 1_000_000
+
+
+@pytest.mark.django_db
+def test_mitre_attack_ansicht_platziert_stufen_nach_tactic_spalte(client):
+    """End-to-end: die im Ransomware-Beispiel hinterlegten attack_tactic-Werte landen
+    korrekt als attack_position in chain_elements (siehe cam_tree.attack_position)."""
+    import json
+    import re
+
+    from apps.cam import cam_tree
+
+    resp = client.post(reverse("cam:create"), data=_post_ransomware(name="ATT&CK Test"))
+    assert resp.status_code == 302
+    s = CamSzenario.objects.get(name="ATT&CK Test")
+
+    resp = client.get(reverse("cam:update", kwargs={"pk": s.pk}))
+    html = resp.content.decode()
+    m = re.search(r'<script id="chain-elements-data"[^>]*>(.*?)</script>', html, re.S)
+    elements = json.loads(m.group(1))
+    stage1 = next(el["data"] for el in elements if el["data"].get("id") == "stage1")  # Initial Access -> TA0001
+    stage4 = next(el["data"] for el in elements if el["data"].get("id") == "stage4")  # Lateral Movement -> TA0008
+
+    assert stage1["attack_position"] == cam_tree.attack_position("TA0001")
+    assert stage4["attack_position"] == cam_tree.attack_position("TA0008")
+    # Lateral Movement (TA0008) kommt in der ATT&CK-Spaltenreihenfolge nach Initial Access (TA0001).
+    assert stage4["attack_position"]["x"] > stage1["attack_position"]["x"]
 
 
 @pytest.mark.django_db

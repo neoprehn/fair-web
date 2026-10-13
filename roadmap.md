@@ -309,10 +309,18 @@ nutzbar, der iam-Stack läuft auf Neo4j Community Edition).
       durchgelaufen. Dabei auch festgestellt: die Windows-Anwendungssteuerungsrichtlinie,
       die `litellm`/`tokenizers` lokal blockiert hatte, griff bei einem späteren Testlauf
       nicht mehr – alle 224 Tests (inkl. beider KI-Vorschlag-Dateien) laufen jetzt lokal grün.
-- [ ] **Vorgemerkt, nicht Teil dieses Durchgangs:** MITRE-ATT&CK-Zweitansicht (Tactics/
-      Techniques als Overlay über dieselbe Kill-Chain, offene ATT&CK-STIX-Daten, Vollansicht
-      analog zum Fullscreen-Muster aus `iam`) – eigener, spürbar größerer Folge-Schritt
-      (neues Feld je `CamStage` für die Technique-Zuordnung, zweiter Layout-Modus).
+- [x] **Nachgezogen:** MITRE-ATT&CK-Zweitansicht umgesetzt. `CamStage.attack_tactic`
+      (neues optionales Feld, 14 MITRE ATT&CK Enterprise Tactics als Choices, reine
+      `AddField`-Migration ohne Datenrisiko) – Ransomware-Beispiel in `beispiele.py`
+      bekam passende Zuordnungen (Initial Access→TA0001, Persistence→TA0003, Priv
+      Escalation→TA0004, Lateral Movement→TA0008, Data Staging→TA0009 Collection,
+      Execution→TA0002). `cam_tree.py`: `ATTACK_TACTIC_ORDER` (kanonische
+      Navigator-Spaltenreihenfolge) + `attack_position()`/`attack_label` in
+      `to_cytoscape_elements()` – Stufen ohne Zuordnung bzw. Outcome-Knoten bekommen
+      keine `attack_position` und blenden in dieser Ansicht aus. `cam/form.html` +
+      `cam/lauf.html`: Umschalter „Kill-Chain"/„MITRE ATT&CK" (tauscht Node-Positionen/
+      -Labels + Kanten-Sichtbarkeit auf demselben Cytoscape-Graph) plus **⛶ Vollansicht**
+      (Fullscreen-Muster aus `iam` übernommen). 231/231 Tests grün.
 
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 

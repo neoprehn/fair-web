@@ -100,11 +100,34 @@ class CamStage(models.Model):
         MID = "mid", "Mittel (mid)"
         LATE = "late", "Spät (late)"
 
+    class AttackTactic(models.TextChoices):
+        """Die 14 MITRE ATT&CK Enterprise Tactics, in der kanonischen Navigator-
+        Spaltenreihenfolge (links -> rechts) - rein optionale Zuordnung je Stufe für
+        die MITRE-ATT&CK-Ansicht (siehe cam_tree.ATTACK_TACTIC_ORDER), keine
+        Auswirkung auf die Risikoberechnung selbst."""
+        RECONNAISSANCE = "TA0043", "Reconnaissance"
+        RESOURCE_DEVELOPMENT = "TA0042", "Resource Development"
+        INITIAL_ACCESS = "TA0001", "Initial Access"
+        EXECUTION = "TA0002", "Execution"
+        PERSISTENCE = "TA0003", "Persistence"
+        PRIVILEGE_ESCALATION = "TA0004", "Privilege Escalation"
+        DEFENSE_EVASION = "TA0005", "Defense Evasion"
+        CREDENTIAL_ACCESS = "TA0006", "Credential Access"
+        DISCOVERY = "TA0007", "Discovery"
+        LATERAL_MOVEMENT = "TA0008", "Lateral Movement"
+        COLLECTION = "TA0009", "Collection"
+        COMMAND_AND_CONTROL = "TA0011", "Command and Control"
+        EXFILTRATION = "TA0010", "Exfiltration"
+        IMPACT = "TA0040", "Impact"
+
     szenario = models.ForeignKey(
         CamSzenario, related_name="stages", on_delete=models.CASCADE, verbose_name="CAM-Szenario"
     )
     reihenfolge = models.PositiveSmallIntegerField("Reihenfolge")
     name = models.CharField("Name", max_length=200)
+    attack_tactic = models.CharField(
+        "MITRE ATT&CK Tactic", max_length=10, choices=AttackTactic.choices, blank=True,
+    )
 
     coverage = models.FloatField("Coverage (0–1)")
     visibility = models.FloatField("Visibility (0–1)")

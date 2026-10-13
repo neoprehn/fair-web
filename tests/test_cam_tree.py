@@ -6,16 +6,20 @@ from apps.cam.beispiele import RANSOMWARE_BEISPIEL
 
 class _StageStub:
     """Minimaler Stand-in für CamStage/CamStageForm.instance - kill_chain_layout()
-    braucht nur .reihenfolge/.name/.outcome_class (siehe dortiger Docstring)."""
+    braucht nur .reihenfolge/.name/.outcome_class/.attack_tactic (siehe dortiger Docstring)."""
 
-    def __init__(self, reihenfolge, name, outcome_class):
+    def __init__(self, reihenfolge, name, outcome_class, attack_tactic=""):
         self.reihenfolge = reihenfolge
         self.name = name
         self.outcome_class = outcome_class
+        self.attack_tactic = attack_tactic
 
 
 def _ransomware_stages():
-    return [_StageStub(s["reihenfolge"], s["name"], s["outcome_class"]) for s in RANSOMWARE_BEISPIEL["stages"]]
+    return [
+        _StageStub(s["reihenfolge"], s["name"], s["outcome_class"], s.get("attack_tactic", ""))
+        for s in RANSOMWARE_BEISPIEL["stages"]
+    ]
 
 
 def test_kill_chain_layout_kanten_referenzieren_knoten_codes_nicht_koordinaten():
@@ -69,3 +73,50 @@ def test_to_cytoscape_elements_zweite_beschriftungszeile_bei_berechnetem_wert():
     stage1 = next(el for el in elements if el.get("data", {}).get("id") == "stage1")
     assert "42.0 %" in stage1["data"]["label"]
     assert "\n" in stage1["data"]["label"]
+
+
+def test_attack_position_ordnet_spalte_nach_kanonischer_tactic_reihenfolge():
+    """Initial Access (TA0001) liegt laut ATTACK_TACTIC_ORDER nach Reconnaissance (TA0043)
+    und Resource Development (TA0042), also in Spalte 2 (Index 2)."""
+    pos_ia = cam_tree.attack_position("TA0001")
+    pos_recon = cam_tree.attack_position("TA0043")
+    assert pos_ia["x"] > pos_recon["x"]
+    assert cam_tree.ATTACK_TACTIC_ORDER.index("TA0001") == 2
+
+
+def test_attack_position_unbekannte_oder_leere_tactic_gibt_none():
+    assert cam_tree.attack_position("") is None
+    assert cam_tree.attack_position("keine-echte-tactic") is None
+
+
+def test_attack_position_mehrere_stufen_gleiche_tactic_werden_gestapelt():
+    pos_row0 = cam_tree.attack_position("TA0001", row=0)
+    pos_row1 = cam_tree.attack_position("TA0001", row=1)
+    assert pos_row0["x"] == pos_row1["x"]
+    assert pos_row1["y"] > pos_row0["y"]
+
+
+def test_to_cytoscape_elements_stufen_mit_tactic_bekommen_attack_position():
+    nodes, edges = cam_tree.kill_chain_layout(_ransomware_stages())
+    elements = cam_tree.to_cytoscape_elements(nodes, edges)
+    stage_elements = {
+        el["data"]["id"]: el["data"] for el in elements
+        if el["data"].get("kind") == "stage"
+    }
+    # Alle 6 Ransomware-Beispielstufen haben in beispiele.py eine attack_tactic gesetzt.
+    for code in ("stage1", "stage2", "stage3", "stage4", "stage5", "stage6"):
+        assert "attack_position" in stage_elements[code]
+        assert "attack_label" in stage_elements[code]
+
+    outcome_elements = [el["data"] for el in elements if el["data"].get("kind") == "outcome"]
+    for data in outcome_elements:
+        assert "attack_position" not in data  # Outcome-Knoten haben keine Tactic
+
+
+def test_to_cytoscape_elements_stufe_ohne_tactic_bekommt_keine_attack_position():
+    stages = _ransomware_stages()
+    stages[0].attack_tactic = ""  # Zuordnung entfernen
+    nodes, edges = cam_tree.kill_chain_layout(stages)
+    elements = cam_tree.to_cytoscape_elements(nodes, edges)
+    stage1 = next(el["data"] for el in elements if el["data"]["id"] == "stage1")
+    assert "attack_position" not in stage1

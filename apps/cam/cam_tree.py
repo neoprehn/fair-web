@@ -34,6 +34,41 @@ def klassen_label(klasse):
     return KLASSEN_LABEL.get(klasse, klasse)
 
 
+# Die 14 MITRE ATT&CK Enterprise Tactics, kanonische Navigator-Spaltenreihenfolge
+# (links -> rechts) - muss mit CamStage.AttackTactic übereinstimmen (hier dupliziert
+# statt importiert, damit cam_tree weiterhin ein reiner, modellunabhängiger
+# Anzeige-Helfer bleibt). Nur für die optionale MITRE-ATT&CK-Ansicht der Kill-Chain,
+# keine Auswirkung auf die Risikoberechnung.
+ATTACK_TACTIC_ORDER = [
+    "TA0043", "TA0042", "TA0001", "TA0002", "TA0003", "TA0004", "TA0005",
+    "TA0006", "TA0007", "TA0008", "TA0009", "TA0011", "TA0010", "TA0040",
+]
+ATTACK_TACTIC_LABEL = {
+    "TA0043": "Reconnaissance", "TA0042": "Resource Development",
+    "TA0001": "Initial Access", "TA0002": "Execution", "TA0003": "Persistence",
+    "TA0004": "Privilege Escalation", "TA0005": "Defense Evasion",
+    "TA0006": "Credential Access", "TA0007": "Discovery",
+    "TA0008": "Lateral Movement", "TA0009": "Collection",
+    "TA0011": "Command and Control", "TA0010": "Exfiltration", "TA0040": "Impact",
+}
+
+_ATTACK_X0 = 70
+_ATTACK_DX = 130
+_ATTACK_Y0 = 60
+_ATTACK_ROW_DY = 55
+
+
+def attack_position(tactic, row=0):
+    """Position einer Stufe in der MITRE-ATT&CK-Ansicht (Spalte = Tactic-Index in
+    ``ATTACK_TACTIC_ORDER``, ``row`` für mehrere Stufen mit derselben Tactic
+    übereinander) - ``None``, wenn keine/eine unbekannte Tactic zugeordnet ist."""
+    if tactic not in ATTACK_TACTIC_ORDER:
+        return None
+    x = _ATTACK_X0 + ATTACK_TACTIC_ORDER.index(tactic) * _ATTACK_DX
+    y = _ATTACK_Y0 + row * _ATTACK_ROW_DY
+    return {"x": x, "y": y}
+
+
 # Statische Positionen für den Susceptibility-Ast (spiegelt FAIRs LEF ← TEF, VULN).
 _SUSC_POS = {
     "LEF": (180, 30),
@@ -92,6 +127,7 @@ def kill_chain_layout(stages):
             "code": code, "kind": "stage",
             "label": f"{s.reihenfolge}. {s.name}", "x": x, "y": _Y_STAGE,
             "reihenfolge": s.reihenfolge,
+            "attack_tactic": getattr(s, "attack_tactic", "") or "",
         })
 
     for a, b in zip(stages, stages[1:]):
@@ -150,17 +186,34 @@ def to_cytoscape_elements(nodes, edges):
     Knoten mit berechnetem Wert (``n["wert"]``, siehe
     ``CamLaufDetailView._annotiere_kill_chain``) bekommen eine zweite Beschriftungs-
     zeile; Kanten tragen ihr ``label`` direkt (Cytoscape zeichnet es auf der Kante).
+
+    Stufen-Knoten mit zugeordneter MITRE-ATT&CK-Tactic bekommen zusätzlich
+    ``attack_position`` (Spalte = Tactic, siehe ``attack_position()``) sowie eine
+    dritte Beschriftungszeile mit dem Tactic-Namen - fürs Umschalten auf die
+    MITRE-ATT&CK-Ansicht im Frontend (JS liest ``attack_position``/``attack_label``;
+    ``None`` bedeutet "in dieser Ansicht ausblenden", z. B. bei Outcome-Knoten oder
+    Stufen ohne Zuordnung).
     """
+    # Zeilen-Index je Tactic (mehrere Stufen mit derselben Tactic werden in der
+    # ATT&CK-Ansicht in derselben Spalte übereinander gestapelt statt überlappt).
+    naechste_zeile = {}
+
     elements = []
     for n in nodes:
         label = f"{n['label']}\n{n['wert']}" if n.get("wert") else n["label"]
-        elements.append({
-            "data": {
-                "id": n["code"], "label": label, "kind": n["kind"],
-                "reihenfolge": n.get("reihenfolge"),
-            },
-            "position": {"x": n["x"], "y": n["y"]},
-        })
+        data = {
+            "id": n["code"], "label": label, "kind": n["kind"],
+            "reihenfolge": n.get("reihenfolge"),
+        }
+        tactic = n.get("attack_tactic")
+        if tactic:
+            row = naechste_zeile.get(tactic, 0)
+            naechste_zeile[tactic] = row + 1
+            pos = attack_position(tactic, row)
+            if pos:
+                data["attack_position"] = pos
+                data["attack_label"] = f"{n['label']}\n{ATTACK_TACTIC_LABEL.get(tactic, tactic)}"
+        elements.append({"data": data, "position": {"x": n["x"], "y": n["y"]}})
     for i, e in enumerate(edges):
         elements.append({
             "data": {

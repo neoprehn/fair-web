@@ -86,12 +86,13 @@ class CamStageForm(forms.ModelForm):
             "recognition", "rec_reliability",
             "monitoring_cadence", "mon_reliability", "duration",
             "progression_probability", "review_independence",
-            "outcome_class",
+            "outcome_class", "attack_tactic",
         )
         widgets = {
             "reihenfolge": forms.HiddenInput(),
             "name": _TEXT,
             "outcome_class": forms.Select(attrs={"class": "form-select form-select-sm"}),
+            "attack_tactic": forms.Select(attrs={"class": "form-select form-select-sm"}),
             **_zahlenfelder(
                 "coverage", "visibility", "vis_reliability",
                 "recognition", "rec_reliability",
