@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{% if cam_szenario %}CAM-Szenario bearbeiten{% else %}Neues CAM-Szenario{% endif %} &middot; fair-web{% endblock %}
+{% block extra_head %}<script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>{% endblock %}
 
 {% block content %}
 <h1 class="h3 mb-3">{% if cam_szenario %}CAM-Szenario bearbeiten{% else %}Neues CAM-Szenario{% endif %}</h1>
@@ -69,23 +71,10 @@
                 Loss-Magnitude-Seite: der Angriff durchläuft die Stufen der Reihe nach. Auf eine
                 Stufe im Diagramm klicken springt zu ihren Feldern.
             </p>
-            <div class="card mb-3"><div class="card-body py-2" style="overflow-x:auto; text-align:center;">
-                <svg id="cam-chain-svg" viewBox="0 0 1100 260" style="width:100%; max-width:1050px; height:auto; margin:0 auto; display:block;">
-                    {% for e in chain_edges %}
-                    <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"
-                          {% if e.kind == "fail" %}style="stroke-dasharray:5,4; opacity:.55;"{% endif %}/>
-                    {% endfor %}
-                    {% for n in chain_nodes %}
-                    {% if n.kind == "stage" %}<a href="#stage-{{ n.reihenfolge }}">{% endif %}
-                    <g class="svg-node {% if n.kind == 'stage' %}eingabe{% else %}berechnet{% endif %}" data-code="{{ n.code }}">
-                        <title>{{ n.label }}</title>
-                        <rect x="{{ n.x|add:'-68' }}" y="{{ n.y|add:'-21' }}" width="136" height="42" rx="7"/>
-                        <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y }}" text-anchor="middle" dominant-baseline="central" style="font-size:10.5px;">{{ n.label }}</text>
-                    </g>
-                    {% if n.kind == "stage" %}</a>{% endif %}
-                    {% endfor %}
-                </svg>
+            <div class="card mb-3"><div class="card-body py-2">
+                <div id="cam-chain-graph" style="width:100%; height:300px;"></div>
             </div></div>
+            {{ chain_elements|json_script:"chain-elements-data" }}
 
             {% for n, stage_form in stage_forms.items %}
             <details id="stage-{{ n }}" data-code="stage{{ n }}" class="card p-3 mb-2"{% if n == 1 %} open{% endif %}>
@@ -200,18 +189,71 @@
 
 {% block extra_js %}
 <script>
-// Aktiven Kill-Chain-Knoten hervorheben, sobald man in ein Feld der jeweiligen Stufe klickt
-// (dasselbe Muster wie der FAIR-Baum auf szenarien/form.html, .svg-node.aktiv aus base.html).
+// Kill-Chain als interaktiver, draggable Graph (Cytoscape.js, lokal vendored unter
+// static/vendor/cytoscape/ - analog zum Graph-Tab in iam/frontend/analysis.html,
+// dort aus Lizenzgruenden Cytoscape statt Neo4js NVL). preset-Layout: das Backend
+// liefert sinnvolle Startpositionen fuer die Prozesskette (cam_tree.kill_chain_layout),
+// danach frei verschiebbar - kein Re-Layout nach dem Ziehen, anders als bei iams
+// konzentrischem Hub-Graph macht ein kraftbasiertes Layout hier keinen Sinn, da die
+// Reihenfolge der Stufen selbst die Information ist.
 (function () {
-    var form = document.getElementById('cam-form');
-    var svg = document.getElementById('cam-chain-svg');
-    if (!form || !svg) return;
-    form.addEventListener('focusin', function (e) {
-        var host = e.target.closest('[data-code]');
-        svg.querySelectorAll('.svg-node').forEach(function (g) {
-            g.classList.toggle('aktiv', !!host && g.dataset.code === host.dataset.code);
-        });
+    var graphEl = document.getElementById('cam-chain-graph');
+    var dataEl = document.getElementById('chain-elements-data');
+    if (!graphEl || !dataEl || typeof cytoscape === 'undefined') return;
+    var elements = JSON.parse(dataEl.textContent || '[]');
+
+    function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+    var txtDim = cssVar('--txt-dim'), accent = cssVar('--accent'), ok = cssVar('--ok'),
+        border = cssVar('--border'), bg2 = cssVar('--bg-2');
+
+    var cy = cytoscape({
+        container: graphEl,
+        elements: elements,
+        style: [
+            { selector: 'node', style: {
+                'background-color': function (ele) { return ele.data('kind') === 'stage' ? accent : ok; },
+                shape: 'round-rectangle', width: 118, height: 40,
+                label: 'data(label)', color: '#04223a', 'font-size': 10, 'font-weight': 700,
+                'text-wrap': 'wrap', 'text-max-width': '108px',
+                'text-valign': 'center', 'text-halign': 'center',
+            } },
+            { selector: 'node.aktiv', style: { 'border-width': 3, 'border-color': '#04223a' } },
+            { selector: 'edge', style: {
+                width: 1.5, 'line-color': border, 'target-arrow-color': border,
+                'target-arrow-shape': 'triangle', 'curve-style': 'bezier',
+                label: 'data(label)', 'font-size': 9, color: txtDim,
+                'text-background-color': bg2, 'text-background-opacity': 0.85, 'text-background-padding': 2,
+            } },
+            { selector: 'edge[kind = "fail"]', style: { 'line-style': 'dashed', opacity: 0.6 } },
+        ],
+        layout: { name: 'preset' },
+        wheelSensitivity: 0.25,
+        minZoom: 0.5,
+        maxZoom: 2,
     });
+
+    // Klick auf eine Stufe springt zu ihren Eingabefeldern (ersetzt den bisherigen
+    // <a href="#stage-N">-Link um die SVG-Knoten) und klappt sie bei Bedarf auf.
+    cy.on('tap', 'node[kind = "stage"]', function (e) {
+        var target = document.getElementById('stage-' + e.target.data('reihenfolge'));
+        if (!target) return;
+        target.open = true;
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    // Aktiven Knoten hervorheben, sobald man in ein Feld der jeweiligen Stufe klickt
+    // (ersetzt das bisherige .svg-node.aktiv-Muster vom FAIR-Baum).
+    var form = document.getElementById('cam-form');
+    if (form) {
+        form.addEventListener('focusin', function (e) {
+            var host = e.target.closest('[data-code]');
+            cy.nodes().removeClass('aktiv');
+            if (host) {
+                var n = cy.getElementById(host.dataset.code);
+                if (n.length) n.addClass('aktiv');
+            }
+        });
+    }
 })();
 
 // Verlustklassen: nur die zur gewählten Verteilung passenden Parameterfelder zeigen

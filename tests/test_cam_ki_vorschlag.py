@@ -15,7 +15,7 @@ from apps.cam.beispiele import RANSOMWARE_BEISPIEL
 from apps.cam.models import CamSzenario
 from apps.konten.models import KIEinstellung
 
-from .test_cam_views import _post_ransomware
+from test_cam_views import _post_ransomware
 
 
 class _FakeMessage:

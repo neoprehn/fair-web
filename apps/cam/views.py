@@ -121,7 +121,9 @@ class _CamSzenarioFormMixin:
             context["verlustklasse_forms"] = self._verlustklasse_forms(data)
 
         stages = [f.instance for f in context["stage_forms"].values()]
-        context["chain_nodes"], context["chain_edges"] = cam_tree.kill_chain_layout(stages)
+        chain_nodes, chain_edges = cam_tree.kill_chain_layout(stages)
+        context["chain_nodes"], context["chain_edges"] = chain_nodes, chain_edges
+        context["chain_elements"] = cam_tree.to_cytoscape_elements(chain_nodes, chain_edges)
         return context
 
     def form_valid(self, form):
@@ -261,6 +263,7 @@ class CamLaufDetailView(DetailView):
 
         context["susc_nodes"], context["susc_edges"] = susc_nodes, susc_edges
         context["chain_nodes"], context["chain_edges"] = chain_nodes, chain_edges
+        context["chain_elements"] = cam_tree.to_cytoscape_elements(chain_nodes, chain_edges)
         return context
 
     @staticmethod

@@ -1,8 +1,11 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load humanize static %}
 
 {% block title %}Simulation &middot; {{ lauf.szenario.name }}{% endblock %}
-{% block extra_head %}{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}{% endblock %}
+{% block extra_head %}
+{% if lauf.status == "fertig" %}<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>{% endif %}
+<script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>
+{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
@@ -83,22 +86,10 @@
         scheitert der Angreifer.
     </p>
     <div class="row mb-3"><div class="col-12">
-    <div class="card h-100"><div class="card-body py-2" style="overflow-x:auto; text-align:center;">
-        <svg viewBox="0 0 1100 260" style="width:100%; max-width:1050px; height:auto; margin:0 auto; display:block;">
-            {% for e in chain_edges %}
-            <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" class="svg-edge"
-                  {% if e.kind == "fail" %}style="stroke-dasharray:5,4; opacity:.55;"{% endif %}/>
-            {% endfor %}
-            {% for n in chain_nodes %}
-            <g class="svg-node {% if n.kind == 'stage' %}eingabe{% else %}berechnet{% endif %}">
-                <title>{{ n.label }}</title>
-                <rect x="{{ n.x|add:'-68' }}" y="{{ n.y|add:'-21' }}" width="136" height="42" rx="7"/>
-                <text class="svg-node-label" x="{{ n.x }}" y="{{ n.y }}" text-anchor="middle" dominant-baseline="central" style="font-size:10.5px;">{{ n.label }}</text>
-            </g>
-            {% if n.wert %}<text class="svg-node-wert" x="{{ n.x }}" y="{{ n.y|add:'34' }}" text-anchor="middle">{{ n.wert }}</text>{% endif %}
-            {% endfor %}
-        </svg>
+    <div class="card h-100"><div class="card-body py-2">
+        <div id="cam-chain-graph-ergebnis" style="width:100%; height:300px;"></div>
     </div></div>
+    {{ chain_elements|json_script:"chain-elements-data" }}
     </div></div>
 
     <div class="card mb-3" style="border:1px solid var(--accent);"><div class="card-body py-2">
@@ -146,6 +137,48 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+// Kill-Chain als interaktiver Graph (Cytoscape.js, read-only hier - kein Formular zum
+// Hinspringen, Draggen zum Erkunden bleibt möglich). Läuft unabhängig vom Lauf-Status:
+// die Struktur steht schon vor der Berechnung, Knoten bekommen nur dann eine zweite
+// Beschriftungszeile mit dem berechneten Anteil (siehe _annotiere_kill_chain), wenn
+// lauf.ist_fertig - das steckt serverseitig schon in chain_elements.
+(function () {
+    var graphEl = document.getElementById('cam-chain-graph-ergebnis');
+    var dataEl = document.getElementById('chain-elements-data');
+    if (!graphEl || !dataEl || typeof cytoscape === 'undefined') return;
+    var elements = JSON.parse(dataEl.textContent || '[]');
+
+    function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+    var txtDim = cssVar('--txt-dim'), accent = cssVar('--accent'), ok = cssVar('--ok'),
+        border = cssVar('--border'), bg2 = cssVar('--bg-2');
+
+    cytoscape({
+        container: graphEl,
+        elements: elements,
+        style: [
+            { selector: 'node', style: {
+                'background-color': function (ele) { return ele.data('kind') === 'stage' ? accent : ok; },
+                shape: 'round-rectangle', width: 118, height: 40,
+                label: 'data(label)', color: '#04223a', 'font-size': 10, 'font-weight': 700,
+                'text-wrap': 'wrap', 'text-max-width': '108px',
+                'text-valign': 'center', 'text-halign': 'center',
+            } },
+            { selector: 'edge', style: {
+                width: 1.5, 'line-color': border, 'target-arrow-color': border,
+                'target-arrow-shape': 'triangle', 'curve-style': 'bezier',
+                label: 'data(label)', 'font-size': 9, color: txtDim,
+                'text-background-color': bg2, 'text-background-opacity': 0.85, 'text-background-padding': 2,
+            } },
+            { selector: 'edge[kind = "fail"]', style: { 'line-style': 'dashed', opacity: 0.6 } },
+        ],
+        layout: { name: 'preset' },
+        wheelSensitivity: 0.25,
+        minZoom: 0.5,
+        maxZoom: 2,
+    });
+})();
+</script>
 {% if lauf.status == "fertig" %}
 <script>
 (function () {

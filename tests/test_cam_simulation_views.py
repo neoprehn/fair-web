@@ -71,10 +71,15 @@ def test_lauf_seite_zeigt_ergebnis(client, cam_szenario):
     resp = client.get(reverse("cam:lauf", kwargs={"pk": lauf.pk}))
     assert resp.status_code == 200
     assert b"Erwarteter Jahresschaden" in resp.content
-    # Kill-Chain-Diagramm zeigt die Stufennamen aus dem Ransomware-Beispiel.
+    # Kill-Chain ist ein Cytoscape-Graph (vendored), die Elemente stecken im
+    # json_script-Block - Stufennamen aus dem Ransomware-Beispiel sind trotzdem im
+    # rohen HTML sichtbar (JSON-Werte), ebenso wie die berechneten Prozent-Anteile.
+    assert 'id="cam-chain-graph-ergebnis"' in resp.content.decode()
+    assert "vendor/cytoscape/cytoscape.min.js" in resp.content.decode()
     assert "Initial Access".encode() in resp.content
     assert "Lateral Movement".encode() in resp.content
     assert "Angreifer scheitert".encode() in resp.content
+    assert "50.0 %".encode() in resp.content  # Erkennungsanteil Stufe 1 (anteil=0.5)
 
 
 @pytest.mark.django_db

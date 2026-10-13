@@ -1,21 +1,24 @@
-"""CAM-Diagramme: Knoten/Kanten fürs SVG, analog zu ``apps.szenarien.fair_tree``.
+"""CAM-Diagramme: Knoten/Kanten für die beiden CAM-Grafiken.
 
 Anders als der FAIR-Baum gibt es hier keinen editierbaren "Schnitt" – CAMs
 Struktur ist fix (immer genau 1 Resistive Control, 6 Kill-Chain-Stufen, 5
 Verlustklassen), die Layout-Funktionen sind daher reine Anzeige-Helfer.
 
-Zwei Diagramme:
+Zwei Diagramme, zwei Darstellungsarten:
 
 - ``susceptibility_layout()`` – die Frequenz-Seite (TEF × Susceptibility über
-  das Resistive Control), spiegelt den LEF-Ast des FAIR-Baums.
-- ``kill_chain_layout(stages)`` – die Loss-Magnitude-Seite: die Kill-Chain
-  als horizontale Prozesskette, mit Abzweigungen zu den Outcome-Klassen und
-  den zwei Terminal-Zuständen (voller Schaden / Angreifer scheitert).
-
-Beide liefern ``(nodes, edges)`` im selben Format wie ``fair_tree.svg_layout()``
-(``nodes: [{code, label, x, y, ...}]``, ``edges: [{x1,y1,x2,y2, ...}]``), damit
-die Templates dieselben ``.svg-node``/``.svg-edge``-CSS-Klassen aus
-``templates/base.html`` wiederverwenden können.
+  das Resistive Control), spiegelt den LEF-Ast des FAIR-Baums. Weiterhin
+  statisches SVG, analog zu ``apps.szenarien.fair_tree`` (``nodes``:
+  ``[{code, label, x, y, ...}]``, ``edges``: ``[{x1,y1,x2,y2, ...}]``, dieselben
+  ``.svg-node``/``.svg-edge``-CSS-Klassen aus ``templates/base.html``).
+- ``kill_chain_layout(stages)`` – die Loss-Magnitude-Seite: die Kill-Chain als
+  Prozesskette, mit Abzweigungen zu den Outcome-Klassen und den zwei
+  Terminal-Zuständen (voller Schaden / Angreifer scheitert). Graph-nativ
+  (``edges``: ``[{source, target, kind, label}]``, Knoten-Codes statt
+  Koordinaten) für den interaktiven Cytoscape-Graph (``to_cytoscape_elements()``,
+  ``static/vendor/cytoscape/``, analog zum Graph-Tab im iam-Projekt) –
+  ``x``/``y`` auf den Knoten sind nur noch initiale Positionen (``preset``-
+  Layout, danach frei draggable).
 """
 
 KLASSEN_LABEL = {
@@ -68,27 +71,32 @@ def kill_chain_layout(stages):
     ``stages``: Iterable mit ``.reihenfolge``/``.name``/``.outcome_class`` — sowohl
     ein ``CamStage``-Queryset (Ergebnis-Seite) als auch eine Liste von
     ``CamStageForm``-Instanzen (Eingabeformular, vor dem Speichern) erfüllen das.
+
+    Kanten referenzieren Knoten über ``source``/``target`` (Knoten-Codes) statt
+    Pixel-Koordinaten – graph-nativ für Cytoscape (siehe ``to_cytoscape_elements``),
+    ``x``/``y`` auf den Knoten dienen nur noch als initiale Positionen (``preset``-
+    Layout, frei draggable danach).
     """
     stages = sorted(stages, key=lambda s: s.reihenfolge)
     n = len(stages)
 
     nodes = []
     edges = []
-    stage_x = {}
+    stage_code = {}
 
     for s in stages:
+        code = f"stage{s.reihenfolge}"
+        stage_code[s.reihenfolge] = code
         x = _X0 + (s.reihenfolge - 1) * _DX
-        stage_x[s.reihenfolge] = x
         nodes.append({
-            "code": f"stage{s.reihenfolge}", "kind": "stage",
+            "code": code, "kind": "stage",
             "label": f"{s.reihenfolge}. {s.name}", "x": x, "y": _Y_STAGE,
             "reihenfolge": s.reihenfolge,
         })
 
     for a, b in zip(stages, stages[1:]):
         edges.append({
-            "x1": stage_x[a.reihenfolge], "y1": _Y_STAGE,
-            "x2": stage_x[b.reihenfolge], "y2": _Y_STAGE,
+            "source": stage_code[a.reihenfolge], "target": stage_code[b.reihenfolge],
             "kind": "progression",
         })
 
@@ -98,19 +106,17 @@ def kill_chain_layout(stages):
         letzte_stufe_je_klasse[s.outcome_class] = s.reihenfolge
     klassen_in_reihenfolge = sorted(letzte_stufe_je_klasse, key=lambda k: letzte_stufe_je_klasse[k])
 
-    outcome_x = {}
     for klasse in klassen_in_reihenfolge:
-        x = stage_x[letzte_stufe_je_klasse[klasse]]
-        outcome_x[klasse] = x
+        reihenfolge = letzte_stufe_je_klasse[klasse]
+        x = _X0 + (reihenfolge - 1) * _DX
         nodes.append({
             "code": klasse, "kind": "outcome",
             "label": klassen_label(klasse), "x": x, "y": _Y_OUTCOME,
         })
     for s in stages:
         edges.append({
-            "x1": stage_x[s.reihenfolge], "y1": _Y_STAGE,
-            "x2": outcome_x[s.outcome_class], "y2": _Y_OUTCOME,
-            "kind": "outcome",
+            "source": stage_code[s.reihenfolge], "target": s.outcome_class,
+            "kind": "outcome", "label": klassen_label(s.outcome_class),
         })
 
     x_terminal = _X0 + n * _DX
@@ -119,19 +125,47 @@ def kill_chain_layout(stages):
         "label": klassen_label("full_impact"), "x": x_terminal, "y": _Y_STAGE,
     })
     edges.append({
-        "x1": stage_x[n], "y1": _Y_STAGE, "x2": x_terminal, "y2": _Y_STAGE, "kind": "progression",
+        "source": stage_code[n], "target": "full_impact", "kind": "progression",
     })
 
     nodes.append({
         "code": "attacker_fails", "kind": "outcome",
         "label": klassen_label("attacker_fails"), "x": x_terminal, "y": _Y_OUTCOME,
     })
-    # Eine gesammelte, gestrichelte Kante statt sechs einzelner (jede Stufe kann
-    # theoretisch zum Scheitern führen) - Ausgangspunkt knapp unter der Stufenreihe,
-    # damit die Linie nicht optisch durch die Stufen-Boxen läuft.
-    mitte_x = (stage_x[1] + stage_x[n]) / 2
+    # Eine gestrichelte Kante statt sechs einzelner (jede Stufe kann theoretisch
+    # zum Scheitern führen) - Quelle nominell Stufe 1 (Start der Kette), stellt
+    # dasselbe Konzept dar wie zuvor die Mittelpunkt-verankerte SVG-Linie.
     edges.append({
-        "x1": mitte_x, "y1": _Y_STAGE + 26, "x2": x_terminal, "y2": _Y_OUTCOME, "kind": "fail",
+        "source": stage_code[1], "target": "attacker_fails", "kind": "fail",
+        "label": "scheitert",
     })
 
     return nodes, edges
+
+
+def to_cytoscape_elements(nodes, edges):
+    """Wandelt ``(nodes, edges)`` aus ``kill_chain_layout()`` in Cytoscape-``elements``
+    um (``cytoscape({elements: ...})``, siehe ``static/vendor/cytoscape/``).
+
+    Knoten mit berechnetem Wert (``n["wert"]``, siehe
+    ``CamLaufDetailView._annotiere_kill_chain``) bekommen eine zweite Beschriftungs-
+    zeile; Kanten tragen ihr ``label`` direkt (Cytoscape zeichnet es auf der Kante).
+    """
+    elements = []
+    for n in nodes:
+        label = f"{n['label']}\n{n['wert']}" if n.get("wert") else n["label"]
+        elements.append({
+            "data": {
+                "id": n["code"], "label": label, "kind": n["kind"],
+                "reihenfolge": n.get("reihenfolge"),
+            },
+            "position": {"x": n["x"], "y": n["y"]},
+        })
+    for i, e in enumerate(edges):
+        elements.append({
+            "data": {
+                "id": f"e{i}", "source": e["source"], "target": e["target"],
+                "label": e.get("label", ""), "kind": e["kind"],
+            },
+        })
+    return elements

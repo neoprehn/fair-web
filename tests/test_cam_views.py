@@ -57,6 +57,19 @@ def test_create_formular_zeigt_reiter_und_kill_chain_anker(client):
 
 
 @pytest.mark.django_db
+def test_create_formular_zeigt_kill_chain_als_cytoscape_graph(client):
+    """Kill-Chain ist ein interaktiver Cytoscape-Graph (vendored), kein statisches SVG
+    mehr - draggable Knoten, Kanten mit Infos (siehe cam_tree.to_cytoscape_elements)."""
+    resp = client.get(reverse("cam:create"))
+    html = resp.content.decode()
+    assert resp.status_code == 200
+    assert "vendor/cytoscape/cytoscape.min.js" in html
+    assert 'id="cam-chain-graph"' in html
+    assert 'id="chain-elements-data"' in html
+    assert "cam-chain-svg" not in html  # altes statisches SVG ist weg
+
+
+@pytest.mark.django_db
 def test_create_speichert_alle_stufen_klassen_und_control(client):
     resp = client.post(reverse("cam:create"), data=_post_ransomware(name="Ransomware Test"))
     assert resp.status_code == 302, resp.context["form"].errors if resp.status_code == 200 else None
