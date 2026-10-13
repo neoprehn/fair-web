@@ -343,6 +343,17 @@ nutzbar, der iam-Stack läuft auf Neo4j Community Edition).
       Knoten-Umpositionierung); Verdacht: Browser-Cache auf dem iPad war noch auf
       dem Stand vor der MITRE-Einführung. Rückmeldung an Nutzer: Seite hart neu
       laden und erneut testen.
+- [x] **Nachtrag (Rückmeldung vom Rechner, nicht mehr iPad):** Vollbild bestätigt
+      funktionierend. „Mitre ist immer noch leer" war kein Bug, sondern erwartetes
+      Verhalten ohne klare Rückmeldung: die MITRE-Ansicht zeigt nur Stufen mit
+      zugewiesener `attack_tactic` – nur das eingebaute Ransomware-Beispiel
+      (`beispiele.py`) hat das vorausgefüllt, bei eigenen Szenarien ist das Feld
+      wegen der reinen `AddField`-Migration (bewusst ohne Backfill, siehe
+      Data-preserving-migrations-Regel) überall leer, die Ansicht blieb also
+      stillschweigend komplett leer. Fix: `cam/form.html` + `cam/lauf.html` zeigen
+      jetzt einen Hinweistext an der Stelle, sobald im MITRE-Modus kein Knoten
+      sichtbar ist (im Formular mit direktem Link zum Nachtragen je Stufe). 231/231
+      Tests weiterhin grün.
 
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
