@@ -123,6 +123,52 @@ stored **total risk (mean)** of the last run and a link to the run.
 Technically, a comparison corresponds to a pyfair
 [meta-model](metamodelle.md).
 
+## FAIR-CAM (Controls Analytics Model)
+
+A dedicated top-level menu item **"FAIR-CAM"** – extends FAIR with a
+quantitative assessment of how effectively security controls actually
+reduce risk. Conceptual background: [FAIR-CAM Fundamentals](fair-cam-grundlagen.md).
+Calculated via the standalone **pyfair-cam** engine – see
+[pyfair-cam (Engine)](pyfair-cam.md) for details.
+
+Via **+ New CAM Scenario** you enter:
+
+- **Threat Event Frequency (TEF)** and three time quantities for reporting
+  (Containment/Resilience/Concurrency) – each as PERT (min/likely/max).
+- **One resistive control** (e.g. EDR/anti-malware) – Intended/Variant
+  Efficacy, Variance Frequency/Duration, Coverage.
+- **Six kill-chain stages** (Detection & Response), each with Coverage,
+  Visibility, Recognition, Monitoring, dwell time and the outcome class on
+  detection (early/mid/late).
+- **Five loss classes** – one per possible kill-chain outcome (Early, Mid,
+  Late, Full Impact, Attacker Fails).
+
+### Loss classes: distribution & assumptions
+
+Each loss class has – **the same way as FAIR factors** – a freely
+selectable distribution (**PERT**, **Lognormal**, **Normal** or
+**Constant**; the same four variants as magnitude-type FAIR factors) with
+the matching parameter fields, plus its own free-text **Assumptions** field
+with a **✨ button** for an AI suggestion (see [AI Agent](ki-agent.md)) –
+two separate controls, exactly as in the FAIR scenario form.
+
+On the detail page, each loss class additionally shows a **📝 button**
+(view assumptions) and a **📈 button** (distribution preview as a density
+curve) – also matching the FAIR factors.
+
+### Calculate & results
+
+**▶ Calculate** starts the Monte Carlo simulation via pyfair-cam. The
+result shows key figures, VaR, LEC, a loss histogram and an **outcome
+distribution** (share of early/mid/late/full impact/attacker fails) – its
+own fair-web-native Plotly charts rather than pyfair-cam's own HTML report.
+
+!!! note "Still standalone"
+    FAIR-CAM currently runs **in parallel** to regular FAIR scenarios, not
+    integrated into their risk tree. The engine already supports docking
+    (`to_pyfair()`); the web UI for it (an admin toggle for Vuln/CS) is a
+    later build-out stage.
+
 ## Cloning & copies
 
 - **Clone** (overview) – duplicates a scenario under a new ID as "… (Copy)".

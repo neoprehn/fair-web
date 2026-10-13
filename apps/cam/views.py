@@ -183,6 +183,54 @@ class CamSzenarioDeleteView(PermissionRequiredMixin, DeleteView):
 
 
 @require_POST
+def cam_ki_vorschlag(request):
+    """KI-Vorschlag für das Annahmen-Feld einer CAM-Verlustklasse, basierend auf dem
+    aktuellen (ungespeicherten) Formularzustand. Antwortet als JSON.
+
+    Analog zu ``apps.szenarien.views.ki_vorschlag``, aber eigenständig (CAM-Verlustklassen
+    statt FAIR-Faktoren) – nutzt denselben generischen ``ki_service``, siehe ``ki_prompts.py``.
+    """
+    if not (request.user.has_perm("cam.add_camszenario")
+            or request.user.has_perm("cam.change_camszenario")):
+        return JsonResponse({"ok": False, "fehler": "Keine Berechtigung."}, status=403)
+
+    from apps.szenarien import ki_service
+
+    from . import ki_prompts
+
+    if not ki_service.ist_verfuegbar(request.user):
+        return JsonResponse({
+            "ok": False,
+            "fehler": "Kein KI-Modell konfiguriert. Bitte unter „KI-Einstellungen“ "
+                       "Anbieter, Modell und API-Key hinterlegen.",
+        })
+
+    frage = request.POST.get("frage", "")
+    szenario_name = request.POST.get("name", "")
+    szenario_beschreibung = request.POST.get("beschreibung", "")
+    klasse_code = request.POST.get("code", "")
+    if klasse_code not in CamVerlustklasse.Klasse.values:
+        return JsonResponse({"ok": False, "fehler": "Unbekanntes Feld."})
+
+    f = CamVerlustklasseForm(
+        request.POST, instance=CamVerlustklasse(klasse=klasse_code), prefix=klasse_code
+    )
+    verteilung = request.POST.get(f"{klasse_code}-verteilung", "")
+    params = f.instance.params if f.is_valid() else {}
+    klasse_display = dict(CamVerlustklasse.Klasse.choices).get(klasse_code, klasse_code)
+    system_prompt = ki_prompts.prompt_annahmen(
+        klasse_display, klasse_code, szenario_name, szenario_beschreibung, verteilung, params
+    )
+
+    try:
+        antwort = ki_service.frage_ki(request.user, system_prompt, frage)
+    except ki_service.KIFehler as exc:
+        return JsonResponse({"ok": False, "fehler": str(exc)})
+
+    return JsonResponse({"ok": True, "antwort": antwort})
+
+
+@require_POST
 @permission_required("cam.add_camsimulationslauf", raise_exception=True)
 def cam_simulation_starten(request, pk):
     """Legt einen CAM-Simulationslauf an, startet ihn im Hintergrund und leitet weiter."""

@@ -120,6 +120,53 @@ gespeicherten **Gesamtrisiko (Ø)** des letzten Laufs und Link zum Lauf.
 
 Technisch entspricht ein Vergleich einem pyfair-[Meta-Modell](metamodelle.md).
 
+## FAIR-CAM (Controls Analytics Model)
+
+Eigener Top-Level-Menüpunkt **„FAIR-CAM"** – ergänzt FAIR um eine quantitative
+Bewertung, wie wirksam Sicherheits-Controls das Risiko tatsächlich senken.
+Konzeptioneller Hintergrund: [FAIR-CAM-Grundlagen](fair-cam-grundlagen.md).
+Rechnet über die eigenständige Engine **pyfair-cam** – siehe
+[pyfair-cam (Engine)](pyfair-cam.md) für Details.
+
+Über **+ Neues CAM-Szenario** werden erfasst:
+
+- **Threat Event Frequency (TEF)** und drei Zeitgrößen für Reporting
+  (Containment/Resilience/Concurrency) – jeweils PERT (min/wahrscheinlich/max).
+- **Ein Resistive Control** (z. B. EDR/Anti-Malware) – Intended/Variant
+  Efficacy, Variance Frequency/Duration, Coverage.
+- **Sechs Kill-Chain-Stufen** (Detection & Response) mit je Coverage,
+  Visibility, Recognition, Monitoring, Verweildauer und der Outcome-Klasse
+  bei Entdeckung (früh/mittel/spät).
+- **Fünf Verlustklassen** – eine je möglichem Ausgang der Kill-Chain (Früh,
+  Mittel, Spät, Voller Schaden, Angreifer scheitert).
+
+### Verlustklassen: Verteilung & Annahmen
+
+Jede Verlustklasse hat – **analog zu den FAIR-Faktoren** – eine frei wählbare
+Verteilung (**PERT**, **Lognormal**, **Normal** oder **Konstant**; dieselben
+vier Varianten wie bei magnitude-FAIR-Faktoren) mit den passenden
+Parameterfeldern, sowie ein eigenes **Annahmen**-Freitextfeld mit **✨-Button**
+für einen KI-Vorschlag (siehe [KI-Agent](ki-agent.md)) – zwei getrennte
+Bedienelemente, genau wie im FAIR-Szenario-Formular.
+
+Auf der Detailseite zeigt jede Verlustklasse zusätzlich einen **📝-Knopf**
+(Annahmen anzeigen) und einen **📈-Knopf** (Verteilungs-Vorschau als
+Dichtekurve) – ebenfalls wie bei den FAIR-Faktoren.
+
+### Berechnen & Ergebnis
+
+**▶ Berechnen** startet die Monte-Carlo-Simulation über pyfair-cam. Das
+Ergebnis zeigt Kennzahlen, VaR, LEC, ein Verlust-Histogramm sowie eine
+**Outcome-Verteilung** (Anteil früh/mittel/spät/voller Schaden/Angreifer
+scheitert) – eigene, fair-web-native Plotly-Charts statt des
+pyfair-cam-eigenen HTML-Reports.
+
+!!! note "Noch eigenständig"
+    FAIR-CAM läuft aktuell **parallel** zu den normalen FAIR-Szenarien, nicht
+    in deren Risiko-Baum eingebunden. Die Engine unterstützt das Andocken
+    bereits (`to_pyfair()`), die Web-Oberfläche dafür (Admin-Umschalter
+    Vuln/CS) ist eine spätere Ausbaustufe.
+
 ## Klonen & Kopien
 
 - **Klonen** (Übersicht) – dupliziert ein Szenario unter neuer ID als „… (Kopie)".

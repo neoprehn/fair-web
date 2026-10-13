@@ -7,6 +7,7 @@ from .views import (
     CamSzenarioDetailView,
     CamSzenarioListView,
     CamSzenarioUpdateView,
+    cam_ki_vorschlag,
     cam_lauf_status,
     cam_simulation_starten,
 )
@@ -20,6 +21,7 @@ urlpatterns = [
     path("<int:pk>/bearbeiten/", CamSzenarioUpdateView.as_view(), name="update"),
     path("<int:pk>/loeschen/", CamSzenarioDeleteView.as_view(), name="delete"),
     path("<int:pk>/starten/", cam_simulation_starten, name="starten"),
+    path("ki-vorschlag/", cam_ki_vorschlag, name="ki_vorschlag"),
     path("lauf/<int:pk>/", CamLaufDetailView.as_view(), name="lauf"),
     path("lauf/<int:pk>/status/", cam_lauf_status, name="status"),
 ]

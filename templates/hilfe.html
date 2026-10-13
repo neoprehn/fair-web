@@ -23,6 +23,7 @@
                 <a class="nav-link px-0 py-1" href="#cia">C/I/A-Kennzeichnung</a>
                 <a class="nav-link px-0 py-1" href="#cluster">Cluster (Gruppen)</a>
                 <a class="nav-link px-0 py-1" href="#vergleich">Szenarien vergleichen</a>
+                <a class="nav-link px-0 py-1" href="#cam">FAIR-CAM</a>
                 <a class="nav-link px-0 py-1" href="#klonen">Klonen &amp; Kopien</a>
                 <a class="nav-link px-0 py-1" href="#rollen">Rollen &amp; Rechte</a>
                 <a class="nav-link px-0 py-1" href="#einstellungen">Anzeige &amp; Einstellungen</a>
@@ -190,6 +191,30 @@
             </ul>
             <p>Optional ein <strong>Referenz-Szenario</strong> wählen – dessen Risikotoleranz wird im
                Compare-Chart rot gezeichnet, mit Schnittpunkten je Szenario-LEC.</p>
+        </section>
+
+        <section id="cam" class="mb-4">
+            <h2 class="h5">FAIR-CAM (Controls Analytics Model)</h2>
+            <p>Eigener Top-Level-Menüpunkt <strong>„FAIR-CAM"</strong> – ergänzt FAIR um eine
+               quantitative Bewertung, wie wirksam Sicherheits-Controls das Risiko tatsächlich
+               senken. Rechnet über die eigenständige Engine <strong>pyfair-cam</strong>.</p>
+            <p>Über <em>+ Neues CAM-Szenario</em> werden erfasst: Threat Event Frequency (TEF), ein
+               Resistive Control (z. B. EDR/Anti-Malware), sechs Kill-Chain-Stufen (Detection &amp;
+               Response) sowie fünf Verlustklassen (Früh/Mittel/Spät/Voller Schaden/Angreifer
+               scheitert).</p>
+            <p>Jede Verlustklasse hat – <strong>analog zu den FAIR-Faktoren</strong> – eine frei
+               wählbare Verteilung (PERT, Lognormal, Normal oder Konstant) mit den passenden
+               Parameterfeldern, sowie ein eigenes <strong>Annahmen</strong>-Freitextfeld mit
+               ✨-Button für einen KI-Vorschlag – zwei getrennte Bedienelemente, genau wie im
+               FAIR-Szenario-Formular. Auf der Detailseite zeigt jede Verlustklasse zusätzlich einen
+               📝-Knopf (Annahmen anzeigen) und einen 📈-Knopf (Verteilungs-Vorschau als
+               Dichtekurve).</p>
+            <p><em>▶ Berechnen</em> startet die Monte-Carlo-Simulation; das Ergebnis zeigt
+               Kennzahlen, VaR, LEC, ein Verlust-Histogramm sowie eine Outcome-Verteilung (Anteil
+               früh/mittel/spät/voller Schaden/Angreifer scheitert).</p>
+            <p class="text-body-secondary small">FAIR-CAM läuft aktuell parallel zu den normalen
+               FAIR-Szenarien, noch nicht in deren Risiko-Baum eingebunden – das ist eine spätere
+               Ausbaustufe.</p>
         </section>
 
         <section id="klonen" class="mb-4">

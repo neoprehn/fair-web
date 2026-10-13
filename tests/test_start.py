@@ -38,3 +38,4 @@ def test_hilfe_seite(client):
     html = client.get(reverse("hilfe")).content.decode()
     assert "Hilfe" in html
     assert 'id="faktoren"' in html  # Inhaltsabschnitte vorhanden
+    assert 'id="cam"' in html  # FAIR-CAM-Abschnitt vorhanden
