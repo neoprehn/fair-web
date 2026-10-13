@@ -86,19 +86,24 @@
         scheitert der Angreifer.
     </p>
     <div class="row mb-3"><div class="col-12">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="btn-group btn-group-sm" role="group" aria-label="Ansicht">
-            <button type="button" class="btn btn-outline-info active" id="cam-view-chain">Kill-Chain</button>
-            <button type="button" class="btn btn-outline-info" id="cam-view-attack">MITRE ATT&amp;CK</button>
-        </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm" id="cam-chain-fullscreen" title="Vollansicht">⛶ Vollansicht</button>
-    </div>
     <div id="cam-chain-wrap" class="card h-100"><div class="card-body py-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Ansicht">
+                <button type="button" class="btn btn-outline-info active" id="cam-view-chain">Kill-Chain</button>
+                <button type="button" class="btn btn-outline-info" id="cam-view-attack">MITRE ATT&amp;CK</button>
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="cam-chain-fullscreen" title="Vollansicht">⛶ Vollansicht</button>
+        </div>
         <div id="cam-chain-graph-ergebnis" style="width:100%; height:300px;"></div>
     </div></div>
     <style>
         #cam-chain-wrap:fullscreen { background: var(--bg-1); padding: 20px; }
         #cam-chain-wrap:fullscreen #cam-chain-graph-ergebnis { height: calc(100vh - 40px) !important; }
+        #cam-chain-wrap.cam-chain-pseudo-fullscreen {
+            position: fixed !important; inset: 0; width: 100vw !important; height: 100vh !important;
+            z-index: 1050; background: var(--bg-1); padding: 20px; margin: 0 !important;
+        }
+        #cam-chain-wrap.cam-chain-pseudo-fullscreen #cam-chain-graph-ergebnis { height: calc(100vh - 40px) !important; }
     </style>
     {{ chain_elements|json_script:"chain-elements-data" }}
     </div></div>
@@ -227,28 +232,51 @@
     if (btnChain) btnChain.addEventListener('click', function () { setView(false); });
     if (btnAttack) btnAttack.addEventListener('click', function () { setView(true); });
 
-    // Vollansicht (dasselbe Fullscreen-Muster wie im iam-Projekt).
+    // Vollansicht (dasselbe Fullscreen-Muster wie im iam-Projekt) - mit CSS-Fallback fuer
+    // Browser ohne Element.requestFullscreen() (iOS/iPadOS WebKit unterstuetzt das nur fuer
+    // <video>, betrifft dort ausnahmslos jeden Browser inkl. Firefox/Chrome fuer iOS).
     var fsBtn = document.getElementById('cam-chain-fullscreen');
     var wrapEl = document.getElementById('cam-chain-wrap');
     if (fsBtn && wrapEl) {
-        fsBtn.addEventListener('click', function () {
-            if (!document.fullscreenElement) {
-                wrapEl.requestFullscreen().catch(function (err) {
-                    console.error('Vollbild fehlgeschlagen:', err);
-                });
-            } else {
-                document.exitFullscreen();
-            }
-        });
-        document.addEventListener('fullscreenchange', function () {
-            fsBtn.classList.toggle('active', document.fullscreenElement === wrapEl);
+        var hatNativeFullscreen = typeof wrapEl.requestFullscreen === 'function';
+        function istAktiv() {
+            return hatNativeFullscreen
+                ? document.fullscreenElement === wrapEl
+                : wrapEl.classList.contains('cam-chain-pseudo-fullscreen');
+        }
+        function nachAenderung() {
+            fsBtn.classList.toggle('active', istAktiv());
             requestAnimationFrame(function () {
                 requestAnimationFrame(function () {
                     cy.resize();
                     cy.fit(undefined, 30);
                 });
             });
+        }
+        fsBtn.addEventListener('click', function () {
+            if (istAktiv()) {
+                if (hatNativeFullscreen) { document.exitFullscreen(); }
+                else { wrapEl.classList.remove('cam-chain-pseudo-fullscreen'); nachAenderung(); }
+            } else {
+                if (hatNativeFullscreen) {
+                    wrapEl.requestFullscreen().catch(function (err) {
+                        console.error('Vollbild fehlgeschlagen:', err);
+                    });
+                } else {
+                    wrapEl.classList.add('cam-chain-pseudo-fullscreen'); nachAenderung();
+                }
+            }
         });
+        if (hatNativeFullscreen) {
+            document.addEventListener('fullscreenchange', nachAenderung);
+        } else {
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && istAktiv()) {
+                    wrapEl.classList.remove('cam-chain-pseudo-fullscreen');
+                    nachAenderung();
+                }
+            });
+        }
     }
 })();
 </script>
