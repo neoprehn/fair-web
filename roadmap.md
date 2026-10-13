@@ -278,7 +278,41 @@ hatte das bisher nicht genutzt und jede Verlustklasse hart auf `BetaPert(low, mo
       `templates/hilfe.html` haben jetzt einen FAIR-CAM-Abschnitt (Szenario-Aufbau,
       Verlustklassen-Verteilungsauswahl + Annahmen/Vorschau-Buttons, Berechnen/Ergebnis,
       Hinweis auf den noch fehlenden FAIR-Andockpunkt) – 208/208 Tests grün (+ 3 KI-Tests,
-      lokal übersprungen wegen der oben genannten Windows-Einschränkung)
+      lokal übersprungen wegen der oben genannten Windows-Einschränkung, die sich
+      zwischenzeitlich von selbst gelöst hat – siehe nächster Punkt, 224/224 jetzt komplett grün)
+
+### CAM-Kill-Chain: interaktiver Cytoscape-Graph statt statischem SVG (@neoprehn)
+
+Angefragt 2026-10-13 – Vorbild: der Graph-Tab in `iam/frontend/analysis.html` (eigenes
+Projekt, `D:\Entwicklung\iam`), der dort bewusst **Cytoscape.js** statt Neo4js eigener
+NVL-Bibliothek nutzt (NVL ist lizenzrechtlich nur mit Aura/kommerzieller Subscription
+nutzbar, der iam-Stack läuft auf Neo4j Community Edition).
+
+- [x] Cytoscape.js lokal vendored (`static/vendor/cytoscape/`, MIT, 1:1 aus dem
+      iam-Repo übernommen) statt CDN – entspricht der dortigen Vertrauensgrenze.
+- [x] `apps/cam/cam_tree.py::kill_chain_layout()`: Kanten referenzieren jetzt
+      Knoten-Codes (`source`/`target`) statt Pixel-Koordinaten (`x1/y1/x2/y2`) – graph-nativ
+      statt SVG-spezifisch. Neue `to_cytoscape_elements()`-Funktion wandelt `(nodes, edges)`
+      in Cytoscape-`elements` um; berechnete Knoten-Werte (Erkennungsanteil je Stufe,
+      Outcome-Anteil, siehe `_annotiere_kill_chain`) werden zur zweiten Beschriftungszeile,
+      Kanten tragen ihr Label direkt (z. B. „scheitert" an der gestrichelten Fail-Kante).
+- [x] `cam/form.html` + `cam/lauf.html`: `preset`-Layout (Backend liefert sinnvolle
+      Startpositionen für die Prozesskette), danach frei draggable – bewusst **kein**
+      Force-/Concentric-Layout wie bei iams Hub-Graph, weil bei der Kill-Chain die
+      Reihenfolge selbst die Information ist (ein Re-Layout würde sie zerstören). Im
+      Formular bleiben Klick-zum-Hinspringen (öffnet die Stufen-Details, scrollt hin) und
+      Fokus-Synchronisierung (aktiver Knoten hervorgehoben) erhalten, jetzt über die
+      Cytoscape-API statt SVG-CSS-Klassen.
+- [x] Nebenbei behoben: latenter Bug in `tests/test_cam_ki_vorschlag.py` – relativer Import
+      (`from .test_cam_views import ...`) funktioniert in diesem pytest-Setup nicht (kein
+      `tests/__init__.py`), war bisher durch `importorskip(litellm)` nie wirklich
+      durchgelaufen. Dabei auch festgestellt: die Windows-Anwendungssteuerungsrichtlinie,
+      die `litellm`/`tokenizers` lokal blockiert hatte, griff bei einem späteren Testlauf
+      nicht mehr – alle 224 Tests (inkl. beider KI-Vorschlag-Dateien) laufen jetzt lokal grün.
+- [ ] **Vorgemerkt, nicht Teil dieses Durchgangs:** MITRE-ATT&CK-Zweitansicht (Tactics/
+      Techniques als Overlay über dieselbe Kill-Chain, offene ATT&CK-STIX-Daten, Vollansicht
+      analog zum Fullscreen-Muster aus `iam`) – eigener, spürbar größerer Folge-Schritt
+      (neues Feld je `CamStage` für die Technique-Zuordnung, zweiter Layout-Modus).
 
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
