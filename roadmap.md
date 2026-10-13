@@ -321,6 +321,28 @@ nutzbar, der iam-Stack läuft auf Neo4j Community Edition).
       `cam/lauf.html`: Umschalter „Kill-Chain"/„MITRE ATT&CK" (tauscht Node-Positionen/
       -Labels + Kanten-Sichtbarkeit auf demselben Cytoscape-Graph) plus **⛶ Vollansicht**
       (Fullscreen-Muster aus `iam` übernommen). 231/231 Tests grün.
+- [x] **Bugfix (gemeldet vom Nutzer, iPad/Firefox):** „Vollbild passiert nichts" –
+      `Element.requestFullscreen()` ist auf iOS/iPadOS für Nicht-`<video>`-Elemente
+      grundsätzlich nicht implementiert (WebKit-Limitierung, betrifft dort *jeden*
+      Browser inkl. Firefox/Chrome für iOS, da Apple WebKit als Engine vorschreibt).
+      Fix: `cam/form.html` + `cam/lauf.html` erkennen jetzt per Feature-Detection
+      (`typeof wrapEl.requestFullscreen === 'function'`), ob native Fullscreen
+      verfügbar ist, und fallen sonst auf eine CSS-Pseudo-Vollansicht zurück
+      (`position: fixed`, volle Viewport-Größe + Escape zum Schließen). Dabei
+      zusätzlich einen zweiten, latenten Bug gefunden: die Toolbar
+      (Kill-Chain/MITRE-Umschalter + Vollansicht-Knopf) lag bisher *außerhalb* von
+      `#cam-chain-wrap` und wurde dadurch vom fixierten Pseudo-Vollansicht-Overlay
+      verdeckt – ohne Escape-Taste (auf Touch-Geräten unpraktisch) ließ sich die
+      Pseudo-Vollansicht nicht mehr schließen. Toolbar jetzt innerhalb von
+      `#cam-chain-wrap` verschachtelt, bleibt dadurch in beiden Modi klickbar.
+      Verifiziert per Playwright (Chromium mit entferntem `requestFullscreen`
+      zur iOS-Simulation): Fallback aktiviert sich korrekt und lässt sich per
+      erneutem Klick wieder schließen. Die zweite Nutzermeldung („Beim Mitre
+      passiert nix") blieb beim Testen auf Desktop-Chromium unauffällig – MITRE-
+      Umschalter funktioniert dort einwandfrei (Screenshots bestätigen korrekte
+      Knoten-Umpositionierung); Verdacht: Browser-Cache auf dem iPad war noch auf
+      dem Stand vor der MITRE-Einführung. Rückmeldung an Nutzer: Seite hart neu
+      laden und erneut testen.
 
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
