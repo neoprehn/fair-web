@@ -94,7 +94,18 @@
             </div>
             <button type="button" class="btn btn-outline-secondary btn-sm" id="cam-chain-fullscreen" title="Vollansicht">⛶ Vollansicht</button>
         </div>
-        <div id="cam-chain-graph-ergebnis" style="width:100%; height:300px;"></div>
+        <div style="position:relative;">
+            <div id="cam-chain-graph-ergebnis" style="width:100%; height:300px;"></div>
+            <div id="cam-attack-empty-hinweis" class="text-body-secondary small text-center px-4"
+                 style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; background:var(--bg-2);">
+                Keine Stufe hat bisher eine MITRE ATT&amp;CK Tactic zugewiesen &ndash;
+                {% if perms.cam.change_camszenario %}
+                trag sie <a href="{% url 'cam:update' lauf.szenario.pk %}">im Formular</a> je Stufe ein, dann erscheint sie hier.
+                {% else %}
+                sie lässt sich im Bearbeiten-Formular je Stufe nachtragen.
+                {% endif %}
+            </div>
+        </div>
     </div></div>
     <style>
         #cam-chain-wrap:fullscreen { background: var(--bg-1); padding: 20px; }
@@ -202,9 +213,11 @@
     });
     var btnChain = document.getElementById('cam-view-chain');
     var btnAttack = document.getElementById('cam-view-attack');
+    var attackHinweis = document.getElementById('cam-attack-empty-hinweis');
     function setView(attackModus) {
         if (btnChain) btnChain.classList.toggle('active', !attackModus);
         if (btnAttack) btnAttack.classList.toggle('active', attackModus);
+        var sichtbareKnoten = 0;
         cy.nodes().forEach(function (n) {
             var o = orig[n.id()];
             if (attackModus) {
@@ -213,6 +226,7 @@
                     n.position(pos);
                     n.data('label', n.data('attack_label') || o.label);
                     n.style('display', 'element');
+                    sichtbareKnoten++;
                 } else {
                     n.style('display', 'none');
                 }
@@ -227,6 +241,7 @@
                 || (!!e.source().data('attack_position') && !!e.target().data('attack_position'));
             e.style('display', sichtbar ? 'element' : 'none');
         });
+        if (attackHinweis) attackHinweis.style.display = (attackModus && sichtbareKnoten === 0) ? 'flex' : 'none';
         cy.fit(undefined, 30);
     }
     if (btnChain) btnChain.addEventListener('click', function () { setView(false); });
