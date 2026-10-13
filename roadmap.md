@@ -268,10 +268,17 @@ hatte das bisher nicht genutzt und jede Verlustklasse hart auf `BetaPert(low, mo
       ganz ohne Verteilungs-Vorschau. `CamSzenarioDetailView` bekam dafür eine eigene
       `_verteilung_kurve()`-Kopie (gleiche KDE-Berechnung wie `apps.szenarien.views`, bewusst
       dupliziert statt importiert) – 207/207 Tests grün
-- [ ] Rückstand unverändert: KI-Vorschlag-✨-Button für Annahmen (siehe oben) und die
-      **Offene Doku-Lücke (vorbestehend, nicht neu):** FAIR-CAM/`apps.cam` taucht noch gar nicht in
-      `docs/bedienung.md`/`templates/hilfe.html` auf – nicht nur die Verteilungsauswahl, die ganze
-      CAM-Bedienung fehlt dort bisher
+- [x] **Nachgezogen:** KI-Vorschlag-✨-Button für das Annahmen-Feld jeder Verlustklasse –
+      `apps/cam/ki_prompts.py` (eigener, schlanker Prompt-Baustein) + `cam_ki_vorschlag`-Endpunkt,
+      nutzt denselben `apps.szenarien.ki_service` wieder (generische KI-Anbindung, keine Dopplung).
+      End-to-end gegen gestubtes `litellm` verifiziert (echtes `litellm` lässt sich auf diesem
+      Windows-Dev-Rechner wegen einer Anwendungssteuerungsrichtlinie nicht laden – dieselbe
+      vorbestehende Einschränkung wie bei `tests/test_ki_vorschlag.py`, daher `importorskip`)
+- [x] **Nachgezogen:** Doku-Lücke geschlossen – `docs/bedienung.md`/`.en.md` und
+      `templates/hilfe.html` haben jetzt einen FAIR-CAM-Abschnitt (Szenario-Aufbau,
+      Verlustklassen-Verteilungsauswahl + Annahmen/Vorschau-Buttons, Berechnen/Ergebnis,
+      Hinweis auf den noch fehlenden FAIR-Andockpunkt) – 208/208 Tests grün (+ 3 KI-Tests,
+      lokal übersprungen wegen der oben genannten Windows-Einschränkung)
 
 ### Später — Geführter Szenario-Dialog (Name noch offen)
 
